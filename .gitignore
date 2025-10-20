@@ -1,2 +1,17 @@
-*.sqlite
+# Django
+*.pyc
+__pycache__/
+db.sqlite3
+/staticfiles/
 .env
+venv/
+.idea/
+.vscode/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node (si usas npm para assets)
+node_modules/
