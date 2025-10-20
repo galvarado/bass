@@ -1,0 +1,97 @@
+.bg-gradient-primary {
+  background-color: #01143E !important;
+  background-image: none !important;
+}
+
+.border-left-primary {
+  border-left: 0.25rem solid #01143E !important;
+}
+
+.text-primary {
+  color: #01143E !important;
+}
+
+.btn-primary {
+  background-color: #01143E !important;
+  border-color: #01143E !important;
+}
+
+.btn-primary:hover {
+  background-color: #0b213a !important;
+  border-color: #0b213a !important;
+}
+footer {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.85rem;
+  letter-spacing: 0.3px;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+body { background: #01143E; }
+
+/* Caja más ancha y sin “dientes” */
+.card-login{
+  max-width: 960px;
+  margin: 3rem auto;
+  border-radius: 1rem;
+  overflow: hidden;          /* oculta bordes desalineados internos */
+}
+
+/* Asegura fondo blanco uniforme en ambas columnas */
+.login-image-container,
+.login-form-container{
+  background: #fff;
+}
+
+/* Logo centrado y con buen tamaño */
+.login-image-container{
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+}
+.login-image-container img{ width: 85%; height: auto; }
+
+/* Inputs más grandes y sin sombras raras */
+.form-control-user{
+  font-size: 1rem;
+  padding: 0.9rem 1.1rem;
+  height: calc(2.8rem + 2px);
+  border: 1px solid #d1d3e2;
+  box-shadow: none;
+}
+.form-control-user:focus{ border-color:#b7b9cc; box-shadow: none; }
+
+/* Si hubiera un <hr> suelto dentro de la tarjeta, ocultarlo */
+.card-login hr{ display:none; }
+
+/* En móvil ocultamos el panel de imagen para ahorrar espacio */
+@media (max-width: 768px){
+  .login-image-container{ display: none; }
+}
+/* ==== Sidebar Logo ==== */
+.sidebar-brand {
+  height: 150px; /* más alto para respirar */
+  padding-top: 15px;
+  padding-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-brand-icon img {
+  max-height: 110px; /* controla el tamaño máximo */
+  width: auto;
+  object-fit: contain;
+}
+
+/* Si en pantallas pequeñas el logo ocupa demasiado */
+@media (max-height: 700px) {
+  .sidebar-brand {
+    height: 120px;
+  }
+  .sidebar-brand-icon img {
+    max-height: 90px;
+  }
+}

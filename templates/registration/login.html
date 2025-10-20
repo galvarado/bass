@@ -1,0 +1,164 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Iniciar sesión</title>
+
+  <!-- Bootstrap 4 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
+  <!-- SB Admin 2 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css">
+  <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+
+  <style>
+    /* Centrar todo el contenido */
+   body {
+  background: #01143E;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.login-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card-login {
+  max-width: 960px;
+  width: 100%;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Logo y formulario */
+.login-image-container,
+.login-form-container {
+  background: #fff;
+}
+
+.login-image-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.login-image-container img {
+  width: 85%;
+  height: auto;
+  max-width: 320px;
+}
+
+.form-control-user {
+  font-size: 1rem;
+  padding: 0.9rem 1.1rem;
+  height: calc(2.8rem + 2px);
+  border: 1px solid #d1d3e2;
+  box-shadow: none;
+}
+
+.form-control-user:focus {
+  border-color: #b7b9cc;
+  box-shadow: none;
+}
+
+/* 📱 Móviles: sin logo lateral */
+@media (max-width: 768px) {
+  .login-image-container { display: none; }
+  .card-login {
+    max-width: 90%;
+    border-radius: 0.75rem;
+  }
+}
+
+/* 💻 Tablets (entre 769px y 1024px): más compacta */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .card-login {
+    max-width: 700px;
+  }
+  .login-image-container img {
+    width: 75%;
+    max-width: 250px;
+  }
+  .login-form-container .p-5 {
+    padding: 2rem !important;
+  }
+}
+
+/* 🖥️ Escritorio grande */
+@media (min-width: 1200px) {
+  .card-login {
+    max-width: 960px;
+  }
+}
+  </style>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="card card-login shadow-lg border-0">
+      <div class="card-body p-0">
+        <div class="row no-gutters">
+          <!-- Lado izquierdo: logo -->
+          <div class="col-lg-6 login-image-container">
+            <img src="{% static 'img/basslogo.jpg' %}" alt="BASS">
+          </div>
+
+          <!-- Lado derecho: formulario -->
+          <div class="col-lg-6 login-form-container">
+            <div class="p-5">
+              <div class="text-center mb-4">
+                <h1 class="h4 text-gray-900">Bienvenido</h1>
+              </div>
+
+              {% if form.errors %}
+                <div class="alert alert-danger">Usuario o contraseña incorrectos.</div>
+              {% endif %}
+
+              <form method="post" class="user" action="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                  <input type="text" name="username" autofocus required
+                         class="form-control form-control-user"
+                         placeholder="Usuario">
+                </div>
+                <div class="form-group">
+                  <input type="password" name="password" required
+                         class="form-control form-control-user"
+                         placeholder="Contraseña">
+                </div>
+                <button type="submit" class="btn btn-primary btn-user btn-block py-2">
+                  Ingresar
+                </button>
+                <input type="hidden" name="next" value="{{ next }}">
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center text-white mt-4">
+      <small class="d-block">
+        Sistema de Gestión Operativa &copy; {% now "Y" %} BASS Autotransportes. Todos los derechos reservados.
+      </small>
+      <small class="d-block">
+        Desarrollado por
+        <a href="https://foxbase.com.mx" target="_blank" class="text-white font-weight-bold text-decoration-none">
+          FoxBase.
+        </a>
+      </small>
+    </footer>
+  </div>
+</body>
+
+</html>

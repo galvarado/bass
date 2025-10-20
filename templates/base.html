@@ -1,0 +1,96 @@
+{% load static %}
+{% load roles %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}BASS{% endblock %}</title>
+
+  <!-- Estilos base -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css">
+  <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+
+  <style>
+    .bg-gradient-primary { background-color:#01143e !important; background-image:none !important; }
+    .sidebar .nav-item .nav-link.active { font-weight:700; }
+    .topbar { background-color:#fff; border-bottom:1px solid #e3e6f0; }
+    .topbar .dropdown-menu a { color:#333; }
+  </style>
+</head>
+
+<body id="page-top">
+
+  <div id="wrapper">
+    <!-- Sidebar (partial) -->
+    {% include "partials/sidebar.html" %}
+    <!-- /Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+      <!-- Topbar -->
+      <nav class="navbar navbar-expand navbar-light topbar mb-4 shadow-sm">
+        <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+          <i class="fa fa-bars"></i>
+        </button>
+
+        <span class="text-primary font-weight-bold">Sistema de Gestión Operativa</span>
+
+        <!-- Menú de usuario -->
+        <ul class="navbar-nav ml-auto">
+          <div class="topbar-divider d-none d-sm-block"></div>
+
+          <li class="nav-item dropdown no-arrow">
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="mr-2 d-none d-lg-inline text-gray-600">
+                Bienvenido, {{ request.user.first_name|default:request.user.username }}
+              </span>
+              <i class="fas fa-caret-down ml-1 text-gray-500"></i>
+            </a>
+
+            <!-- Dropdown -->
+            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                aria-labelledby="userDropdown">
+              <a class="dropdown-item" href="{% url 'profile' %}">
+                <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                Perfil
+              </a>
+              <div class="dropdown-divider"></div>
+              <form action="{% url 'logout' %}" method="post" class="m-0">
+                {% csrf_token %}
+                <button class="dropdown-item" type="submit">
+                  <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                  Cerrar sesión
+                </button>
+              </form>
+            </div>
+          </li>
+        </ul>
+      </nav>
+      <!-- /Topbar -->
+
+      <!-- Contenido principal -->
+      <div id="content" class="p-4">
+        {% block content %}{% endblock %}
+      </div>
+
+      <!-- Footer -->
+      <footer class="text-center text-muted my-3">
+        <small>
+          Sistema de Gestión Operativa &copy; {% now "Y" %} BASS Autotransportes · Desarrollado por
+          <a href="https://foxbase.com.mx" target="_blank">FoxBase</a>. Todos los derechos reservados.
+        </small>
+      </footer>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/js/sb-admin-2.min.js"></script>
+</body>
+</html>

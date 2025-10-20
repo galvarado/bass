@@ -1,0 +1,102 @@
+{% load static %}
+{% load roles %}
+
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+
+  <!-- Brand -->
+  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'dashboard' %}">
+    <div class="sidebar-brand-icon">
+      <img src="{% static 'img/basslogowhite.png' %}" alt="BASS" style="max-height:110px; width:auto; padding:10px">
+    </div>
+  </a>
+
+  <hr class="sidebar-divider my-0">
+
+  <!-- Dashboard -->
+  <li class="nav-item">
+    <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">
+      <i class="fas fa-fw fa-tachometer-alt"></i> <span>Dashboard</span>
+    </a>
+  </li>
+
+  <!-- Viajes -->
+  {% if user|has_any_group:"admin,viajes" %}
+  <li class="nav-item">
+    <a class="nav-link" href="/trips/">
+      <i class="fas fa-route"></i> <span>Viajes</span>
+    </a>
+  </li>
+  {% endif %}
+
+  {% if user|has_any_group:"admin,operadores" %}
+  <li class="nav-item">
+    <a class="nav-link" href="/operators/">
+      <i class="fas fa-user"></i> <span>Operadores</span>
+    </a>
+  </li>
+  {% endif %}
+
+    {% if user|has_any_group:"admin,unidades" %}
+  <li class="nav-item">
+    <a class="nav-link" href="/trucks/">
+      <i class="fas fa-truck"></i> <span>Unidades</span>
+    </a>
+  </li>
+  {% endif %}
+
+  <!-- Monitoreo -->
+  {% if user|has_any_group:"admin,monitoreo" %}
+  <li class="nav-item">
+    <a class="nav-link" href="/monitoring/">
+      <i class="fas fa-satellite-dish"></i> <span>Monitoreo</span>
+    </a>
+  </li>
+  {% endif %}
+
+  <!-- Taller -->
+  {% if user|has_any_group:"admin,taller" %}
+  <li class="nav-item"><a class="nav-link" href="/workshop/"><i class="fas fa-tools"></i> <span>Taller</span></a></li>
+  {% endif %}
+
+  <!-- Almacén -->
+  {% if user|has_any_group:"admin,almacen" %}
+  <li class="nav-item"><a class="nav-link" href="/warehouse/"><i class="fas fa-warehouse"></i> <span>Almacén</span></a></li>
+  {% endif %}
+
+  <!-- Liquidación -->
+  {% if user|has_any_group:"admin,liquidacion" %}
+  <li class="nav-item"><a class="nav-link" href="/settlement/"><i class="fas fa-file-invoice-dollar"></i> <span>Liquidación</span></a></li>
+  {% endif %}
+
+  <!-- Cobranza -->
+  {% if user|has_any_group:"admin,cobranza" %}
+  <li class="nav-item"><a class="nav-link" href="/collection/"><i class="fas fa-hand-holding-usd"></i> <span>Cobranza</span></a></li>
+  {% endif %}
+
+  <!-- Financiero -->
+  {% if user|has_any_group:"admin,financiero" %}
+  <li class="nav-item"><a class="nav-link" href="/finance/"><i class="fas fa-coins"></i> <span>Financiero</span></a></li>
+  {% endif %}
+
+  <!-- CTPAT -->
+  {% if user|has_any_group:"admin,ctpat" %}
+  <li class="nav-item"><a class="nav-link" href="/ctpat/"><i class="fas fa-shield"></i> <span>CTPAT</span></a></li>
+  {% endif %}
+
+  <!-- Cuentas -->
+  {% if user|has_group:"admin" %}
+  <li class="nav-item"><a class="nav-link" href="/admin/"><i class="fas fa-users-cog"></i> <span>Cuentas</span></a></li>
+  {% endif %}
+
+  <hr class="sidebar-divider d-none d-md-block">
+
+  <!-- Logout -->
+  <li class="nav-item px-3 pb-3">
+    <form action="{% url 'logout' %}" method="post" class="m-0 p-0">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-light btn-sm w-100">
+        <i class="fas fa-sign-out-alt"></i> Salir
+      </button>
+    </form>
+  </li>
+</ul>

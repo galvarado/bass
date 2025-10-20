@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load roles %}
+
+{% block title %}Dashboard · BASS{% endblock %}
+
+{% block content %}
+<h1 class="h3 text-gray-800 mb-4">Dashboard</h1>
+
+<div class="row">
+  <!-- Viajes -->
+  {% if user|has_any_group:"Admin,Operaciones,Logistica" %}
+  <div class="col-lg-4 mb-4">
+    <div class="card border-left-primary shadow h-100 py-2">
+      <div class="card-body">
+        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Viajes</div>
+        <div class="h5 mb-3 font-weight-bold text-gray-800">Panel operativo</div>
+        <a href="/trips/" class="btn btn-primary btn-sm">Abrir</a>
+        {% if user|has_perm:"trips.add_trip" %}
+          <a href="/trips/new/" class="btn btn-outline-primary btn-sm">Nuevo viaje</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Logística -->
+  {% if user|has_any_group:"Admin,Logistica" %}
+  <div class="col-lg-4 mb-4">
+    <div class="card border-left-success shadow h-100 py-2">
+      <div class="card-body">
+        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Logística</div>
+        <div class="h5 mb-3 font-weight-bold text-gray-800">Planeación y rutas</div>
+        <a href="/logistics/" class="btn btn-success btn-sm">Abrir</a>
+        {% if user|has_perm:"catalogs.change_route" %}
+          <a href="/logistics/optimize/" class="btn btn-outline-success btn-sm">Optimizar rutas</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Monitoreo -->
+  {% if user|has_any_group:"Admin,Monitoreo" %}
+  <div class="col-lg-4 mb-4">
+    <div class="card border-left-warning shadow h-100 py-2">
+      <div class="card-body">
+        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Monitoreo</div>
+        <div class="h5 mb-3 font-weight-bold text-gray-800">GPS y eventos</div>
+        <a href="/monitoring/" class="btn btn-warning btn-sm text-white">Abrir</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Taller -->
+  {% if user|has_any_group:"Admin,Taller" %}
+  <div class="col-lg-4 mb-4">
+    <div class="card border-left-info shadow h-100 py-2">
+      <div class="card-body">
+        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Taller</div>
+        <div class="h5 mb-3 font-weight-bold text-gray-800">Mantenimiento</div>
+        <a href="/workshop/" class="btn btn-info btn-sm text-white">Abrir</a>
+        {% if user|has_perm:"workshop.add_workorder" %}
+          <a href="/workshop/workorders/new/" class="btn btn-outline-info btn-sm">Nueva OT</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Almacén -->
+  {% if user|has_any_group:"Admin,Almacen" %}
+  <div class="col-lg-4 mb-4">
+    <div class="card border-left-secondary shadow h-100 py-2">
+      <div class="card-body">
+        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Almacén</div>
+        <div class="h5 mb-3 font-weight-bold text-gray-800">Inventario</div>
+        <a href="/warehouse/" class="btn btn-secondary btn-sm">Abrir</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Liquidación -->
+  {% if user|has_any_group:"Admin,Liquidacion" %}
+  <div class="col-lg-4 mb-4">
+    <div class="card border-left-dark shadow h-100 py-2">
+      <div class="card-body">
+        <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Liquidación</div>
+        <div class="h5 mb-3 font-weight-bold text-gray-800">Rendiciones</div>
+        <a href="/settlement/" class="btn btn-dark btn-sm">Abrir</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Cobranza -->
+  {% if user|has_any_group:"Admin,Cobranza" %}
+  <div class="col-lg-4 mb-4">
+    <div class="card border-left-danger shadow h-100 py-2">
+      <div class="card-body">
+        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Cobranza</div>
+        <div class="h5 mb-3 font-weight-bold text-gray-800">Cuentas por cobrar</div>
+        <a href="/collection/" class="btn btn-danger btn-sm">Abrir</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Financiero -->
+  {% if user|has_any_group:"Admin,Financiero" %}
+  <div class="col-lg-4 mb-4">
+    <div class="card border-left-primary shadow h-100 py-2">
+      <div class="card-body">
+        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Financiero</div>
+        <div class="h5 mb-3 font-weight-bold text-gray-800">KPIs</div>
+        <a href="/finance/" class="btn btn-primary btn-sm">Abrir</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- CTPAT -->
+  {% if user|has_any_group:"Admin,CTPAT" %}
+  <div class="col-lg-4 mb-4">
+    <div class="card border-left-success shadow h-100 py-2">
+      <div class="card-body">
+        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">CTPAT</div>
+        <div class="h5 mb-3 font-weight-bold text-gray-800">Cumplimiento</div>
+        <a href="/ctpat/" class="btn btn-success btn-sm">Abrir</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
