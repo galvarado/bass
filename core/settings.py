@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "warehouse",
     "workshop",
     "common",
+    "audit",
 ]
 
 MIDDLEWARE = [

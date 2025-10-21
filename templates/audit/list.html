@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load audit_extras %}
+
+{% block title %}Bitácora · BASS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h5 mb-0">Bitácora</h1>
+</div>
+
+<form method="get" class="card mb-3">
+  <div class="card-body">
+    <div class="form-row">
+      <div class="col-md-3 mb-2"><input name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar texto/usuario/path/tags"></div>
+      <div class="col-md-2 mb-2">
+        <select name="action" class="form-control">
+        <option value="">Todas las acciones</option>
+        {% for k,v in logs.model.ACTIONS %}
+            <option value="{{ k }}" {% if request.GET.action == k %}selected{% endif %}>{{ v }}</option>
+        {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 mb-2"><input name="model" value="{{ request.GET.model }}" class="form-control" placeholder="Modelo (e.g. operator)"></div>
+      <div class="col-md-2 mb-2"><input type="date" name="from" value="{{ request.GET.from }}" class="form-control"></div>
+      <div class="col-md-2 mb-2"><input type="date" name="to"   value="{{ request.GET.to }}"   class="form-control"></div>
+      <div class="col-md-1 mb-2"><button class="btn btn-outline-primary btn-block">Filtrar</button></div>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="thead-light">
+        <tr>
+          <th>Fecha</th><th>Usuario</th><th>Acción</th><th>Modelo</th><th>Obj</th><th>Detalle</th><th>IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+          <tr>
+            <td>{{ log.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ log.user|default:"—" }}</td>
+            <td><span class="badge badge-{{ log.action|action_badge }}">{{ log.get_action_display }}</span></td>
+            <td>{{ log.content_type.model|default:"—" }}</td>
+            <td>{{ log.object_id|default:"—" }}</td>
+            <td>
+              {% if log.object_repr %}<div class="small text-muted">{{ log.object_repr }}</div>{% endif %}
+              {% if log.changes %}
+                <details><summary class="small">Cambios</summary>
+                  <pre class="small mb-0">{{ log.changes|safe }}</pre>
+                </details>
+              {% endif %}
+              {% if log.tags %}
+                <div class="small text-muted">tags: {{ log.tags|safe }}</div>
+              {% endif %}
+            </td>
+            <td class="small">{{ log.ip|default:"—" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-4">Sin eventos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if is_paginated %}
+  <div class="card-footer">
+    <nav><ul class="pagination mb-0">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">«</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">«</span></li>
+      {% endif %}
+      <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">»</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">»</span></li>
+      {% endif %}
+    </ul></nav>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

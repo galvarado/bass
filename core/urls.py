@@ -27,5 +27,7 @@ urlpatterns = [
     path("dashboard/", core_views.dashboard, name="dashboard"),
     path("accounts/", include("accounts.urls")),
     path("operators/", include("operators.urls", namespace="operators")),
+    path("audit/", include("audit.urls")),
+
 
 ]
