@@ -26,6 +26,18 @@
     </div>
   </div>
 </form>
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="text-muted small">
+    {% if is_paginated and paginator.count %}
+      Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ paginator.count }}
+      · Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% elif paginator and paginator.count == 0 %}
+      0 resultados
+    {% else %}
+      {{ operators|length }} operador{{ operators|length|pluralize:"es" }}
+    {% endif %}
+  </div>
+</div>
 
 <div class="card">
   <div class="table-responsive">
@@ -49,7 +61,6 @@
               </a><br>
               <small class="text-muted">
                 {% if op.phone %}<i class="fas fa-phone"></i> {{ op.phone }} · {% endif %}
-                {% if op.email %}<i class="fas fa-envelope"></i> {{ op.email }}{% endif %}
               </small>
             </td>
             <td>{{ op.rfc }}</td>
@@ -79,38 +90,58 @@
       </tbody>
     </table>
   </div>
-
-  {% if is_paginated %}
+{% if is_paginated %}
   <div class="card-footer">
-    <nav>
+    <nav aria-label="Paginación">
       <ul class="pagination mb-0">
+
+        {# Primera / Anterior #}
         {% if page_obj.has_previous %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}">«</a>
+            <a class="page-link" href="?page=1&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">« Primero</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">‹ Anterior</a>
           </li>
         {% else %}
-          <li class="page-item disabled"><span class="page-link">«</span></li>
+          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
         {% endif %}
 
+        {# Números con elipsis (sin paréntesis) #}
         {% for i in paginator.page_range %}
-          {% if page_obj.number == i %}
-            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-          {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
-            <li class="page-item"><a class="page-link" href="?page={{ i }}&q={{ request.GET.q }}&status={{ request.GET.status }}">{{ i }}</a></li>
+          {% if i == 1 or i == paginator.num_pages or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+            {% if page_obj.number == i %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ i }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% elif i == 2 and page_obj.number > 4 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% elif i == paginator.num_pages|add:'-1' and page_obj.number < paginator.num_pages|add:'-3' %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
           {% endif %}
         {% endfor %}
 
+        {# Siguiente / Última #}
         {% if page_obj.has_next %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}">»</a>
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">Siguiente ›</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ paginator.num_pages }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">Última »</a>
           </li>
         {% else %}
-          <li class="page-item disabled"><span class="page-link">»</span></li>
+          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
+          <li class="page-item disabled"><span class="page-link">Última »</span></li>
         {% endif %}
+
       </ul>
     </nav>
   </div>
-  {% endif %}
+{% endif %}
 </div>
 
 {% endblock %}

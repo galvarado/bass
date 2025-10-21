@@ -11,30 +11,43 @@ from .forms import OperatorForm, OperatorSearchForm
 class OperatorListView(ListView):
     model = Operator
     template_name = "operators/list.html"
-    context_object_name = "operators"
-    paginate_by = 10
+    context_object_name = "operators"   
+    paginate_by = 10                    
 
     def get_queryset(self):
-        qs = super().get_queryset().filter(deleted=False)
-        q = self.request.GET.get("q", "").strip()
+        qs = Operator.objects.filter(deleted=False)
+
+        q = (self.request.GET.get("q") or "").strip()
         status = self.request.GET.get("status", "")
+
         if q:
-            qs = qs.filter(
-                Q(last_name_paterno__icontains=q) |
-                Q(last_name_materno__icontains=q) |
-                Q(rfc__icontains=q) |
-                Q(license_number__icontains=q) |
-                Q(email__icontains=q) |
-                Q(phone__icontains=q)
-            )
+            tokens = [t for t in q.split() if t]
+            for t in tokens:
+                qs = qs.filter(
+                    Q(first_name__icontains=t) |
+                    Q(last_name_paterno__icontains=t) |
+                    Q(last_name_materno__icontains=t) |
+                    Q(rfc__icontains=t) |
+                    Q(license_number__icontains=t) |
+                    Q(email__icontains=t) |
+                    Q(phone__icontains=t)
+                )
+
         if status in ("0", "1"):
             qs = qs.filter(active=(status == "1"))
-        return qs
+
+        return qs.order_by("last_name_paterno", "last_name_materno", "first_name")
 
     def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
+        ctx = super().get_context_data(**kwargs)  # <-- NO reemplaces 'operators' aquí
         ctx["search_form"] = OperatorSearchForm(self.request.GET or None)
         return ctx
+
+    def get_paginate_by(self, queryset):
+        try:
+            return int(self.request.GET.get("page_size", self.paginate_by))
+        except (TypeError, ValueError):
+            return self.paginate_by
 
 class OperatorCreateView(CreateView):
     model = Operator
