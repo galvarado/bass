@@ -4,161 +4,235 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Iniciar sesión · BASS</title>
 
-  <title>Iniciar sesión</title>
-
-  <!-- Bootstrap 4 -->
+  <!-- Bootstrap / SB Admin -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
-  <!-- SB Admin 2 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css">
   <link rel="stylesheet" href="{% static 'css/custom.css' %}">
 
   <style>
-    /* Centrar todo el contenido */
-   body {
-  background: #01143E;
+    /* Fondo general */
+    body {
+      background: linear-gradient(135deg, #01143E 0%, #0b2a66 40%, #164a7f 100%);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: "Poppins", "Segoe UI", sans-serif;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Tarjeta principal */
+    .card-login {
+      max-width: 900px;
+      width: 100%;
+      border-radius: 1.2rem;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 10px 25px rgba(0,0,0,.3);
+      border: none;
+    }
+
+    /* Lado izquierdo */
+    .login-image-container {
+      background: linear-gradient(135deg, #01143E 0%, #0b2a66 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    .login-image-container img {
+      width: 80%;
+      max-width: 280px;
+      margin-bottom: 1.5rem;
+      filter: drop-shadow(0 0 6px rgba(255,255,255,.2));
+    }
+
+    .login-image-container h2 {
+      font-weight: 600;
+      font-size: 1.2rem;
+      letter-spacing: .5px;
+      color: rgba(255,255,255,.9);
+    }
+
+    /* Formulario */
+    .login-form-container {
+      background: #fff;
+      padding: 3rem;
+    }
+
+    .text-gray-900 { color: #01143E !important; }
+
+    .form-control-user {
+      font-size: 1rem;
+      padding: 0.8rem 1rem 0.8rem 2.5rem;
+      height: calc(2.9rem + 2px);
+      border-radius: 0.75rem;
+      border: 1px solid #d1d3e2;
+      transition: border-color .2s ease;
+    }
+
+    .form-control-user:focus {
+      border-color: #01143E;
+      box-shadow: 0 0 0 0.1rem rgba(1,20,62,.25);
+    }
+
+    .input-icon {
+      position: relative;
+    }
+
+    .input-icon i {
+      position: absolute;
+      top: 50%;
+      left: 14px;
+      transform: translateY(-50%);
+      color: #999;
+    }
+
+    /* Botón */
+    .btn-primary {
+      background: linear-gradient(90deg, #01143E 0%, #0b2a66 100%);
+      border: none;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all .2s ease-in-out;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(90deg, #0b2a66 0%, #164a7f 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,.2);
+    }
+
+    /* Footer */
+    footer {
+      color: rgba(255,255,255,0.85);
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+      text-align: center;
+      margin-top: 2rem;
+    }
+
+    footer a { color: #fff; font-weight: 600; }
+
+    /* Responsivo */
+    @media (max-width: 768px) {
+      .login-image-container { display: none; }
+      .login-form-container { padding: 2rem 1.5rem; }
+      .card-login { max-width: 90%; }
+    }
+    /* ======== Fix footer alignment ======== */
+
+/* Estructura principal */
+body {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;      /* apila verticalmente */
+  align-items: center;         /* centra horizontalmente */
+  justify-content: center;     /* centra verticalmente */
   min-height: 100vh;
 }
 
-.login-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
+/* El contenedor de la tarjeta */
 .card-login {
-  max-width: 960px;
+  margin-bottom: 2rem;         /* deja espacio para el footer */
+}
+
+/* Centrar footer globalmente */
+footer {
   width: 100%;
-  border-radius: 1rem;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  margin-top: 0.5rem;
+  position: relative;
 }
 
-/* Logo y formulario */
-.login-image-container,
+/* Opcional: en pantallas grandes, que no quede pegado a la derecha */
+@media (min-width: 768px) {
+  footer {
+    text-align: center !important;
+  }
+}
+/* ==== Ajuste real de espaciado en formulario de login ==== */
+.login-form-container form .form-group {
+  margin-bottom: 1.4rem !important; /* fuerza espacio entre inputs */
+}
+
+.login-form-container form input.form-control-user {
+  margin-bottom: 0 !important; /* evita que Bootstrap lo anule */
+}
+
+.login-form-container form button.btn {
+  margin-top: 0.8rem !important; /* aire entre último input y botón */
+  padding-top: 0.7rem !important;
+  padding-bottom: 0.7rem !important;
+}
+
+.login-form-container .text-center.mb-4 {
+  margin-bottom: 2rem !important; /* separa título del formulario */
+}
+
+/* Opcional: un poco más de aire dentro del panel del formulario */
 .login-form-container {
-  background: #fff;
+  padding: 3rem 3rem 3.5rem 3rem !important;
 }
 
-.login-image-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
-.login-image-container img {
-  width: 85%;
-  height: auto;
-  max-width: 320px;
-}
-
-.form-control-user {
-  font-size: 1rem;
-  padding: 0.9rem 1.1rem;
-  height: calc(2.8rem + 2px);
-  border: 1px solid #d1d3e2;
-  box-shadow: none;
-}
-
-.form-control-user:focus {
-  border-color: #b7b9cc;
-  box-shadow: none;
-}
-
-/* 📱 Móviles: sin logo lateral */
-@media (max-width: 768px) {
-  .login-image-container { display: none; }
-  .card-login {
-    max-width: 90%;
-    border-radius: 0.75rem;
-  }
-}
-
-/* 💻 Tablets (entre 769px y 1024px): más compacta */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .card-login {
-    max-width: 700px;
-  }
-  .login-image-container img {
-    width: 75%;
-    max-width: 250px;
-  }
-  .login-form-container .p-5 {
-    padding: 2rem !important;
-  }
-}
-
-/* 🖥️ Escritorio grande */
-@media (min-width: 1200px) {
-  .card-login {
-    max-width: 960px;
-  }
-}
   </style>
 </head>
 <body>
-  <div class="login-wrapper">
-    <div class="card card-login shadow-lg border-0">
-      <div class="card-body p-0">
-        <div class="row no-gutters">
-          <!-- Lado izquierdo: logo -->
-          <div class="col-lg-6 login-image-container">
-            <img src="{% static 'img/basslogo.jpg' %}" alt="BASS">
-          </div>
+  <div class="card card-login">
+    <div class="row no-gutters">
+      <!-- Izquierda -->
+      <div class="col-md-6 login-image-container">
+        <img src="{% static 'img/basslogowhite.png' %}" alt="BASS">
+        <h2>Sistema de Gestión Operativa</h2>
+      </div>
 
-          <!-- Lado derecho: formulario -->
-          <div class="col-lg-6 login-form-container">
-            <div class="p-5">
-              <div class="text-center mb-4">
-                <h1 class="h4 text-gray-900">Bienvenido</h1>
-              </div>
-
-              {% if form.errors %}
-                <div class="alert alert-danger">Usuario o contraseña incorrectos.</div>
-              {% endif %}
-
-              <form method="post" class="user" action="{% url 'login' %}">
-                {% csrf_token %}
-                <div class="form-group">
-                  <input type="text" name="username" autofocus required
-                         class="form-control form-control-user"
-                         placeholder="Usuario">
-                </div>
-                <div class="form-group">
-                  <input type="password" name="password" required
-                         class="form-control form-control-user"
-                         placeholder="Contraseña">
-                </div>
-                <button type="submit" class="btn btn-primary btn-user btn-block py-2">
-                  Ingresar
-                </button>
-                <input type="hidden" name="next" value="{{ next }}">
-              </form>
-            </div>
-          </div>
+      <!-- Derecha -->
+      <div class="col-md-6 login-form-container">
+        <div class="text-center mb-4">
+          <h1 class="h4 text-gray-900 font-weight-bold">Iniciar sesión</h1>
         </div>
+
+        {% if form.errors %}
+          <div class="alert alert-danger">Usuario o contraseña incorrectos.</div>
+        {% endif %}
+
+        <form method="post" action="{% url 'login' %}">
+          {% csrf_token %}
+          <div class="form-group input-icon">
+            <i class="fas fa-user"></i>
+            <input type="text" name="username" autofocus required class="form-control form-control-user"
+                   placeholder="Usuario">
+          </div>
+          <div class="form-group input-icon">
+            <i class="fas fa-lock"></i>
+            <input type="password" name="password" required class="form-control form-control-user"
+                   placeholder="Contraseña">
+          </div>
+          <button type="submit" class="btn btn-primary btn-user btn-block py-2">Ingresar</button>
+          <input type="hidden" name="next" value="{{ next }}">
+        </form>
       </div>
     </div>
-
-    <!-- Footer -->
-    <footer class="text-center text-white mt-4">
-      <small class="d-block">
-        Sistema de Gestión Operativa &copy; {% now "Y" %} BASS Autotransportes. Todos los derechos reservados.
-      </small>
-      <small class="d-block">
-        Desarrollado por
-        <a href="https://foxbase.com.mx" target="_blank" class="text-white font-weight-bold text-decoration-none">
-          FoxBase.
-        </a>
-      </small>
-    </footer>
   </div>
-</body>
 
+  <footer>
+    <small>Sistema de Gestión Operativa © {% now "Y" %} BASS Autotransportes</small><br>
+    <small>Desarrollado por <a href="https://foxbase.com.mx" target="_blank">FoxBase</a>. Todos los derechos reservados.</small>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js"></script>
+</body>
 </html>

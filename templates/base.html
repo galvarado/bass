@@ -31,46 +31,69 @@
     <div id="content-wrapper" class="d-flex flex-column">
 
       <!-- Topbar -->
-      <nav class="navbar navbar-expand navbar-light topbar mb-4 shadow-sm">
-        <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+      <nav class="navbar navbar-expand topbar topbar-modern sticky-top mb-4">
+        <!-- Toggler (mobile) -->
+        <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-2">
           <i class="fa fa-bars"></i>
         </button>
 
-        <span class="text-primary font-weight-bold">Sistema de Gestión Operativa</span>
+        <!-- Título -->
+        <div class="d-flex flex-column">
+          <span class="brand-title">Sistema de Gestión Operativa</span>
+          <small class="brand-subtitle d-none d-sm-inline">Control, eficiencia y trazabilidad en cada viaje.</small>
+        </div>
 
-        <!-- Menú de usuario -->
-        <ul class="navbar-nav ml-auto">
+        <!-- Espaciador -->
+        <div class="ml-auto d-flex align-items-center">
+
+          <!-- Info: Hora MX / TX y USD -->
+          <div class="d-none d-md-flex align-items-center topbar-info mr-3">
+            <div class="mr-3" id="time-mx">
+              <i class="far fa-clock mr-1"></i> 🇲🇽 CDMX —
+            </div>
+            <div class="mr-3" id="time-tx">
+              <i class="far fa-clock mr-1"></i> 🇺🇸 Texas —
+            </div>
+            <div id="usdMxn" class="badge badge-light text-primary">
+              <i class="fas fa-dollar-sign mr-1"></i> USD/MXN —
+            </div>
+          </div>
+
           <div class="topbar-divider d-none d-sm-block"></div>
 
-          <li class="nav-item dropdown no-arrow">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="mr-2 d-none d-lg-inline text-gray-600">
-                Bienvenido, {{ request.user.first_name|default:request.user.username }}
-              </span>
-              <i class="fas fa-caret-down ml-1 text-gray-500"></i>
-            </a>
-
-            <!-- Dropdown -->
-            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                aria-labelledby="userDropdown">
-              <a class="dropdown-item" href="{% url 'profile' %}">
-                <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                Perfil
+          <!-- Menú de usuario -->
+          <ul class="navbar-nav align-items-center ml-2">
+            <li class="nav-item dropdown no-arrow">
+              <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="mr-2 d-none d-lg-inline text-user">
+                  Bienvenido, {{ request.user.first_name|default:request.user.username }}
+                </span>
+                <span class="avatar">
+                  {{ request.user.first_name|default:request.user.username|first|upper }}
+                </span>
+                <i class="fas fa-caret-down ml-1 text-caret d-none d-lg-inline"></i>
               </a>
-              <div class="dropdown-divider"></div>
-              <form action="{% url 'logout' %}" method="post" class="m-0">
-                {% csrf_token %}
-                <button class="dropdown-item" type="submit">
-                  <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                  Cerrar sesión
-                </button>
-              </form>
-            </div>
-          </li>
-        </ul>
+
+              <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                  aria-labelledby="userDropdown">
+                <a class="dropdown-item" href="{% url 'profile' %}">
+                  <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Perfil
+                </a>
+                <div class="dropdown-divider"></div>
+                <form action="{% url 'logout' %}" method="post" class="m-0">
+                  {% csrf_token %}
+                  <button class="dropdown-item" type="submit">
+                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Cerrar sesión
+                  </button>
+                </form>
+              </div>
+            </li>
+          </ul>
+        </div>
       </nav>
       <!-- /Topbar -->
+
 
       <!-- Contenido principal -->
       <div id="content" class="p-4">
@@ -104,5 +127,42 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/js/sb-admin-2.min.js"></script>
+  <script>
+  function updateTimes() {
+    const now = new Date();
+
+    // Hora CDMX
+    const mxOpts = { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    const mxStr = now.toLocaleTimeString('es-MX', mxOpts);
+    document.getElementById('time-mx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇲🇽 CDMX ${mxStr}`;
+
+    // Hora Texas
+    const txOpts = { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    const txStr = now.toLocaleTimeString('es-MX', txOpts);
+    document.getElementById('time-tx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇺🇸 Texas ${txStr}`;
+  }
+  updateTimes();
+  setInterval(updateTimes, 1000);
+
+  // Tipo de cambio USD→MXN
+  async function fetchUsdMxn() {
+    const el = document.getElementById('usdMxn');
+    try {
+      const res = await fetch('/api/utils/header-info/', { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (data && data.usd_mxn) {
+        const val = Number(data.usd_mxn).toFixed(4);
+        el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN ${val}`;
+      } else {
+        el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN —`;
+      }
+    } catch (e) {
+      el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN —`;
+    }
+  }
+  fetchUsdMxn();
+  setInterval(fetchUsdMxn, 10 * 60 * 1000);
+</script>
 </body>
 </html>

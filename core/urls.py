@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views as core_views
+from common.views import header_info
 
 
 urlpatterns = [
@@ -28,6 +29,8 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("operators/", include("operators.urls", namespace="operators")),
     path("audit/", include("audit.urls")),
+    path("api/utils/header-info/", header_info, name="header_info"),
+
 
 
 ]
