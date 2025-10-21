@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Detalle de Operador · BASS{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between">
+    <strong>Detalle de Operador</strong>
+    <div>
+      <a href="{% url 'operators:update' op.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i> Editar</a>
+      <a href="{% url 'operators:delete' op.pk %}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i> Eliminar</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-3">Nombre</dt><dd class="col-sm-9">{{ op.first_name }} {{ op.last_name }}</dd>
+      <dt class="col-sm-3">RFC</dt><dd class="col-sm-9">{{ op.rfc }}</dd>
+      <dt class="col-sm-3">Licencia</dt><dd class="col-sm-9">{{ op.license_number }}</dd>
+      <dt class="col-sm-3">Vigencia</dt><dd class="col-sm-9">{{ op.license_expires_at|date:"d/m/Y" }}</dd>
+      <dt class="col-sm-3">Teléfono</dt><dd class="col-sm-9">{{ op.phone|default:"—" }}</dd>
+      <dt class="col-sm-3">Email</dt><dd class="col-sm-9">{{ op.email|default:"—" }}</dd>
+      <dt class="col-sm-3">Estado</dt>
+      <dd class="col-sm-9">{% if op.active %}<span class="badge badge-success">Activo</span>{% else %}<span class="badge badge-secondary">Inactivo</span>{% endif %}</dd>
+    </dl>
+  </div>
+</div>
+{% endblock %}

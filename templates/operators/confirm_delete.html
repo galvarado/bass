@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Eliminar Operador · BASS{% endblock %}
+{% block content %}
+<div class="card border-danger">
+  <div class="card-header bg-danger text-white"><strong>Eliminar Operador</strong></div>
+  <div class="card-body">
+    <p>¿Seguro que deseas eliminar al operador <strong>{{ object.first_name }} {{ object.last_name }}</strong> (Licencia: {{ object.license_number }})?</p>
+    <form method="post">
+      {% csrf_token %}
+      <a href="{% url 'operators:list' %}" class="btn btn-outline-secondary">Cancelar</a>
+      <button class="btn btn-danger" type="submit"><i class="fas fa-trash"></i> Eliminar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

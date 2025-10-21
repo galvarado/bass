@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "trucks",
     "warehouse",
     "workshop",
+    "common",
 ]
 
 MIDDLEWARE = [
