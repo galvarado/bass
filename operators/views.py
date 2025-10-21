@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.urls import reverse_lazy
 from django.views import View 
+from django.http import HttpResponseRedirect
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
 
 
@@ -74,10 +75,21 @@ class OperatorDetailView(DetailView):
     template_name = "operators/detail.html"
     context_object_name = "op"
 
-class OperatorSoftDeleteView(View):
-    def post(self, request, pk):
-        op = get_object_or_404(Operator, pk=pk)
-        op.deleted = True
-        op.save()
-        messages.success(request, f"Operador {op.first_name} {op.last_name} marcado como eliminado.")
-        return redirect("operators:list")
+class OperatorSoftDeleteView(DeleteView):
+    model = Operator
+    template_name = "operators/confirm_delete.html"
+    success_url = reverse_lazy("operators:list")
+
+    def get_queryset(self):
+        # evita mostrar confirmación de algo ya eliminado
+        return Operator.objects.filter(deleted=False)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.deleted = True
+        self.object.save(update_fields=["deleted"])
+        messages.success(
+            request,
+            f"Operador {self.object.first_name} {self.object.last_name_paterno} eliminado."
+        )
+        return HttpResponseRedirect(self.get_success_url())
