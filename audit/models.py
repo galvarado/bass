@@ -10,7 +10,7 @@ class AuditLog(models.Model):
     ACTIONS = [
         ("create",      "Creación"),
         ("update",      "Actualización"),
-        ("soft_delete", "Eliminación lógica"),
+        ("soft_delete", "Eliminación"),
         ("restore",     "Restauración"),
         ("login",       "Inicio de sesión"),
         ("logout",      "Cierre de sesión"),
