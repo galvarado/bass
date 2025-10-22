@@ -1,6 +1,9 @@
 from django.urls import path
-from . import views
+from .views import profile_detail, profile_edit, ChangePasswordView, ChangePasswordDoneView
 
 urlpatterns = [
-    path("profile/", views.profile, name="profile"),
+    path("profile/", profile_detail, name="profile"),
+    path("profile/edit/", profile_edit, name="profile_edit"),
+    path("password/change/", ChangePasswordView.as_view(), name="password_change"),
+    path("password/change/done/", ChangePasswordDoneView.as_view(), name="password_change_done"),
 ]

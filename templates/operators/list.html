@@ -47,7 +47,6 @@
           <th>Nombre</th>
           <th>RFC</th>
           <th>Licencia</th>
-          <th>Vigencia</th>
           <th>Estado</th>
           <th style="width: 120px;">Acciones</th>
         </tr>
@@ -63,9 +62,23 @@
                 {% if op.phone %}<i class="fas fa-phone"></i> {{ op.phone }} · {% endif %}
               </small>
             </td>
-            <td>{{ op.rfc }}</td>
-            <td>{{ op.license_number }}</td>
-            <td>{{ op.license_expires_at|date:"d/m/Y" }}</td>
+            <td>
+                {% if op.rfc %}
+                    {{ op.rfc }}
+                {% else %}
+                    <span class="text-muted">Sin RFC</span>
+                {% endif %}
+                </td>
+            <td>
+                {{ op.license_number }}<br>
+                <small class="text-muted">
+                    {% if op.license_expires_at %}
+                    <i class="far fa-calendar-alt"></i> Vence {{ op.license_expires_at|date:"d/m/Y" }}
+                    {% else %}
+                    <i class="far fa-calendar-alt"></i> Sin fecha
+                    {% endif %}
+                </small>
+                </td>
             <td>
               {% if op.active %}
                 <span class="badge badge-success">Activo</span>

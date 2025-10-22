@@ -2,6 +2,7 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import os
 
 # ==== Paths & env ====
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -132,3 +133,5 @@ LOGIN_REDIRECT_URL = "dashboard"   # o "trip_list" si prefieres
 LOGOUT_REDIRECT_URL = "login"
 OPENEXCHANGE_APP_ID = "c98896f4617b43779470c2d5170f285f"
 OPENEXCHANGE_BASE_URL = "https://openexchangerates.org/api/latest.json"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")

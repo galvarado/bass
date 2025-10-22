@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import User
+
+from django.db import models
 
 class ExchangeRate(models.Model):
     """Almacena el tipo de cambio diario USD→MXN"""
@@ -12,3 +15,6 @@ class ExchangeRate(models.Model):
 
     def __str__(self):
         return f"{self.date} USD/MXN {self.usd_mxn}"
+
+
+
