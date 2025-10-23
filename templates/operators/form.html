@@ -1,155 +1,153 @@
 {% extends "base.html" %}
 {% load form_extras %}
-
 {% block title %}{% if object %}Editar Operador{% else %}Nuevo Operador{% endif %} · BASS{% endblock %}
 {% block content %}
 
-<div class="card">
-  <div class="card-header">
-    <strong>{% if object %}Editar{% else %}Nuevo{% endif %} Operador</strong>
-  </div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">{% if object %}Editar Operador{% else %}Nuevo Operador{% endif %}</h1>
+  <a href="{% url 'operators:list' %}" class="btn btn-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact">
+  {% csrf_token %}
   <div class="card-body">
 
-    <form method="post" novalidate>
-      {% csrf_token %}
+    {# Errores generales (no asociados a un campo) #}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
 
-      {# Errores generales del formulario (no asociados a un campo) #}
-      {% if form.non_field_errors %}
-        <div class="alert alert-danger">
-          {% for error in form.non_field_errors %}
-            <div>{{ error }}</div>
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.first_name.id_for_label }}">Nombre(s)</label>
+        {% if form.first_name.errors %}
+          {{ form.first_name|add_class:"form-control is-invalid" }}
+          {% for e in form.first_name.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.first_name|add_class:"form-control" }}
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-4">
+        <label for="{{ form.last_name_paterno.id_for_label }}">Apellido paterno</label>
+        {% if form.last_name_paterno.errors %}
+          {{ form.last_name_paterno|add_class:"form-control is-invalid" }}
+          {% for e in form.last_name_paterno.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.last_name_paterno|add_class:"form-control" }}
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-4">
+        <label for="{{ form.last_name_materno.id_for_label }}">Apellido materno</label>
+        {% if form.last_name_materno.errors %}
+          {{ form.last_name_materno|add_class:"form-control is-invalid" }}
+          {% for e in form.last_name_materno.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.last_name_materno|add_class:"form-control" }}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.rfc.id_for_label }}">RFC</label>
+        {% if form.rfc.errors %}
+          {{ form.rfc|add_class:"form-control text-uppercase is-invalid" }}
+          <small class="text-muted d-block mt-1">{{ form.rfc.help_text }}</small>
+          {% for e in form.rfc.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.rfc|add_class:"form-control text-uppercase" }}
+          <small class="text-muted d-block mt-1">{{ form.rfc.help_text }}</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-4">
+        <label for="{{ form.license_number.id_for_label }}">No. de Licencia</label>
+        {% if form.license_number.errors %}
+          {{ form.license_number|add_class:"form-control is-invalid" }}
+          {% for e in form.license_number.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.license_number|add_class:"form-control" }}
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-4">
+        <label for="{{ form.license_expires_at.id_for_label }}">Vigencia de licencia</label>
+        {% if form.license_expires_at.errors %}
+          {{ form.license_expires_at|add_class:"form-control is-invalid" }}
+          {% for e in form.license_expires_at.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.license_expires_at|add_class:"form-control" }}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.phone.id_for_label }}">Teléfono</label>
+        {% if form.phone.errors %}
+          {{ form.phone|add_class:"form-control is-invalid" }}
+          {% for e in form.phone.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.phone|add_class:"form-control" }}
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="{{ form.email.id_for_label }}">Email</label>
+        {% if form.email.errors %}
+          {{ form.email|add_class:"form-control is-invalid" }}
+          {% for e in form.email.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.email|add_class:"form-control" }}
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-2 d-flex align-items-center">
+        <div class="custom-control custom-switch mt-4">
+          <input type="checkbox"
+                 class="custom-control-input"
+                 id="{{ form.active.id_for_label }}"
+                 name="{{ form.active.name }}"
+                 {% if form.active.value %}checked{% endif %}>
+          <label class="custom-control-label" for="{{ form.active.id_for_label }}">Activo</label>
+          {% for e in form.active.errors %}
+            <div class="text-danger small d-block mt-1">{{ e }}</div>
           {% endfor %}
         </div>
-      {% endif %}
-
-      <div class="form-row">
-        <div class="form-group col-md-4">
-          <label>Nombre(s)</label>
-          {% if form.first_name.errors %}
-            {{ form.first_name|add_class:"form-control is-invalid" }}
-            {% for error in form.first_name.errors %}
-              <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          {% else %}
-            {{ form.first_name|add_class:"form-control" }}
-          {% endif %}
-        </div>
-
-        <div class="form-group col-md-4">
-          <label>Apellido paterno</label>
-          {% if form.last_name_paterno.errors %}
-            {{ form.last_name_paterno|add_class:"form-control is-invalid" }}
-            {% for error in form.last_name_paterno.errors %}
-              <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          {% else %}
-            {{ form.last_name_paterno|add_class:"form-control" }}
-          {% endif %}
-        </div>
-
-        <div class="form-group col-md-4">
-          <label>Apellido materno</label>
-          {% if form.last_name_materno.errors %}
-            {{ form.last_name_materno|add_class:"form-control is-invalid" }}
-            {% for error in form.last_name_materno.errors %}
-              <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          {% else %}
-            {{ form.last_name_materno|add_class:"form-control" }}
-          {% endif %}
-        </div>
       </div>
+    </div>
 
-      <div class="form-row">
-        <div class="form-group col-md-4">
-          <label>RFC</label>
-          {% if form.rfc.errors %}
-            {{ form.rfc|add_class:"form-control text-uppercase is-invalid" }}
-            <small class="form-text text-muted">{{ form.rfc.help_text }}</small>
-            {% for error in form.rfc.errors %}
-              <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          {% else %}
-            {{ form.rfc|add_class:"form-control text-uppercase" }}
-            <small class="form-text text-muted">{{ form.rfc.help_text }}</small>
-          {% endif %}
-        </div>
-
-        <div class="form-group col-md-4">
-          <label>No. de Licencia</label>
-          {% if form.license_number.errors %}
-            {{ form.license_number|add_class:"form-control is-invalid" }}
-            {% for error in form.license_number.errors %}
-              <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          {% else %}
-            {{ form.license_number|add_class:"form-control" }}
-          {% endif %}
-        </div>
-
-        <div class="form-group col-md-4">
-          <label>Vigencia de licencia</label>
-          {% if form.license_expires_at.errors %}
-            {{ form.license_expires_at|add_class:"form-control is-invalid" }}
-            {% for error in form.license_expires_at.errors %}
-              <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          {% else %}
-            {{ form.license_expires_at|add_class:"form-control" }}
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group col-md-4">
-          <label>Teléfono</label>
-          {% if form.phone.errors %}
-            {{ form.phone|add_class:"form-control is-invalid" }}
-            {% for error in form.phone.errors %}
-              <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          {% else %}
-            {{ form.phone|add_class:"form-control" }}
-          {% endif %}
-        </div>
-
-        <div class="form-group col-md-6">
-          <label>Email</label>
-          {% if form.email.errors %}
-            {{ form.email|add_class:"form-control is-invalid" }}
-            {% for error in form.email.errors %}
-              <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          {% else %}
-            {{ form.email|add_class:"form-control" }}
-          {% endif %}
-        </div>
-
-        <div class="form-group col-md-2 d-flex align-items-center">
-          <div class="form-check mt-4">
-            {# Checkbox con error: muestra texto rojo si aplica #}
-            {{ form.active }}
-            <label class="form-check-label">Activo</label>
-            {% if form.active.errors %}
-              {% for error in form.active.errors %}
-                <div class="text-danger small d-block mt-1">{{ error }}</div>
-              {% endfor %}
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <div class="d-flex justify-content-between">
-        <a href="{% url 'operators:list' %}" class="btn btn-outline-secondary">
-          <i class="fas fa-arrow-left"></i> Volver
-        </a>
-        <button class="btn btn-primary" type="submit">
-          <i class="fas fa-save"></i> Guardar
-        </button>
-      </div>
-
-    </form>
   </div>
-</div>
+
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      {% if object %}
+        <i class="fas fa-save"></i> Guardar cambios
+      {% else %}
+        <i class="fas fa-save"></i> Crear operador
+      {% endif %}
+    </button>
+  </div>
+</form>
 
 {% endblock %}

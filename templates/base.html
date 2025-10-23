@@ -14,27 +14,17 @@
   <link rel="shortcut icon" href="{% static 'img/favicon.png' %}">
   <meta name="theme-color" content="#01143E">
   <link rel="stylesheet" href="{% static 'css/custom.css' %}">
-
-  <style>
-    .bg-gradient-primary { background-color:#01143e !important; background-image:none !important; }
-    .sidebar .nav-item .nav-link.active { font-weight:700; }
-    .topbar { background-color:#fff; border-bottom:1px solid #e3e6f0; }
-    .topbar .dropdown-menu a { color:#333; }
-  </style>
 </head>
 
 <body id="page-top">
 
   <div id="wrapper">
-    <!-- Sidebar (partial) -->
     {% include "partials/sidebar.html" %}
-    <!-- /Sidebar -->
 
-    <!-- Content Wrapper -->
     <div id="content-wrapper" class="d-flex flex-column">
 
       <!-- Topbar -->
-      <nav class="navbar navbar-expand topbar topbar-modern sticky-top mb-4">
+      <nav class="navbar navbar-expand topbar topbar-modern sticky-top mb-3 px-3">
         <!-- Toggler (mobile) -->
         <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-2">
           <i class="fa fa-bars"></i>
@@ -49,7 +39,6 @@
         <!-- Espaciador -->
         <div class="ml-auto d-flex align-items-center">
 
-          <!-- Info: Hora MX / TX y USD -->
           <div class="d-none d-md-flex align-items-center topbar-info mr-3">
             <div class="mr-3" id="time-mx">
               <i class="far fa-clock mr-1"></i> 🇲🇽 CDMX —
@@ -64,7 +53,7 @@
 
           <div class="topbar-divider d-none d-sm-block"></div>
 
-          <!-- Menú de usuario -->
+          <!-- Menú usuario -->
           <ul class="navbar-nav align-items-center ml-2">
             <li class="nav-item dropdown no-arrow">
               <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
@@ -80,7 +69,7 @@
 
               <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                   aria-labelledby="userDropdown">
-                <a class="dropdown-item" href="{% url 'profile' %}">
+                <a class="dropdown-item" href="{% url 'accounts:profile' %}">
                   <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Perfil
                 </a>
                 <div class="dropdown-divider"></div>
@@ -95,32 +84,34 @@
           </ul>
         </div>
       </nav>
-      <!-- /Topbar -->
-
 
       <!-- Contenido principal -->
-      <div id="content" class="p-4">
-      {% if messages %}
-        <div class="container px-0 mb-3">
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-              {{ message }}
-              <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
-                <span aria-hidden="true">&times;</span>
-              </button>
+      <div id="content" class="py-4">
+        <div class="app-container">
+          {% if messages %}
+            <div class="px-0 mb-3">
+              {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                  {{ message }}
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+              {% endfor %}
             </div>
-          {% endfor %}
+          {% endif %}
+          {% block content %}{% endblock %}
         </div>
-      {% endif %}
-        {% block content %}{% endblock %}
       </div>
 
       <!-- Footer -->
       <footer class="text-center text-muted my-3">
-        <small>
-          Sistema de Gestión Operativa &copy; {% now "Y" %} BASS Autotransportes · Desarrollado por
-          <a href="https://foxbase.com.mx" target="_blank">FoxBase</a>. Todos los derechos reservados.
-        </small>
+        <div class="app-container">
+          <small>
+            Sistema de Gestión Operativa &copy; {% now "Y" %} BASS Autotransportes · Desarrollado por
+            <a href="https://foxbase.com.mx" target="_blank">FoxBase</a>.
+          </small>
+        </div>
       </footer>
     </div>
   </div>
@@ -131,41 +122,26 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/js/sb-admin-2.min.js"></script>
   <script>
-  function updateTimes() {
-    const now = new Date();
-
-    // Hora CDMX
-    const mxOpts = { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-    const mxStr = now.toLocaleTimeString('es-MX', mxOpts);
-    document.getElementById('time-mx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇲🇽 CDMX ${mxStr}`;
-
-    // Hora Texas
-    const txOpts = { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-    const txStr = now.toLocaleTimeString('es-MX', txOpts);
-    document.getElementById('time-tx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇺🇸 Texas ${txStr}`;
-  }
-  updateTimes();
-  setInterval(updateTimes, 1000);
-
-  // Tipo de cambio USD→MXN
-  async function fetchUsdMxn() {
-    const el = document.getElementById('usdMxn');
-    try {
-      const res = await fetch('/api/utils/header-info/', { credentials: 'same-origin' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const data = await res.json();
-      if (data && data.usd_mxn) {
-        const val = Number(data.usd_mxn).toFixed(4);
-        el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN ${val}`;
-      } else {
-        el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN —`;
-      }
-    } catch (e) {
-      el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN —`;
+    function updateTimes() {
+      const now = new Date();
+      const mxOpts = { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      const txOpts = { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      document.getElementById('time-mx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇲🇽 CDMX ${now.toLocaleTimeString('es-MX', mxOpts)}`;
+      document.getElementById('time-tx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇺🇸 Texas ${now.toLocaleTimeString('es-MX', txOpts)}`;
     }
-  }
-  fetchUsdMxn();
-  setInterval(fetchUsdMxn, 10 * 60 * 1000);
-</script>
+    updateTimes(); setInterval(updateTimes, 1000);
+
+    async function fetchUsdMxn() {
+      const el = document.getElementById('usdMxn');
+      try {
+        const res = await fetch('/api/utils/header-info/', { credentials: 'same-origin' });
+        const data = await res.json();
+        if (data && data.usd_mxn)
+          el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN ${Number(data.usd_mxn).toFixed(4)}`;
+        else el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN —`;
+      } catch { el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN —`; }
+    }
+    fetchUsdMxn(); setInterval(fetchUsdMxn, 600000);
+  </script>
 </body>
 </html>

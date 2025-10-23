@@ -1,60 +1,67 @@
 {% extends "base.html" %}
+{% load form_extras %}
+
 {% block title %}Editar Perfil · BASS{% endblock %}
 {% block content %}
+
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">Editar perfil</h1>
-  <a href="{% url 'profile' %}" class="btn btn-light btn-sm">Volver</a>
+  <a href="{% url 'accounts:profile' %}" class="btn btn-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
 </div>
 
-<form method="post" enctype="multipart/form-data" class="card shadow-sm">
-  <div class="card-body">
-    {% csrf_token %}
+<form method="post" enctype="multipart/form-data" class="card shadow-sm form-compact">
+  {% csrf_token %}
+  <div class="card-body py-3">
     <div class="row">
       <div class="col-md-6">
         <h6 class="border-bottom pb-2">Cuenta</h6>
         <div class="form-group mb-2">
-          <label>Nombre</label>
-          {{ uform.first_name }}
+          <label for="{{ uform.first_name.id_for_label }}">Nombre</label>
+          {{ uform.first_name|add_class:"form-control form-control-sm" }}
         </div>
         <div class="form-group mb-2">
-          <label>Apellido</label>
-          {{ uform.last_name }}
+          <label for="{{ uform.last_name.id_for_label }}">Apellido</label>
+          {{ uform.last_name|add_class:"form-control form-control-sm" }}
         </div>
         <div class="form-group mb-2">
-          <label>Correo</label>
-          {{ uform.email }}
+          <label for="{{ uform.email.id_for_label }}">Correo</label>
+          {{ uform.email|add_class:"form-control form-control-sm" }}
         </div>
       </div>
+
       <div class="col-md-6">
         <h6 class="border-bottom pb-2">Perfil</h6>
         <div class="form-group mb-2">
-          <label>Teléfono</label>
-          {{ pform.phone }}
+          <label for="{{ pform.phone.id_for_label }}">Teléfono</label>
+          {{ pform.phone|add_class:"form-control form-control-sm" }}
         </div>
         <div class="form-group mb-2">
-          <label>RFC</label>
-          {{ pform.rfc }}
+          <label for="{{ pform.rfc.id_for_label }}">RFC</label>
+          {{ pform.rfc|add_class:"form-control form-control-sm text-uppercase" }}
         </div>
         <div class="form-group mb-2">
-          <label>CURP</label>
-          {{ pform.curp }}
+          <label for="{{ pform.curp.id_for_label }}">CURP</label>
+          {{ pform.curp|add_class:"form-control form-control-sm text-uppercase" }}
         </div>
         <div class="form-group mb-2">
-          <label>Foto (opcional)</label>
-          {{ pform.photo }}
+          <label for="{{ pform.photo.id_for_label }}">Foto (opcional)</label>
+          {{ pform.photo|add_class:"form-control-file form-control-sm" }}
           {% if user.profile.photo %}
             <div class="mt-2">
-              <img src="{{ user.profile.photo.url }}" style="height:80px;width:80px;object-fit:cover;border-radius:50%;">
+              <img src="{{ user.profile.photo.url }}" alt="Foto actual"
+                   style="height:80px;width:80px;object-fit:cover;border-radius:50%;border:1px solid #ddd;">
             </div>
           {% endif %}
         </div>
       </div>
     </div>
   </div>
-  <div class="card-footer text-right">
+
+  <div class="card-footer text-right py-2">
     <button type="submit" class="btn btn-primary btn-sm">
       <i class="fas fa-save"></i> Guardar cambios
     </button>
   </div>
 </form>
+
 {% endblock %}

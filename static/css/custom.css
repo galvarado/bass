@@ -1,295 +1,247 @@
-.bg-gradient-primary {
-  background-color: #01143E !important;
-  background-image: none !important;
+:root {
+  --app-max-width: 1520px;
+  --app-x-padding: 24px;
 }
 
-.border-left-primary {
-  border-left: 0.25rem solid #01143E !important;
+h1.h4, .card-header{
+  color: #01143e; /* color principal del tema */
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
-
-.text-primary {
-  color: #01143E !important;
-}
-
-.btn-primary {
-  background-color: #01143E !important;
-  border-color: #01143E !important;
-}
-
-.btn-primary:hover {
-  background-color: #0b213a !important;
-  border-color: #0b213a !important;
-}
-
-footer {
-  color: rgba(255,255,255,0.8);
-  font-size: 0.85rem;
-  letter-spacing: 0.3px;
-}
-
-footer a:hover {
-  text-decoration: underline;
-}
-
-body { background: #01143E; }
-
-/* Caja más ancha y sin “dientes” */
-.card-login{
-  max-width: 960px;
-  margin: 3rem auto;
-  border-radius: 1rem;
-  overflow: hidden;          /* oculta bordes desalineados internos */
-}
-
-/* Asegura fondo blanco uniforme en ambas columnas */
-.login-image-container,
-.login-form-container{
-  background: #fff;
-}
-
-/* Logo centrado y con buen tamaño */
-.login-image-container{
-  display: flex; align-items: center; justify-content: center;
-  padding: 2rem;
-}
-.login-image-container img{ width: 85%; height: auto; }
-
-/* Inputs más grandes y sin sombras raras */
-.form-control-user{
-  font-size: 1rem;
-  padding: 0.9rem 1.1rem;
-  height: calc(2.8rem + 2px);
-  border: 1px solid #d1d3e2;
-  box-shadow: none;
-}
-.form-control-user:focus{ border-color:#b7b9cc; box-shadow: none; }
-
-/* Si hubiera un <hr> suelto dentro de la tarjeta, ocultarlo */
-.card-login hr{ display:none; }
-
-/* En móvil ocultamos el panel de imagen para ahorrar espacio */
-@media (max-width: 768px){
-  .login-image-container{ display: none; }
-}
-/* =======================
-   Sidebar - Logo BASS (ajuste final)
-   ======================= */
-
-/* Añade aire por arriba */
-#accordionSidebar {
-  padding-top: 20px !important;   /* espacio superior del contenedor */
-}
-
-/* Contenedor principal del logo */
-.sidebar-brand {
-  height: 170px;
-  padding: 0;
-  margin-bottom: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Bloque del logo con padding interno */
-.sidebar .sidebar-brand-icon {
-  padding: 40px 12px 28px 12px !important; /* ↑ más aire arriba */
-}
-
-/* Imagen centrada y con tamaño equilibrado */
-.sidebar .sidebar-brand-icon img {
-  max-height: 135px;
-  width: auto;
-  display: block;
+/* Contenedor principal del contenido (centrado moderado) */
+.app-container {
+  max-width: var(--app-max-width);
   margin: 0 auto;
-  object-fit: contain;
+  padding-left: var(--app-x-padding);
+  padding-right: var(--app-x-padding);
 }
 
-/* Separador inferior del brand */
-.sidebar hr.sidebar-divider.my-0 {
-  margin-top: 15px !important;
-  margin-bottom: 20px !important;
+/* General */
+body { background: #01143E; }
+#content {
+  padding-top: 1.25rem !important;
+  padding-bottom: 1.25rem !important;
 }
-/* ===== Topbar Modern ===== */
+.alert { margin-bottom: .75rem; }
+
+/* -------- Topbar -------- */
 .topbar-modern {
   background: linear-gradient(90deg, #01143E 0%, #0b315f 60%, #164a7f 100%);
   color: #eaf1ff;
-  border-bottom: 0;
   box-shadow: 0 2px 10px rgba(0,0,0,.15);
-  min-height: 56px;
+  border-bottom: none;
 }
-
-.topbar-modern .brand-title {
-  font-weight: 700;
-  letter-spacing: .2px;
-  color: #fff;
-}
-
-.topbar-modern .brand-subtitle {
-  color: rgba(255,255,255,.80);
-  letter-spacing: .2px;
-}
-
-.topbar-modern .nav-link,
-.topbar-modern .navbar-text,
-.topbar-modern .text-user,
-.topbar-modern .text-caret {
+.topbar-modern .brand-title { font-weight: 700; color: #fff; letter-spacing: .2px; }
+.topbar-modern .brand-subtitle { color: rgba(255,255,255,.80); letter-spacing: .2px; }
+.topbar-modern .nav-link, .topbar-modern .text-user, .topbar-modern .text-caret {
   color: #eaf1ff !important;
 }
-
-/* Botón de icono (notificaciones/ayuda) */
-.topbar-modern .icon-btn {
-  border: 0;
-  background: transparent;
-  padding: .45rem .6rem;
-  border-radius: 9999px;
-  color: #eaf1ff;
-  line-height: 1;
-  transition: background .15s ease, transform .05s ease;
-}
-.topbar-modern .icon-btn:hover { background: rgba(255,255,255,.12); }
-.topbar-modern .icon-btn:active { transform: translateY(1px); }
-
-/* Punto de estado en la campana */
-.topbar-modern .badge-dot {
-  position: absolute;
-  top: 6px; right: 6px;
-  width: 8px; height: 8px;
-  background: #28a745;
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(1,20,62,.85);
-}
-
-/* Avatar redondo con inicial */
 .topbar-modern .avatar {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  background: #f0f4ff;
-  color: #01143E;
-  font-weight: 700;
-  font-size: .95rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: .25rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #f0f4ff; color: #01143E; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: .25rem; box-shadow: 0 1px 2px rgba(0,0,0,.08);
 }
-
-/* Buscador ligero incrustado */
-.topbar-modern .search-lite .form-control {
-  color: #eaf1ff;
-}
-.topbar-modern .search-lite .form-control::placeholder {
-  color: rgba(234,241,255,.75);
-}
-.topbar-modern .search-lite .input-group-text {
-  color: #eaf1ff;
-}
-
-/* Quita bordes del input */
-.topbar-modern .search-lite .form-control,
-.topbar-modern .search-lite .input-group-text {
-  border: 0;
-  border-bottom: 1px dashed rgba(255,255,255,.25);
-  border-radius: 0;
-  background: transparent;
-  padding-top: .25rem;
-  padding-bottom: .25rem;
-}
-
-/* Divider más sutil sobre gradiente */
-.topbar-modern .topbar-divider {
-  width: 1px;
-  background: rgba(255,255,255,.15);
-  height: 28px;
-  margin: 0 .75rem;
-}
-
-/* Dropdown contrastado */
-.topbar-modern .dropdown-menu {
-  border: 0;
-  border-radius: .6rem;
-}
-
-/* Responsive tweaks */
-@media (max-width: 768px) {
-  .topbar-modern .brand-subtitle { display: none; }
-  .topbar-modern .search-lite { display: none !important; }
-}
-/* Info block (horarios y tipo de cambio) */
 .topbar-info {
-  padding: .35rem .75rem;
-  border-radius: 8px;
-  background: rgba(255,255,255,.06);
-  color: #f0f4ff;
-  font-size: 0.9rem;
-  font-weight: 500;
+  padding: .35rem .75rem; border-radius: 8px;
+  background: rgba(255,255,255,.06); color: #f0f4ff;
+  font-size: 0.9rem; font-weight: 500;
 }
-
-.topbar-info i {
-  color: rgba(255,255,255,.85);
-}
-
 .topbar-info .badge {
-  font-size: 0.85rem;
-  background: #f8f9fc;
-  color: #01143E;
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0,0,0,.15);
+  background: #f8f9fc; color: #01143E; font-weight: 600;
 }
-/* ==== Sidebar con degradado animado ==== */
+
+/* -------- Sidebar degradado + navegación -------- */
 .bg-gradient-primary {
   background: linear-gradient(180deg, #01143E 0%, #0b2a66 40%, #164a7f 100%) !important;
   background-size: 200% 200%;
   animation: sidebarGradientShift 18s ease infinite;
-  border-right: none !important;
 }
-
-/* Animación suave del gradiente (igual estilo que topbar) */
 @keyframes sidebarGradientShift {
   0% { background-position: 0% 0%; }
   50% { background-position: 100% 100%; }
   100% { background-position: 0% 0%; }
 }
-
-/* Ajustes visuales del texto y hover */
 .sidebar .nav-item .nav-link {
-  color: rgba(255, 255, 255, 0.85) !important;
+  color: rgba(255,255,255,0.85) !important;
   transition: all 0.2s ease-in-out;
 }
-
 .sidebar .nav-item .nav-link:hover,
 .sidebar .nav-item .nav-link.active {
   color: #fff !important;
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(255,255,255,0.08);
   border-radius: 0.35rem;
 }
-
-/* Separadores más sutiles */
 .sidebar hr.sidebar-divider {
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(255,255,255,0.2);
   margin: 0.75rem 1rem;
 }
-
-/* Títulos de sección (Operación, Catálogos...) */
 .sidebar-heading {
   text-transform: uppercase;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255,255,255,0.6);
   padding-left: 1rem;
   letter-spacing: 0.05em;
 }
 
-/* Botón de salida */
-.sidebar .btn-light {
-  background: rgba(255, 255, 255, 0.95);
-  color: #01143E;
-  font-weight: 600;
-  border: none;
-  transition: all 0.2s ease;
+#accordionSidebar { padding-top: 0 !important; }
+
+/* Bloque del brand con aire arriba */
+.sidebar .sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+
+  /* más alto y con padding superior real */
+  min-height: 110px;
+  padding: 24px 0 14px 0;  /* <-- aire arriba */
+  margin: 0;
+  overflow: hidden;
 }
 
-.sidebar .btn-light:hover {
-  background: #fff;
-  color: #0b2a66;
-  transform: translateY(-1px);
+/* Contenedor interno del logo */
+.sidebar .sidebar-brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+
+  padding: 0 !important;
+  margin: 0;
+}
+
+/* Imagen del logo: un poco más grande pero sin tocar bordes */
+.sidebar .sidebar-brand-icon img {
+  max-height: 130px;       /* sube si lo quieres aún más grande */
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Separador debajo del logo */
+.sidebar hr.sidebar-divider.my-0 {
+  margin-top: 12px !important;
+  margin-bottom: 16px !important;
+}
+
+/* Estado colapsado del sidebar (SB Admin 2) */
+.sidebar.toggled .sidebar-brand {
+  min-height: 4.375rem;
+  padding: 0;
+}
+.sidebar.toggled .sidebar-brand-icon img {
+  max-height: 32px;
+}
+
+/* Viewports muy bajos: evita que “apriete” */
+@media (max-height: 640px) {
+  .sidebar .sidebar-brand { min-height: 150px; padding-top: 16px; }
+  .sidebar .sidebar-brand-icon img { max-height: 110px; }
+}
+
+/* -------- Botones y texto base -------- */
+.text-primary { color: #01143E !important; }
+.btn-primary {
+  background-color: #01143E !important;
+  border-color: #01143E !important;
+}
+.btn-primary:hover {
+  background-color: #0b213a !important;
+  border-color: #0b213a !important;
+}
+
+/* -------- Footer -------- */
+footer {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.85rem;
+}
+footer a:hover { text-decoration: underline; }
+
+/* -------- Login card (si aplica) -------- */
+.card-login{
+  max-width: 960px;
+  margin: 3rem auto;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+.login-image-container, .login-form-container{ background: #fff; }
+.login-image-container{
+  display: flex; align-items: center; justify-content: center; padding: 2rem;
+}
+.login-image-container img{ width: 85%; height: auto; }
+.form-control-user{
+  font-size: 1rem; padding: 0.9rem 1.1rem; height: calc(2.8rem + 2px);
+  border: 1px solid #d1d3e2; box-shadow: none;
+}
+.form-control-user:focus{ border-color:#b7b9cc; box-shadow: none; }
+.card-login hr{ display:none; }
+@media (max-width: 768px){ .login-image-container{ display: none; } }
+/* ============================================================
+   BASS - Estilo compacto para tablas, buscador y paginación
+   ============================================================ */
+
+/* --- Formularios compactos (buscador y filtros) --- */
+.form-compact input[type="text"],
+.form-compact input[type="search"],
+.form-compact select,
+.form-compact .form-control,
+.form-compact .btn {
+  font-size: 0.875rem;               /* texto de ~14px */
+  padding: 0.25rem 0.5rem;           /* compacto */
+  height: calc(1.5em + 0.5rem + 2px); /* iguala altura entre input, select y botón */
+}
+
+/* Ajuste visual del input-group: evita doble borde con el botón */
+.input-group.input-group-sm .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* --- Tabla compacta --- */
+table.table {
+  font-size: 0.875rem;
+}
+table.table thead th {
+  white-space: nowrap; /* evita saltos de línea en encabezados */
+}
+table.table td,
+table.table th {
+  padding: 0.4rem 0.5rem; /* menos espacio vertical */
+  vertical-align: middle;
+}
+
+/* --- Paginación y card-footer --- */
+.pagination.pagination-sm .page-link {
+  padding: 0.25rem 0.5rem;
+}
+.card-footer.py-2 {
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
+/* --- Badges y botones pequeños --- */
+.badge {
+  padding: 0.25em 0.5em;
+  font-size: 0.75rem;
+}
+.btn-sm {
+  padding: 0.15rem 0.35rem;
+  font-size: 0.75rem;
+}
+
+/* --- Espaciado uniforme para texto pequeño --- */
+.text-muted.small {
+  font-size: 0.8125rem; /* 13px */
+}
+
+/* --- Ajuste responsivo suave para pantallas pequeñas --- */
+@media (max-width: 768px) {
+  .form-compact .col-md-3,
+  .form-compact .col-md-6 {
+    margin-bottom: 0.5rem;
+  }
+  table.table {
+    font-size: 0.8rem;
+  }
 }

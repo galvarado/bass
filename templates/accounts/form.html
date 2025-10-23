@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load form_extras %}
+{% block title %}{% if object %}Editar Usuario{% else %}Nuevo Usuario{% endif %} · BASS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">{% if object %}Editar Usuario{% else %}Nuevo Usuario{% endif %}</h1>
+  <a href="{% url 'accounts:list' %}" class="btn btn-light btn-sm"><i class="fas fa-arrow-left"> </i> Volver</a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact">
+  {% csrf_token %}
+  <div class="card-body">
+
+    {# Errores generales (no asociados a un campo) #}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.username.id_for_label }}">Usuario</label>
+        {% if form.username.errors %}
+          {{ form.username|add_class:"form-control is-invalid" }}
+          {% for e in form.username.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.username|add_class:"form-control" }}
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-4">
+        <label for="{{ form.first_name.id_for_label }}">Nombre</label>
+        {% if form.first_name.errors %}
+          {{ form.first_name|add_class:"form-control is-invalid" }}
+          {% for e in form.first_name.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.first_name|add_class:"form-control" }}
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-4">
+        <label for="{{ form.last_name.id_for_label }}">Apellidos</label>
+        {% if form.last_name.errors %}
+          {{ form.last_name|add_class:"form-control is-invalid" }}
+          {% for e in form.last_name.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.last_name|add_class:"form-control" }}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label for="{{ form.email.id_for_label }}">Email</label>
+        {% if form.email.errors %}
+          {{ form.email|add_class:"form-control is-invalid" }}
+          {% for e in form.email.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.email|add_class:"form-control" }}
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-3 d-flex align-items-center">
+        <div class="custom-control custom-switch mt-4">
+          <input type="checkbox"
+                 class="custom-control-input"
+                 id="{{ form.is_active.id_for_label }}"
+                 name="{{ form.is_active.name }}"
+                 {% if form.is_active.value %}checked{% endif %}>
+          <label class="custom-control-label" for="{{ form.is_active.id_for_label }}">Activo</label>
+          {% for e in form.is_active.errors %}
+            <div class="text-danger small d-block mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group col-md-3 d-flex align-items-center">
+        <div class="custom-control custom-switch mt-4">
+          <input type="checkbox"
+                 class="custom-control-input"
+                 id="{{ form.is_staff.id_for_label }}"
+                 name="{{ form.is_staff.name }}"
+                 {% if form.is_staff.value %}checked{% endif %}>
+          <label class="custom-control-label" for="{{ form.is_staff.id_for_label }}">Staff</label>
+          {% for e in form.is_staff.errors %}
+            <div class="text-danger small d-block mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# Solo mostrar contraseñas si existen en el form (crear usuario) #}
+    {% if form.password1 %}
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label for="{{ form.password1.id_for_label }}">Contraseña</label>
+        {% if form.password1.errors %}
+          {{ form.password1|add_class:"form-control is-invalid" }}
+          {% for e in form.password1.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.password1|add_class:"form-control" }}
+        {% endif %}
+      </div>
+      <div class="form-group col-md-6">
+        <label for="{{ form.password2.id_for_label }}">Confirmar contraseña</label>
+        {% if form.password2.errors %}
+          {{ form.password2|add_class:"form-control is-invalid" }}
+          {% for e in form.password2.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
+          {% endfor %}
+        {% else %}
+          {{ form.password2|add_class:"form-control" }}
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      {% if object %}
+        <i class="fas fa-save"></i> Guardar cambios
+      {% else %}
+        <i class="fas fa-save"></i> Crear usuario
+      {% endif %}
+    </button>
+  </div>
+</form>
+
+{% endblock %}

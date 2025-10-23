@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Eliminar usuario · BASS{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-header"><strong>Eliminar usuario</strong></div>
+  <div class="card-body">
+    <p>¿Deseas eliminar al usuario <strong>{{ object.username }}</strong> ({{ object.get_full_name }})?</p>
+    <form method="post">
+      {% csrf_token %}
+      <a href="{% url 'accounts:list' %}" class="btn btn-outline-secondary">Cancelar</a>
+      <button class="btn btn-danger" type="submit"><i class="fas fa-trash"></i> Eliminar</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
