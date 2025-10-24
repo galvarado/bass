@@ -4,7 +4,7 @@ from django.shortcuts import render
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import Q
 from django.urls import reverse_lazy
@@ -57,14 +57,18 @@ class StaffRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.request.user.is_staff or self.request.user.is_superuser
 
-class UserListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
+class UserListView(LoginRequiredMixin, ListView):
     model = User
     template_name = "accounts/list.html"
     context_object_name = "users"
-    paginate_by = 20
+    paginate_by = 10
 
     def get_queryset(self):
-        qs = User.objects.all().order_by("username")
+        qs = (User.objects
+            .all()
+            .order_by("username")
+            .prefetch_related("groups"))  # ← trae grupos en un solo query
+
         q = self.request.GET.get("q", "").strip()
         status = self.request.GET.get("status", "").strip()
 
@@ -81,6 +85,9 @@ class UserListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
         elif status == "0":
             qs = qs.filter(is_active=False)
 
+        qs = qs.exclude(is_superuser=True)
+        qs = qs.exclude(id=self.request.user.id)
+
         return qs
 
     def get_context_data(self, **kwargs):
@@ -88,11 +95,12 @@ class UserListView(LoginRequiredMixin, StaffRequiredMixin, ListView):
         ctx["search_form"] = UserSearchForm(self.request.GET or None)
         return ctx
 
+
 class UserCreateView(LoginRequiredMixin, StaffRequiredMixin, CreateView):
     model = User
     form_class = UserCreateForm
     template_name = "accounts/form.html"
-    success_url = reverse_lazy("users:list")
+    success_url = reverse_lazy("accounts:list")
 
     def form_valid(self, form):
         messages.success(self.request, "Usuario creado correctamente.")
@@ -102,7 +110,7 @@ class UserUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
     model = User
     form_class = UserUpdateForm
     template_name = "accounts/form.html"
-    success_url = reverse_lazy("users:list")
+    success_url = reverse_lazy("accounts:list")
 
     def form_valid(self, form):
         messages.success(self.request, "Usuario actualizado correctamente.")
@@ -111,7 +119,7 @@ class UserUpdateView(LoginRequiredMixin, StaffRequiredMixin, UpdateView):
 class UserDeleteView(LoginRequiredMixin, StaffRequiredMixin, DeleteView):
     model = User
     template_name = "accounts/confirm_delete.html"
-    success_url = reverse_lazy("users:list")
+    success_url = reverse_lazy("accounts:list")
 
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Usuario eliminado.")
@@ -120,7 +128,7 @@ class UserDeleteView(LoginRequiredMixin, StaffRequiredMixin, DeleteView):
 class UserPasswordSetView(LoginRequiredMixin, StaffRequiredMixin, FormView):
     template_name = "accounts/password.html"
     form_class = UserSetPasswordForm
-    success_url = reverse_lazy("users:list")
+    success_url = reverse_lazy("accounts:list")
 
     def dispatch(self, request, *args, **kwargs):
         self.user_obj = User.objects.get(pk=kwargs["pk"])

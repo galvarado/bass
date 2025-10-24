@@ -83,19 +83,31 @@
           {% endfor %}
         </div>
       </div>
-
-      <div class="form-group col-md-3 d-flex align-items-center">
-        <div class="custom-control custom-switch mt-4">
-          <input type="checkbox"
-                 class="custom-control-input"
-                 id="{{ form.is_staff.id_for_label }}"
-                 name="{{ form.is_staff.name }}"
-                 {% if form.is_staff.value %}checked{% endif %}>
-          <label class="custom-control-label" for="{{ form.is_staff.id_for_label }}">Staff</label>
-          {% for e in form.is_staff.errors %}
-            <div class="text-danger small d-block mt-1">{{ e }}</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>Grupos</label>
+        {% if form.groups.errors %}
+          <div class="border rounded p-2 is-invalid">
+            <div class="row">
+              {% for cb in form.groups %}
+                <div class="col-6 mb-1">{{ cb }}</div>
+              {% endfor %}
+            </div>
+          </div>
+          {% for e in form.groups.errors %}
+            <div class="invalid-feedback d-block">{{ e }}</div>
           {% endfor %}
-        </div>
+        {% else %}
+          <div class="border rounded p-2">
+            <div class="row">
+              {% for cb in form.groups %}
+                <div class="col-6 mb-1">{{ cb }}</div>
+              {% endfor %}
+            </div>
+          </div>
+          <small class="form-text text-muted">Selecciona uno o varios.</small>
+        {% endif %}
       </div>
     </div>
 

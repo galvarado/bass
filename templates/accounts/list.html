@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% load tz %}
+
 {% block title %}Usuarios · BASS{% endblock %}
 {% block content %}
 
@@ -51,7 +53,8 @@
           <th>Usuario</th>
           <th>Nombre</th>
           <th>Email</th>
-          <th>Rol</th>
+          <th>Grupos</th>
+          <th>Último acceso</th> 
           <th>Estado</th>
           <th style="width:160px;">Acciones</th>
         </tr>
@@ -63,12 +66,21 @@
             <td>{{ u.first_name }} {{ u.last_name }}</td>
             <td>{{ u.email|default:"—" }}</td>
             <td>
-              {% if u.is_superuser %}
-                <span class="badge badge-dark">Superuser</span>
-              {% elif u.is_staff %}
-                <span class="badge badge-info">Staff</span>
+            {% if u.groups.all %}
+              {% for g in u.groups.all %}
+                <span class="badge badge-light text-muted border">{{ g.name|lower }}</span>
+              {% empty %}
+                —
+              {% endfor %}
+            {% else %}
+              —
+            {% endif %}
+            </td>
+            <td class="text-nowrap">
+              {% if u.last_login %}
+                {{ u.last_login|localtime|date:"Y-m-d H:i" }}
               {% else %}
-                <span class="badge badge-secondary">Usuario</span>
+                —
               {% endif %}
             </td>
             <td>
