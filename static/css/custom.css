@@ -245,3 +245,38 @@ table.table th {
     font-size: 0.8rem;
   }
 }
+
+/* ---- Sidebar: espaciado equilibrado ---- */
+.sidebar .nav-item .nav-link {
+  padding-top: 0.45rem;     /* default es ~0.75rem */
+  padding-bottom: 0.45rem;
+  font-size: 0.92rem;       /* ligeramente más pequeño */
+}
+
+/* ---- Íconos ---- */
+.sidebar .nav-item .nav-link i {
+  margin-right: 0.4rem;
+  font-size: 0.95rem;
+}
+
+/* ---- Divisores ---- */
+.sidebar hr.sidebar-divider {
+  margin: 0.65rem 1rem;
+}
+
+/* ---- Encabezados de sección ---- */
+.sidebar .sidebar-heading {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.05rem;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+/* ---- Submenús desplegables ---- */
+.sidebar .collapse-inner .collapse-item {
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+  font-size: 0.88rem;
+}

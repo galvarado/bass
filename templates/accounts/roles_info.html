@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Roles y Permisos · BASS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Roles y Privilegios</h1>
+  <a href="{% url 'dashboard' %}" class="btn btn-light btn-sm">
+    <i class="fas fa-arrow-left"></i> Volver
+  </a>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <p class="mb-3 text-muted">
+      En BASS, los usuarios se agrupan por <strong>roles</strong>, que determinan las secciones a las que pueden acceder y las acciones que pueden realizar.
+    </p>
+
+    <!-- SUPERADMIN -->
+    <div class="mb-4">
+      <h5 class="text-danger"><i class="fas fa-crown"></i> Superadmin</h5>
+      <ul class="small mb-2">
+        <li>Acceso total al sistema.</li>
+        <li>Puede ver y administrar todas las secciones y usuarios.</li>
+        <li>Puede crear, editar o eliminar usuarios, asignar grupos y cambiar contraseñas.</li>
+        <li>Acceso completo a la <strong>Bitácora</strong> y todos los módulos: Operación, Mantenimiento, Cumplimiento, Administración, Sistema, Catálogos.</li>
+      </ul>
+      <span class="badge badge-dark">Acceso completo</span>
+    </div>
+
+    <hr>
+
+    <!-- ADMIN -->
+    <div class="mb-4">
+      <h5 class="text-info"><i class="fas fa-user-shield"></i> Admin</h5>
+      <ul class="small mb-2">
+        <li>Acceso a todas las secciones, excepto la <strong>Bitácora</strong>.</li>
+        <li>Puede administrar usuarios para crear, editar, activar/desactivar y cambiar contraseña así como asignar grupos pero no puede eliminarlos.</li>
+        <li>Acceso a módulos: Operación, Mantenimiento, Cumplimiento, Administración, Sistema, Catálogos</li>
+        <li>No puede dar de alta ni modificar usuarios de tipo Superadmin.</li>
+      </ul>
+      <span class="badge badge-info">Acceso extendido</span>
+    </div>
+
+    <hr>
+
+    <!-- ROLES OPERATIVOS -->
+    <div class="mb-4">
+      <h5 class="text-success"><i class="fas fa-people-carry"></i> Roles operativos</h5>
+      <p class="small text-muted">Corresponden a grupos funcionales dentro del sistema. Cada uno accede sólo a su sección específica:</p>
+      <ul class="small mb-2">
+        <li><strong>Operación</strong>: acceso a viajes y monitoreo.</li>
+        <li><strong>Mantenimiento</strong>: acceso a taller y almacén.</li>
+        <li><strong>Cumplimiento</strong>: acceso al módulo CTPAT.</li>
+        <li><strong>Administración</strong>: acceso a liquidación y cobranza.</li>
+        <li><strong>Catálogos</strong>: acceso a gestión de operadores, vehículos, clientes y ubicaciones.</li>
+        <li><strong>Sistema</strong>: Solo los usuarios superadmin y admin tienen acceso a este módulo.</li>
+      </ul>
+      <span class="badge badge-success">Acceso restringido a su módulo</span>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

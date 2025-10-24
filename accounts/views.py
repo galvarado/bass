@@ -8,13 +8,19 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import Q
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, FormView, TemplateView
 from .forms import UserForm, UserSearchForm, UserCreateForm, UserSetPasswordForm, ProfileForm, UserUpdateForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordChangeView, PasswordChangeDoneView
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import TemplateView
+
+class RolesInfoView(LoginRequiredMixin, TemplateView):
+    template_name = "accounts/roles_info.html"
 
 @login_required
 def profile_detail(request):
