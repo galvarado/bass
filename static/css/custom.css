@@ -141,10 +141,10 @@ body { background: #01143E; }
 }
 
 /* -------- Botones y texto base -------- */
-.text-primary { color: #01143E !important; }
+.text-primary { color: #114072 !important; }
 .btn-primary {
-  background-color: #01143E !important;
-  border-color: #01143E !important;
+  background-color: #114072 !important;
+  border-color: #114072 !important;
 }
 .btn-primary:hover {
   background-color: #0b213a !important;
