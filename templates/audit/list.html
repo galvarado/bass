@@ -1,27 +1,17 @@
 {% extends "base.html" %}
-{% load audit_extras %}
-
 {% block title %}Bitácora · BASS{% endblock %}
+
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0 text-primary">Bitácora</h1>
 </div>
 
-<div class="alert alert-info small shadow-sm">
-  <i class="fas fa-info-circle"></i>
-  La <strong>Bitácora</strong> registra automáticamente todas las acciones relevantes realizadas dentro del sistema,
-  incluyendo la creación, edición y eliminación de objetos, así como inicios de sesión, cambios de configuración y otras operaciones.
-  Puedes filtrar los eventos por usuario, acción, modelo o rango de fechas para analizar la actividad del sistema.
-</div>
-
 <form method="get" class="card mb-3">
   <div class="card-body py-3">
     <div class="form-row align-items-center form-compact">
       <div class="col-md-3 mb-2">
-        <div class="input-group input-group-sm">
-          <input name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar texto/usuario/path/tags">
-        </div>
+        <input name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar texto/usuario/path/tags">
       </div>
       <div class="col-md-2 mb-2">
         <select name="action" class="form-control">
@@ -31,89 +21,196 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-2 mb-2">
-        <input name="model" value="{{ request.GET.model }}" class="form-control" placeholder="Modelo (e.g. operator)">
+      <div class="col-md-3 mb-2">
+        <input type="text" name="model" value="{{ request.GET.model }}" class="form-control" placeholder="Modelo (e.g. operator)">
       </div>
       <div class="col-md-2 mb-2">
-        <input type="date" name="from" value="{{ request.GET.from }}" class="form-control">
+        <input type="text" name="date_from" value="{{ request.GET.date_from }}" class="form-control" placeholder="dd/mm/aaaa">
       </div>
       <div class="col-md-2 mb-2">
-        <input type="date" name="to" value="{{ request.GET.to }}" class="form-control">
+        <input type="text" name="date_to" value="{{ request.GET.date_to }}" class="form-control" placeholder="dd/mm/aaaa">
       </div>
-      <div class="col-md-1 mb-2">
-        <button class="btn btn-outline-primary btn-block" type="submit">Filtrar</button>
-      </div>
+    </div>
+    <div class="text-right">
+      <button class="btn btn-outline-primary btn-sm" type="submit">
+        <i class="fas fa-filter"></i> Filtrar
+      </button>
     </div>
   </div>
 </form>
 
-<div class="card">
-  <div class="table-responsive">
-    <table class="table table-hover mb-0">
-      <thead class="thead-light">
-        <tr>
-          <th>Fecha</th>
-          <th>Usuario</th>
-          <th>Acción</th>
-          <th>Modelo</th>
-          <th>Obj</th>
-          <th>Detalle</th>
-          <th>IP</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for log in logs %}
-          <tr>
-            <td>{{ log.created_at|date:"Y-m-d H:i" }}</td>
-            <td>{{ log.user|default:"—" }}</td>
-            <td><span class="badge badge-{{ log.action|action_badge }}">{{ log.get_action_display }}</span></td>
-            <td>{{ log.content_type.model|default:"—" }}</td>
-            <td>{{ log.object_id|default:"—" }}</td>
-            <td>
-              {% if log.object_repr %}<div class="small text-muted">{{ log.object_repr }}</div>{% endif %}
-              {% if log.changes %}
-                <details><summary class="small">Cambios</summary>
-                  <pre class="small mb-0">{{ log.changes|safe }}</pre>
-                </details>
-              {% endif %}
-              {% if log.tags %}
-                <div class="small text-muted">tags: {{ log.tags|safe }}</div>
-              {% endif %}
-            </td>
-            <td class="small">{{ log.ip|default:"—" }}</td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="7" class="text-center text-muted py-4">Sin eventos.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead class="thead-light">
+      <tr>
+        <th style="width:165px;">Fecha</th>
+        <th style="width:140px;">Usuario</th>
+        <th style="width:130px;">Acción</th>
+        <th>Target</th>
+        <th>Resumen</th>
+        <th style="width:120px;">IP</th>
+        <th style="width:60px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td class="text-nowrap">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+        <td class="text-truncate" style="max-width:140px;">{{ log.user.get_username|default:"anon" }}</td>
 
-  {% if is_paginated %}
-  <div class="card-footer py-2">
-    <nav aria-label="Paginación">
-      <ul class="pagination pagination-sm mb-0">
-        {% if page_obj.has_previous %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">«</a>
-          </li>
-        {% else %}
-          <li class="page-item disabled"><span class="page-link">«</span></li>
-        {% endif %}
+        {# === ACCIÓN (badge inline sin templatetag) === #}
+        <td>
+          {% if log.action == "create" %}
+            <span class="badge badge-success">Creación</span>
+          {% elif log.action == "update" %}
+            <span class="badge badge-warning">Actualización</span>
+          {% elif log.action == "delete" or log.action == "soft_delete" %}
+            <span class="badge badge-danger">Eliminación</span>
+          {% elif log.action == "restore" %}
+            <span class="badge badge-info">Restauración</span>
+          {% elif log.action == "login" %}
+            <span class="badge badge-primary">Inicio de sesión</span>
+          {% elif log.action == "logout" %}
+            <span class="badge badge-secondary">Cierre de sesión</span>
+          {% else %}
+            <span class="badge badge-light">{{ log.action }}</span>
+          {% endif %}
+        </td>
 
-        <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+        {# === TARGET === #}
+        <td class="text-truncate" style="max-width:360px;">
+          {% if log.action == "login" or log.action == "logout" %}
+            {{ log.user.get_username|default:"—" }}
+          {% else %}
+            {% if log.object_repr %}
+              {{ log.object_repr }}
+            {% elif log.content_type %}
+              {{ log.content_type|capfirst }}
+            {% else %}
+              —
+            {% endif %}
+          {% endif %}
+        </td>
 
-        {% if page_obj.has_next %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">»</a>
-          </li>
-        {% else %}
-          <li class="page-item disabled"><span class="page-link">»</span></li>
-        {% endif %}
-      </ul>
-    </nav>
+        {# === RESUMEN === #}
+        <td class="text-muted">
+          {% if log.action == "create" and log.changes %}
+            Creado con {{ log.changes|length }} campos
+          {% elif log.action == "update" and log.changes %}
+            {{ log.changes|length }} campos modificados
+          {% elif log.action == "login" %}
+            Inicio de sesión de {{ log.user.get_username|default:"(usuario desconocido)" }}
+          {% elif log.action == "logout" %}
+            Cierre de sesión de {{ log.user.get_username|default:"(usuario desconocido)" }}
+          {% elif log.summary %}
+            {{ log.summary }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+
+        <td class="text-nowrap">{{ log.ip|default:"—" }}</td>
+
+        {# === BOTÓN DE MODAL === #}
+        <td class="text-center">
+          {% if log.action == "update" and log.changes %}
+            <button class="btn btn-sm btn-outline-secondary"
+                    type="button"
+                    data-toggle="modal"
+                    data-target="#modalChanges{{ log.id }}"
+                    title="Ver detalles de cambios">
+              <i class="fas fa-eye"></i>
+            </button>
+          {% else %}
+            <i class="text-muted fas fa-minus"></i>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-center text-muted py-4">Sin registros</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# ==== MODALES (solo para ediciones) ==== #}
+{% for log in logs %}
+  {% if log.action == "update" and log.changes %}
+  <div class="modal fade" id="modalChanges{{ log.id }}" tabindex="-1" role="dialog" aria-labelledby="modalLabel{{ log.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+      <div class="modal-content shadow">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalLabel{{ log.id }}">
+            Cambios · {{ log.object_repr|default:"(sin objeto)" }}
+          </h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-2 text-muted small">
+            {{ log.path }} · {{ log.method }} · IP: {{ log.ip|default:"—" }}<br>
+            UA: {{ log.user_agent|default:"" }}
+          </div>
+
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Before</th>
+                <th>After</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for field, pair in log.changes.items %}
+                <tr>
+                  <td>{{ field }}</td>
+                  <td>
+                    {% if pair.0 %}
+                      {{ pair.0 }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                  <td class="bg-success-light">
+                    {% if pair.1 %}
+                      {{ pair.1 }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
   </div>
   {% endif %}
-</div>
+{% endfor %}
+
+{% if is_paginated %}
+<nav aria-label="page-nav">
+  <ul class="pagination pagination-sm justify-content-end">
+    {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">«</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">«</span></li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">»</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">»</span></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
 
 {% endblock %}

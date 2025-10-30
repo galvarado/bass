@@ -4,9 +4,6 @@ from django.urls import reverse_lazy
 from django.views import View 
 from django.http import HttpResponseRedirect
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
-from audit.utils import log_action, model_to_dict as audit_model_to_dict
-
-
 from .models import Operator
 from .forms import OperatorForm, OperatorSearchForm
 
@@ -66,13 +63,6 @@ class OperatorCreateView(CreateView):
 
     def form_valid(self, form):
         resp = super().form_valid(form)  # aquí self.object ya tiene PK
-        log_action(
-            self.request,
-            action="create",
-            obj=self.object,
-            after=audit_model_to_dict(self.object, include=FIELDS_AUDIT),
-            tags={"module": "operators"},
-        )
         messages.success(self.request, "Operador creado correctamente.")
         return resp
 
@@ -84,16 +74,7 @@ class OperatorUpdateView(UpdateView):
     success_url = reverse_lazy("operators:list")
 
     def form_valid(self, form):
-        before = audit_model_to_dict(self.get_object(), include=FIELDS_AUDIT)  # OK aquí
         resp = super().form_valid(form)
-        log_action(
-            self.request,
-            action="update",
-            obj=self.object,
-            before=before,
-            after=audit_model_to_dict(self.object, include=FIELDS_AUDIT),
-            tags={"module": "operators"},
-        )
         messages.success(self.request, "Operador actualizado correctamente.")
         return resp
 
@@ -112,16 +93,7 @@ class OperatorSoftDeleteView(DeleteView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        before = audit_model_to_dict(self.object, include=FIELDS_AUDIT)
         self.object.deleted = True
         self.object.save(update_fields=["deleted"])
-        log_action(
-            request,
-            action="soft_delete",
-            obj=self.object,
-            before=before,
-            after=audit_model_to_dict(self.object, include=FIELDS_AUDIT),
-            tags={"module": "operators"},
-        )
         messages.success(request, f"Operador {self.object.first_name} {self.object.last_name_paterno} eliminado.")
         return HttpResponseRedirect(self.get_success_url())

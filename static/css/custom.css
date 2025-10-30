@@ -280,3 +280,8 @@ table.table th {
   padding-bottom: 0.3rem;
   font-size: 0.88rem;
 }
+.table td, .table th { vertical-align: middle; }
+.table-bordered td { font-size: 0.875rem; word-break: break-word; }
+.text-danger { background-color: #ffe6e6; }
+.text-success { background-color: #e6ffe6; }
+.modal-header { background-color: #f1f5ff; border-bottom: 1px solid #dee2e6; }

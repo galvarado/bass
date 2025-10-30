@@ -35,8 +35,9 @@ INSTALLED_APPS = [
     "warehouse",
     "workshop",
     "common",
-    "audit",
+    "audit.apps.AuditConfig",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -46,6 +47,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "audit.middleware.StoreRequestMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -100,6 +102,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+# Audit (Bitacora)
+AUDIT_EXCLUDE = {"audit.AuditLog", "contenttypes.ContentType", "sessions.Session", "common.ExchangeRate"}
+AUDIT_FIELDS_EXCLUDE = {
+    "auth.User": ["password"],
+}
 
 # ==== Internacionalización ====
 LANGUAGE_CODE = "es"                   # español
