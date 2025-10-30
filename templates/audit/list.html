@@ -10,127 +10,183 @@
 <form method="get" class="card mb-3">
   <div class="card-body py-3">
     <div class="form-row align-items-center form-compact">
+      
+      <!-- Campo de búsqueda -->
       <div class="col-md-3 mb-2">
-        <input name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Buscar texto/usuario/path/tags">
+        <div class="input-group input-group-sm">
+          <input name="q"
+                 value="{{ request.GET.q }}"
+                 class="form-control"
+                 placeholder="Buscar texto/usuario/path/tags">
+        </div>
       </div>
+
+      <!-- Filtro de acción -->
       <div class="col-md-2 mb-2">
-        <select name="action" class="form-control">
+        <select name="action" class="form-control form-control-sm">
           <option value="">Todas las acciones</option>
           {% for k,v in logs.model.ACTIONS %}
             <option value="{{ k }}" {% if request.GET.action == k %}selected{% endif %}>{{ v }}</option>
           {% endfor %}
         </select>
       </div>
+
+      <!-- Modelo -->
       <div class="col-md-3 mb-2">
-        <input type="text" name="model" value="{{ request.GET.model }}" class="form-control" placeholder="Modelo (e.g. operator)">
+        <input type="text"
+               name="model"
+               value="{{ request.GET.model }}"
+               class="form-control form-control-sm"
+               placeholder="Modelo (e.g. operator)">
       </div>
+
+      <!-- Fecha desde -->
       <div class="col-md-2 mb-2">
-        <input type="text" name="date_from" value="{{ request.GET.date_from }}" class="form-control" placeholder="dd/mm/aaaa">
+        <input type="text"
+               name="date_from"
+               value="{{ request.GET.date_from }}"
+               class="form-control form-control-sm"
+               placeholder="dd/mm/aaaa">
       </div>
+
+      <!-- Fecha hasta -->
       <div class="col-md-2 mb-2">
-        <input type="text" name="date_to" value="{{ request.GET.date_to }}" class="form-control" placeholder="dd/mm/aaaa">
+        <input type="text"
+               name="date_to"
+               value="{{ request.GET.date_to }}"
+               class="form-control form-control-sm"
+               placeholder="dd/mm/aaaa">
       </div>
+
     </div>
-    <div class="text-right">
-      <button class="btn btn-outline-primary btn-sm" type="submit">
-        <i class="fas fa-filter"></i> Filtrar
-      </button>
-    </div>
+  </div>
+
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-outline-primary btn-sm" type="submit">
+      <i class="fas fa-filter"></i> Filtrar
+    </button>
   </div>
 </form>
 
-<div class="table-responsive">
-  <table class="table table-sm table-hover align-middle">
-    <thead class="thead-light">
-      <tr>
-        <th style="width:165px;">Fecha</th>
-        <th style="width:140px;">Usuario</th>
-        <th style="width:130px;">Acción</th>
-        <th>Target</th>
-        <th>Resumen</th>
-        <th style="width:120px;">IP</th>
-        <th style="width:60px;"></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for log in logs %}
-      <tr>
-        <td class="text-nowrap">{{ log.created_at|date:"Y-m-d H:i" }}</td>
-        <td class="text-truncate" style="max-width:140px;">{{ log.user.get_username|default:"anon" }}</td>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 table-sm align-middle">
+      <thead class="thead-light">
+        <tr>
+          <th style="width:165px;">Fecha</th>
+          <th style="width:140px;">Usuario</th>
+          <th style="width:130px;">Acción</th>
+          <th>Objetivo</th>
+          <th>Resumen</th>
+          <th style="width:120px;">IP</th>
+          <th style="width:60px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-nowrap">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+          <td class="text-truncate" style="max-width:140px;">{{ log.user.get_username|default:"anon" }}</td>
 
-        {# === ACCIÓN (badge inline sin templatetag) === #}
-        <td>
-          {% if log.action == "create" %}
-            <span class="badge badge-success">Creación</span>
-          {% elif log.action == "update" %}
-            <span class="badge badge-warning">Actualización</span>
-          {% elif log.action == "delete" or log.action == "soft_delete" %}
-            <span class="badge badge-danger">Eliminación</span>
-          {% elif log.action == "restore" %}
-            <span class="badge badge-info">Restauración</span>
-          {% elif log.action == "login" %}
-            <span class="badge badge-primary">Inicio de sesión</span>
-          {% elif log.action == "logout" %}
-            <span class="badge badge-secondary">Cierre de sesión</span>
-          {% else %}
-            <span class="badge badge-light">{{ log.action }}</span>
-          {% endif %}
-        </td>
+          {# Acción (badge inline) #}
+          <td>
+            {% if log.action == "create" %}
+              <span class="badge badge-success">Creación</span>
+            {% elif log.action == "update" %}
+              <span class="badge badge-warning">Actualización</span>
+            {% elif log.action == "delete" or log.action == "soft_delete" %}
+              <span class="badge badge-danger">Eliminación</span>
+            {% elif log.action == "restore" %}
+              <span class="badge badge-info">Restauración</span>
+            {% elif log.action == "login" %}
+              <span class="badge badge-primary">Inicio de sesión</span>
+            {% elif log.action == "logout" %}
+              <span class="badge badge-secondary">Cierre de sesión</span>
+            {% else %}
+              <span class="badge badge-light">{{ log.action }}</span>
+            {% endif %}
+          </td>
 
-        {# === TARGET === #}
-        <td class="text-truncate" style="max-width:360px;">
-          {% if log.action == "login" or log.action == "logout" %}
-            {{ log.user.get_username|default:"—" }}
-          {% else %}
-            {% if log.object_repr %}
-              {{ log.object_repr }}
-            {% elif log.content_type %}
-              {{ log.content_type|capfirst }}
+          {# Objetivo #}
+          <td class="text-truncate" style="max-width:360px;">
+            {% if log.action == "login" or log.action == "logout" %}
+              {{ log.user.get_username|default:"—" }}
+            {% else %}
+              {% if log.object_repr %}
+                {{ log.object_repr }}
+              {% elif log.content_type %}
+                {{ log.content_type|capfirst }}
+              {% else %}
+                —
+              {% endif %}
+            {% endif %}
+          </td>
+
+          {# Resumen #}
+          <td class="text-muted">
+            {% if log.action == "create" and log.changes %}
+              Creado con {{ log.changes|length }} campos
+            {% elif log.action == "update" and log.changes %}
+              {{ log.changes|length }} campos modificados
+            {% elif log.action == "login" %}
+              Inicio de sesión de {{ log.user.get_username|default:"(usuario desconocido)" }}
+            {% elif log.action == "logout" %}
+              Cierre de sesión de {{ log.user.get_username|default:"(usuario desconocido)" }}
+            {% elif log.summary %}
+              {{ log.summary }}
             {% else %}
               —
             {% endif %}
-          {% endif %}
-        </td>
+          </td>
 
-        {# === RESUMEN === #}
-        <td class="text-muted">
-          {% if log.action == "create" and log.changes %}
-            Creado con {{ log.changes|length }} campos
-          {% elif log.action == "update" and log.changes %}
-            {{ log.changes|length }} campos modificados
-          {% elif log.action == "login" %}
-            Inicio de sesión de {{ log.user.get_username|default:"(usuario desconocido)" }}
-          {% elif log.action == "logout" %}
-            Cierre de sesión de {{ log.user.get_username|default:"(usuario desconocido)" }}
-          {% elif log.summary %}
-            {{ log.summary }}
-          {% else %}
-            —
-          {% endif %}
-        </td>
+          <td class="text-nowrap">{{ log.ip|default:"—" }}</td>
 
-        <td class="text-nowrap">{{ log.ip|default:"—" }}</td>
+          <td class="text-center">
+            {% if log.action == "update" and log.changes %}
+              <button class="btn btn-sm btn-outline-secondary"
+                      type="button"
+                      data-toggle="modal"
+                      data-target="#modalChanges{{ log.id }}"
+                      title="Ver detalles de cambios">
+                <i class="fas fa-eye"></i>
+              </button>
+            {% else %}
+              <i class="text-muted fas fa-minus"></i>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Sin registros</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-        {# === BOTÓN DE MODAL === #}
-        <td class="text-center">
-          {% if log.action == "update" and log.changes %}
-            <button class="btn btn-sm btn-outline-secondary"
-                    type="button"
-                    data-toggle="modal"
-                    data-target="#modalChanges{{ log.id }}"
-                    title="Ver detalles de cambios">
-              <i class="fas fa-eye"></i>
-            </button>
-          {% else %}
-            <i class="text-muted fas fa-minus"></i>
-          {% endif %}
-        </td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="7" class="text-center text-muted py-4">Sin registros</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% if is_paginated %}
+  <div class="card-footer py-2">
+    <nav aria-label="Paginación">
+      <ul class="pagination pagination-sm mb-0 justify-content-end">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">«</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">«</span></li>
+        {% endif %}
+        <li class="page-item disabled">
+          <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">»</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">»</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
 </div>
 
 {# ==== MODALES (solo para ediciones) ==== #}
@@ -154,36 +210,40 @@
             UA: {{ log.user_agent|default:"" }}
           </div>
 
-          <table class="table table-sm mb-0">
-            <thead>
-              <tr>
-                <th>Field</th>
-                <th>Before</th>
-                <th>After</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for field, pair in log.changes.items %}
-                <tr>
-                  <td>{{ field }}</td>
-                  <td>
-                    {% if pair.0 %}
-                      {{ pair.0 }}
-                    {% else %}
-                      —
-                    {% endif %}
-                  </td>
-                  <td class="bg-success-light">
-                    {% if pair.1 %}
-                      {{ pair.1 }}
-                    {% else %}
-                      —
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead class="thead-light">
+                  <tr>
+                    <th>Field</th>
+                    <th>Before</th>
+                    <th>After</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for field, pair in log.changes.items %}
+                    <tr>
+                      <td>{{ field }}</td>
+                      <td>
+                        {% if pair.0 %}
+                          {{ pair.0 }}
+                        {% else %}
+                          <span class="text-muted">—</span>
+                        {% endif %}
+                      </td>
+                      <td class="bg-success-light">
+                        {% if pair.1 %}
+                          {{ pair.1 }}
+                        {% else %}
+                          <span class="text-muted">—</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer">
@@ -194,23 +254,5 @@
   </div>
   {% endif %}
 {% endfor %}
-
-{% if is_paginated %}
-<nav aria-label="page-nav">
-  <ul class="pagination pagination-sm justify-content-end">
-    {% if page_obj.has_previous %}
-      <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">«</a></li>
-    {% else %}
-      <li class="page-item disabled"><span class="page-link">«</span></li>
-    {% endif %}
-    <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
-    {% if page_obj.has_next %}
-      <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">»</a></li>
-    {% else %}
-      <li class="page-item disabled"><span class="page-link">»</span></li>
-    {% endif %}
-  </ul>
-</nav>
-{% endif %}
 
 {% endblock %}
