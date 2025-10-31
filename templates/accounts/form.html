@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load form_extras %}
+{% load roles %}
 {% block title %}{% if object %}Editar Usuario{% else %}Nuevo Usuario{% endif %} · BASS{% endblock %}
 {% block content %}
 
@@ -72,11 +73,17 @@
       <div class="form-group col-md-3 d-flex align-items-center">
         <div class="custom-control custom-switch mt-4">
           <input type="checkbox"
-                 class="custom-control-input"
-                 id="{{ form.is_active.id_for_label }}"
-                 name="{{ form.is_active.name }}"
-                 {% if form.is_active.value %}checked{% endif %}>
-          <label class="custom-control-label" for="{{ form.is_active.id_for_label }}">Activo</label>
+                class="custom-control-input"
+                id="{{ form.is_active.id_for_label }}"
+                name="{{ form.is_active.name }}"
+                {% if form.is_active.value %}checked{% endif %}
+                {% if not request.user|has_group:"superadmin" %}disabled{% endif %}>
+          <label class="custom-control-label" for="{{ form.is_active.id_for_label }}">
+            Activo
+            {% if not request.user|has_group:"superadmin" %}
+              <span class="d-block small text-muted">Solo superadmin</span>
+            {% endif %}
+          </label>
           {% for e in form.is_active.errors %}
             <div class="text-danger small d-block mt-1">{{ e }}</div>
           {% endfor %}

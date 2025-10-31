@@ -189,7 +189,7 @@
   {% endif %}
 </div>
 
-{# ==== MODALES (solo para ediciones) ==== #}
+{{# ==== MODALES (solo para ediciones) ==== #}
 {% for log in logs %}
   {% if log.action == "update" and log.changes %}
   <div class="modal fade" id="modalChanges{{ log.id }}" tabindex="-1" role="dialog" aria-labelledby="modalLabel{{ log.id }}" aria-hidden="true">
@@ -220,27 +220,28 @@
                     <th>Después</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {% for field, pair in log.changes.items %}
-                    <tr>
-                      <td>{{ field }}</td>
-                      <td>
-                        {% if pair.0 %}
-                          {{ pair.0 }}
-                        {% else %}
-                          <span class="text-muted">—</span>
-                        {% endif %}
-                      </td>
-                      <td class="bg-success-light">
-                        {% if pair.1 %}
-                          {{ pair.1 }}
-                        {% else %}
-                          <span class="text-muted">—</span>
-                        {% endif %}
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
+               <tbody>
+  {% for field, pair in log.changes.items %}
+    <tr>
+      <td>{{ field }}</td>
+      <td>
+        {% if pair.before %}
+          {{ pair.before }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if pair.after %}
+          {{ pair.after }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+</tbody>
+
               </table>
             </div>
           </div>
@@ -254,5 +255,6 @@
   </div>
   {% endif %}
 {% endfor %}
+
 
 {% endblock %}

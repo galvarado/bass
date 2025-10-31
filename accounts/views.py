@@ -245,32 +245,6 @@ class UserUpdateView(SuperadminOrAdminRequiredMixin, UpdateView):
         messages.success(self.request, "Usuario actualizado correctamente.")
         return super().form_valid(form)
 
-
-class UserDeleteView(SuperadminOrAdminRequiredMixin, DeleteView):
-    model = User
-    template_name = "accounts/confirm_delete.html"
-    success_url = reverse_lazy("accounts:list")
-
-    def dispatch(self, request, *args, **kwargs):
-        obj = self.get_object()
-
-        # Solo superadmin puede borrar superadmins
-        if obj.groups.filter(name=SUPERADMIN_GROUP).exists() and not is_superadmin(request.user):
-            from django.core.exceptions import PermissionDenied
-            raise PermissionDenied
-
-        # Admin no puede eliminar a nadie
-        if is_admin(request.user) and not is_superadmin(request.user):
-            from django.core.exceptions import PermissionDenied
-            raise PermissionDenied
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
-        messages.success(self.request, "Usuario eliminado.")
-        return super().delete(request, *args, **kwargs)
-
-
 class UserPasswordSetView(SuperadminOrAdminRequiredMixin, FormView):
     template_name = "accounts/password.html"
     form_class = UserSetPasswordForm
