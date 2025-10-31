@@ -44,10 +44,10 @@
 
   <hr class="sidebar-divider">
 
-  {# ===================== ADMINISTRACIÓN ==================== #}
-  {% with section="administracion" %}
+  {# ===================== FINANZAS ==================== #}
+  {% with section="finanzas" %}
     {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
-      <div class="sidebar-heading text-uppercase">Administración</div>
+      <div class="sidebar-heading text-uppercase">Finanzas</div>
     {% endif %}
   {% endwith %}
 

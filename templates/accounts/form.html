@@ -12,7 +12,6 @@
   {% csrf_token %}
   <div class="card-body">
 
-    {# Errores generales (no asociados a un campo) #}
     {% if form.non_field_errors %}
       <div class="alert alert-danger">
         {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
@@ -84,14 +83,22 @@
         </div>
       </div>
     </div>
+
+    {# === GRUPOS === #}
     <div class="form-row">
       <div class="form-group col-md-6">
         <label>Grupos</label>
         {% if form.groups.errors %}
-          <div class="border rounded p-2 is-invalid">
+          <div class="border rounded p-2 is-invalid" id="groups-wrapper">
             <div class="row">
               {% for cb in form.groups %}
-                <div class="col-6 mb-1">{{ cb }}</div>
+                <div class="col-6 mb-1 group-item">
+                  {# le ponemos data-name para manejarlo en JS #}
+                  <label class="mb-0">
+                    {{ cb.tag|safe }}
+                    <span class="small text-muted">{{ cb.choice_label }}</span>
+                  </label>
+                </div>
               {% endfor %}
             </div>
           </div>
@@ -99,19 +106,31 @@
             <div class="invalid-feedback d-block">{{ e }}</div>
           {% endfor %}
         {% else %}
-          <div class="border rounded p-2">
+          <div class="border rounded p-2" id="groups-wrapper">
             <div class="row">
               {% for cb in form.groups %}
-                <div class="col-6 mb-1">{{ cb }}</div>
+                <div class="col-6 mb-1 group-item">
+                  <label class="mb-0">
+                    {# aquí sí podemos inyectar data-attrs #}
+                    <input type="checkbox"
+                           name="{{ cb.data.name }}"
+                           value="{{ cb.data.value }}"
+                           id="{{ cb.id_for_label }}"
+                           {% if cb.data.selected %}checked{% endif %}
+                           data-group-label="{{ cb.choice_label }}">
+                    <span class="small text-muted">{{ cb.choice_label }}</span>
+                  </label>
+                </div>
               {% endfor %}
             </div>
           </div>
-          <small class="form-text text-muted">Selecciona uno o varios.</small>
+          <small class="form-text text-muted">
+            Si seleccionas <strong>Admin</strong> o <strong>Superadmin</strong>, no necesitas otros grupos.
+          </small>
         {% endif %}
       </div>
     </div>
 
-    {# Solo mostrar contraseñas si existen en el form (crear usuario) #}
     {% if form.password1 %}
     <div class="form-row">
       <div class="form-group col-md-6">
@@ -151,5 +170,64 @@
     </button>
   </div>
 </form>
+
+{# ===== JS para lógica de grupos ===== #}
+<script>
+  (function() {
+    const ADMIN_NAMES = ["Admin", "Administrador"];
+    const SUPERADMIN_NAMES = ["Superadmin", "Súperadmin", "Super Admin"];
+
+    const wrapper = document.getElementById("groups-wrapper");
+    if (!wrapper) return;
+
+    const checkboxes = Array.from(wrapper.querySelectorAll("input[type='checkbox']"));
+
+    function isAdmin(cb) {
+      return ADMIN_NAMES.some(n => (cb.dataset.groupLabel || "").toLowerCase() === n.toLowerCase());
+    }
+
+    function isSuperadmin(cb) {
+      return SUPERADMIN_NAMES.some(n => (cb.dataset.groupLabel || "").toLowerCase() === n.toLowerCase());
+    }
+
+    function getAdmins() {
+      return checkboxes.filter(isAdmin);
+    }
+
+    function getSuperadmins() {
+      return checkboxes.filter(isSuperadmin);
+    }
+
+    function getOthers() {
+      return checkboxes.filter(cb => !isAdmin(cb) && !isSuperadmin(cb));
+    }
+
+    function applyState() {
+      const adminChecked = getAdmins().some(cb => cb.checked);
+      const superChecked = getSuperadmins().some(cb => cb.checked);
+
+      const admins = getAdmins();
+      const supers = getSuperadmins();
+      const others = getOthers();
+
+      if (adminChecked) {
+        supers.forEach(cb => { cb.checked = false; cb.disabled = true; });
+        others.forEach(cb => { cb.checked = false; cb.disabled = true; cb.closest(".group-item")?.classList.add("text-muted"); });
+        admins.forEach(cb => { cb.disabled = false; cb.closest(".group-item")?.classList.remove("text-muted"); });
+      } 
+      else if (superChecked) {
+        admins.forEach(cb => { cb.checked = false; cb.disabled = true; });
+        others.forEach(cb => { cb.checked = false; cb.disabled = true; cb.closest(".group-item")?.classList.add("text-muted"); });
+        supers.forEach(cb => { cb.disabled = false; cb.closest(".group-item")?.classList.remove("text-muted"); });
+      } 
+      else {
+        checkboxes.forEach(cb => { cb.disabled = false; cb.closest(".group-item")?.classList.remove("text-muted"); });
+      }
+    }
+
+    checkboxes.forEach(cb => cb.addEventListener("change", applyState));
+    applyState();
+  })();
+</script>
 
 {% endblock %}

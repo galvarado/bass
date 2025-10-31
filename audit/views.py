@@ -2,8 +2,10 @@
 from django.views.generic import ListView
 from django.db.models import Q
 from .models import AuditLog
+from common.mixins import SuperadminRequiredMixin
 
-class AuditLogListView(ListView):
+
+class AuditLogListView(SuperadminRequiredMixin, ListView):
     model = AuditLog
     template_name = "audit/list.html"
     context_object_name = "logs"

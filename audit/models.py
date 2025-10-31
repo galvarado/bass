@@ -22,7 +22,8 @@ class AuditLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
                              on_delete=models.SET_NULL, related_name="audit_logs")
     action = models.CharField(max_length=32, choices=ACTIONS)
-
+    summary = models.CharField(max_length=255, blank=True)
+    target = models.CharField(max_length=255, blank=True)
     # Target genérico (opcional)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
     object_id = models.CharField(max_length=64, null=True, blank=True)
