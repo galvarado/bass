@@ -1,6 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth.views import PasswordChangeView
+
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     UserPassesTestMixin,
@@ -91,25 +93,27 @@ def profile_edit(request):
     )
 
 
+
 class ChangePasswordView(PasswordChangeView):
     template_name = "accounts/password_change.html"
-    success_url = reverse_lazy("accounts:password_change_done")
+    success_url = reverse_lazy("accounts:profile")
 
     def form_valid(self, form):
-        response = super().form_valid(form)
-        user = self.request.user
+        user = form.save()  # guarda la nueva contraseña
+        update_session_auth_hash(self.request, user)  # mantiene sesión activa
 
-        # apagar el flag cuando SÍ cambió la contraseña
-        if hasattr(user, "profile"):
-            if getattr(user.profile, "must_change_password", False):
-                user.profile.must_change_password = False
-                user.profile.save()
-        else:
-            if hasattr(user, "must_change_password") and user.must_change_password:
-                user.must_change_password = False
-                user.save()
+        # 🔹 limpiar el flag de cambio obligatorio
+        if hasattr(user, "profile") and getattr(user.profile, "must_change_password", False):
+            user.profile.must_change_password = False
+            user.profile.save()
+        elif hasattr(user, "must_change_password") and user.must_change_password:
+            user.must_change_password = False
+            user.save()
 
-        return response
+        # 🔹 mostrar un solo mensaje
+        messages.success(self.request, "Tu contraseña se cambió correctamente.")
+        return redirect("accounts:profile")
+
 
 
 class ChangePasswordDoneView(PasswordChangeDoneView):
