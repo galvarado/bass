@@ -1,27 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Bitácora · BASS{% endblock %}
-
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h4 mb-0 text-primary">Bitácora</h1>
+  <h1 class="h4 mb-0">Bitácora</h1>
 </div>
 
 <form method="get" class="card mb-3">
   <div class="card-body py-3">
     <div class="form-row align-items-center form-compact">
-      
-      <!-- Campo de búsqueda -->
-      <div class="col-md-3 mb-2">
+
+      <!-- Buscador -->
+      <div class="col-md-4 mb-2">
         <div class="input-group input-group-sm">
           <input name="q"
                  value="{{ request.GET.q }}"
                  class="form-control"
                  placeholder="Buscar texto/usuario/path/tags">
+          <div class="input-group-append">
+            <button class="btn btn-outline-primary" type="submit">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Filtro de acción -->
+      <!-- Acción -->
       <div class="col-md-2 mb-2">
         <select name="action" class="form-control form-control-sm">
           <option value="">Todas las acciones</option>
@@ -32,7 +36,7 @@
       </div>
 
       <!-- Modelo -->
-      <div class="col-md-3 mb-2">
+      <div class="col-md-2 mb-2">
         <input type="text"
                name="model"
                value="{{ request.GET.model }}"
@@ -68,9 +72,22 @@
   </div>
 </form>
 
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if is_paginated and paginator.count %}
+      Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ paginator.count }}
+      · Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% elif paginator and paginator.count == 0 %}
+      0 resultados
+    {% else %}
+      {{ logs|length }} registro{{ logs|length|pluralize:"s" }}
+    {% endif %}
+  </div>
+</div>
+
 <div class="card">
   <div class="table-responsive">
-    <table class="table table-hover mb-0 table-sm align-middle">
+    <table class="table table-hover mb-0">
       <thead class="thead-light">
         <tr>
           <th style="width:165px;">Fecha</th>
@@ -79,84 +96,87 @@
           <th>Objetivo</th>
           <th>Resumen</th>
           <th style="width:120px;">IP</th>
-          <th style="width:60px;"></th>
+          <th style="width:60px;">Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for log in logs %}
-        <tr>
-          <td class="text-nowrap">{{ log.created_at|date:"Y-m-d H:i" }}</td>
-          <td class="text-truncate" style="max-width:140px;">{{ log.user.get_username|default:"anon" }}</td>
+          <tr>
+            <td class="text-nowrap align-middle">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+            <td class="text-truncate align-middle" style="max-width:140px;">{{ log.user.get_username|default:"anon" }}</td>
 
-          {# Acción (badge inline) #}
-          <td>
-            {% if log.action == "create" %}
-              <span class="badge badge-success">Creación</span>
-            {% elif log.action == "update" %}
-              <span class="badge badge-warning">Actualización</span>
-            {% elif log.action == "delete" or log.action == "soft_delete" %}
-              <span class="badge badge-danger">Eliminación</span>
-            {% elif log.action == "restore" %}
-              <span class="badge badge-info">Restauración</span>
-            {% elif log.action == "login" %}
-              <span class="badge badge-primary">Inicio de sesión</span>
-            {% elif log.action == "logout" %}
-              <span class="badge badge-secondary">Cierre de sesión</span>
-            {% else %}
-              <span class="badge badge-light">{{ log.action }}</span>
-            {% endif %}
-          </td>
+            <!-- Acción (badge) -->
+            <td class="align-middle">
+              {% if log.action == "create" %}
+                <span class="badge badge-success">Creación</span>
+              {% elif log.action == "update" %}
+                <span class="badge badge-warning">Actualización</span>
+              {% elif log.action == "delete" or log.action == "soft_delete" %}
+                <span class="badge badge-danger">Eliminación</span>
+              {% elif log.action == "restore" %}
+                <span class="badge badge-info">Restauración</span>
+              {% elif log.action == "login" %}
+                <span class="badge badge-primary">Inicio de sesión</span>
+              {% elif log.action == "logout" %}
+                <span class="badge badge-secondary">Cierre de sesión</span>
+              {% else %}
+                <span class="badge badge-light">{{ log.action }}</span>
+              {% endif %}
+            </td>
 
-          {# Objetivo #}
-          <td class="text-truncate" style="max-width:360px;">
-            {% if log.action == "login" or log.action == "logout" %}
-              {{ log.user.get_username|default:"—" }}
-            {% else %}
-              {% if log.object_repr %}
-                {{ log.object_repr }}
-              {% elif log.content_type %}
-                {{ log.content_type|capfirst }}
+            <!-- Objetivo -->
+            <td class="text-truncate align-middle" style="max-width:360px;">
+              {% if log.action == "login" or log.action == "logout" %}
+                {{ log.user.get_username|default:"—" }}
+              {% else %}
+                {% if log.object_repr %}
+                  {{ log.object_repr }}
+                {% elif log.content_type %}
+                  {{ log.content_type|capfirst }}
+                {% else %}
+                  —
+                {% endif %}
+              {% endif %}
+            </td>
+
+            <!-- Resumen -->
+            <td class="text-muted align-middle">
+              {% if log.action == "create" and log.changes %}
+                Creado con {{ log.changes|length }} campo{{ log.changes|length|pluralize:"s" }}
+              {% elif log.action == "update" and log.changes %}
+                {{ log.changes|length }} campo{{ log.changes|length|pluralize:"s" }} modificad{{ log.changes|length|pluralize:"o,os" }}
+              {% elif log.action == "login" %}
+                Inicio de sesión de {{ log.user.get_username|default:"(usuario desconocido)" }}
+              {% elif log.action == "logout" %}
+                Cierre de sesión de {{ log.user.get_username|default:"(usuario desconocido)" }}
+              {% elif log.summary %}
+                {{ log.summary }}
               {% else %}
                 —
               {% endif %}
-            {% endif %}
-          </td>
+            </td>
 
-          {# Resumen #}
-          <td class="text-muted">
-            {% if log.action == "create" and log.changes %}
-              Creado con {{ log.changes|length }} campos
-            {% elif log.action == "update" and log.changes %}
-              {{ log.changes|length }} campos modificados
-            {% elif log.action == "login" %}
-              Inicio de sesión de {{ log.user.get_username|default:"(usuario desconocido)" }}
-            {% elif log.action == "logout" %}
-              Cierre de sesión de {{ log.user.get_username|default:"(usuario desconocido)" }}
-            {% elif log.summary %}
-              {{ log.summary }}
-            {% else %}
-              —
-            {% endif %}
-          </td>
+            <td class="text-nowrap align-middle">{{ log.ip|default:"—" }}</td>
 
-          <td class="text-nowrap">{{ log.ip|default:"—" }}</td>
-
-          <td class="text-center">
-            {% if log.action == "update" and log.changes %}
-              <button class="btn btn-sm btn-outline-secondary"
-                      type="button"
-                      data-toggle="modal"
-                      data-target="#modalChanges{{ log.id }}"
-                      title="Ver detalles de cambios">
-                <i class="fas fa-eye"></i>
-              </button>
-            {% else %}
-              <i class="text-muted fas fa-minus"></i>
-            {% endif %}
-          </td>
-        </tr>
+            <!-- Acciones -->
+            <td class="text-right align-middle">
+              {% if log.action == "update" and log.changes %}
+                <button class="btn btn-sm btn-outline-secondary"
+                        type="button"
+                        data-toggle="modal"
+                        data-target="#modalChanges{{ log.id }}"
+                        title="Ver detalles de cambios">
+                  <i class="fas fa-eye"></i>
+                </button>
+              {% else %}
+                <span class="text-muted"><i class="fas fa-minus"></i></span>
+              {% endif %}
+            </td>
+          </tr>
         {% empty %}
-        <tr><td colspan="7" class="text-center text-muted py-4">Sin registros</td></tr>
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">Sin registros.</td>
+          </tr>
         {% endfor %}
       </tbody>
     </table>
@@ -165,31 +185,63 @@
   {% if is_paginated %}
   <div class="card-footer py-2">
     <nav aria-label="Paginación">
-      <ul class="pagination pagination-sm mb-0 justify-content-end">
+      <ul class="pagination pagination-sm mb-0">
+
+        {# Primera / Anterior #}
         {% if page_obj.has_previous %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">«</a>
+            <a class="page-link"
+               href="?page=1&q={{ request.GET.q|urlencode }}&action={{ request.GET.action|urlencode }}&model={{ request.GET.model|urlencode }}&date_from={{ request.GET.date_from|urlencode }}&date_to={{ request.GET.date_to|urlencode }}">« Primero</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&action={{ request.GET.action|urlencode }}&model={{ request.GET.model|urlencode }}&date_from={{ request.GET.date_from|urlencode }}&date_to={{ request.GET.date_to|urlencode }}">‹ Anterior</a>
           </li>
         {% else %}
-          <li class="page-item disabled"><span class="page-link">«</span></li>
+          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
         {% endif %}
-        <li class="page-item disabled">
-          <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-        </li>
+
+        {# Números con elipsis #}
+        {% for i in paginator.page_range %}
+          {% if i == 1 or i == paginator.num_pages or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+            {% if page_obj.number == i %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+              <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ i }}&q={{ request.GET.q|urlencode }}&action={{ request.GET.action|urlencode }}&model={{ request.GET.model|urlencode }}&date_from={{ request.GET.date_from|urlencode }}&date_to={{ request.GET.date_to|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% elif i == 2 and page_obj.number > 4 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% elif i == paginator.num_pages|add:'-1' and page_obj.number < paginator.num_pages|add:'-3' %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        {# Siguiente / Última #}
         {% if page_obj.has_next %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">»</a>
+            <a class="page-link"
+               href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&action={{ request.GET.action|urlencode }}&model={{ request.GET.model|urlencode }}&date_from={{ request.GET.date_from|urlencode }}&date_to={{ request.GET.date_to|urlencode }}">Siguiente ›</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ paginator.num_pages }}&q={{ request.GET.q|urlencode }}&action={{ request.GET.action|urlencode }}&model={{ request.GET.model|urlencode }}&date_from={{ request.GET.date_from|urlencode }}&date_to={{ request.GET.date_to|urlencode }}">Última »</a>
           </li>
         {% else %}
-          <li class="page-item disabled"><span class="page-link">»</span></li>
+          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
+          <li class="page-item disabled"><span class="page-link">Última »</span></li>
         {% endif %}
+
       </ul>
     </nav>
   </div>
   {% endif %}
 </div>
 
-{{# ==== MODALES (solo para ediciones) ==== #}
+{# ==== MODALES (solo para ediciones) ==== #}
 {% for log in logs %}
   {% if log.action == "update" and log.changes %}
   <div class="modal fade" id="modalChanges{{ log.id }}" tabindex="-1" role="dialog" aria-labelledby="modalLabel{{ log.id }}" aria-hidden="true">
@@ -220,28 +272,15 @@
                     <th>Después</th>
                   </tr>
                 </thead>
-               <tbody>
-  {% for field, pair in log.changes.items %}
-    <tr>
-      <td>{{ field }}</td>
-      <td>
-        {% if pair.before %}
-          {{ pair.before }}
-        {% else %}
-          <span class="text-muted">—</span>
-        {% endif %}
-      </td>
-      <td>
-        {% if pair.after %}
-          {{ pair.after }}
-        {% else %}
-          <span class="text-muted">—</span>
-        {% endif %}
-      </td>
-    </tr>
-  {% endfor %}
-</tbody>
-
+                <tbody>
+                  {% for field, pair in log.changes.items %}
+                    <tr>
+                      <td>{{ field }}</td>
+                      <td>{% if pair.before %}{{ pair.before }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                      <td>{% if pair.after %}{{ pair.after }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
               </table>
             </div>
           </div>
@@ -255,6 +294,5 @@
   </div>
   {% endif %}
 {% endfor %}
-
 
 {% endblock %}

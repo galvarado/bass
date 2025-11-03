@@ -14,6 +14,7 @@
 <form method="get" class="card mb-3">
   <div class="card-body py-3">
     <div class="form-row align-items-center form-compact">
+      <!-- Buscador -->
       <div class="col-md-6 mb-2">
         <div class="input-group input-group-sm">
           {{ search_form.q }}
@@ -24,9 +25,11 @@
           </div>
         </div>
       </div>
+      <!-- Filtro de estado -->
       <div class="col-md-3 mb-2">
         {{ search_form.status }}
       </div>
+      <!-- Espacio flexible -->
       <div class="col-md-3 mb-2 d-none d-md-block"></div>
     </div>
   </div>
@@ -54,7 +57,7 @@
           <th>Nombre</th>
           <th>Email</th>
           <th>Grupos</th>
-          <th>Último acceso</th> 
+          <th>Último acceso</th>
           <th>Estado</th>
           <th style="width:160px;">Acciones</th>
         </tr>
@@ -62,46 +65,50 @@
       <tbody>
         {% for u in users %}
           <tr>
-            <td><strong>{{ u.username }}</strong></td>
-            <td>{{ u.first_name }} {{ u.last_name }}</td>
-            <td>{{ u.email|default:"—" }}</td>
-            <td>
-            {% if u.groups.all %}
-              {% for g in u.groups.all %}
-                <span class="badge badge-light text-muted border">{{ g.name|lower }}</span>
-              {% empty %}
-                —
-              {% endfor %}
-            {% else %}
-              —
-            {% endif %}
+            <td class="align-middle"><strong>{{ u.username }}</strong></td>
+            <td class="align-middle">{{ u.first_name }} {{ u.last_name }}</td>
+            <td class="align-middle">{{ u.email|default:"—" }}</td>
+            <td class="align-middle">
+              {% with gs=u.groups.all %}
+                {% if gs %}
+                  {% for g in gs %}
+                    <span class="badge badge-light text-muted border">{{ g.name|lower }}</span>
+                  {% empty %}
+                    —
+                  {% endfor %}
+                {% else %}
+                  —
+                {% endif %}
+              {% endwith %}
             </td>
-            <td class="text-nowrap">
+            <td class="text-nowrap align-middle">
               {% if u.last_login %}
                 {{ u.last_login|localtime|date:"Y-m-d H:i" }}
               {% else %}
                 —
               {% endif %}
             </td>
-            <td>
+            <td class="align-middle">
               {% if u.is_active %}
                 <span class="badge badge-success">Activo</span>
               {% else %}
                 <span class="badge badge-secondary">Inactivo</span>
               {% endif %}
             </td>
-            <td class="text-right">
-              <a href="{% url 'accounts:update' u.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+            <td class="text-right align-middle">
+              <a href="{% url 'accounts:update' u.pk %}"
+                 class="btn btn-sm btn-outline-secondary" title="Editar">
                 <i class="fas fa-edit"></i>
               </a>
-              <a href="{% url 'accounts:password' u.pk %}" class="btn btn-sm btn-outline-warning" title="Cambiar contraseña">
+              <a href="{% url 'accounts:password' u.pk %}"
+                 class="btn btn-sm btn-outline-warning" title="Cambiar contraseña">
                 <i class="fas fa-key"></i>
               </a>
             </td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="6" class="text-center text-muted py-4">Sin resultados.</td>
+            <td colspan="7" class="text-center text-muted py-4">Sin resultados.</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -116,10 +123,12 @@
         {# Primera / Anterior #}
         {% if page_obj.has_previous %}
           <li class="page-item">
-            <a class="page-link" href="?page=1&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">« Primero</a>
+            <a class="page-link"
+               href="?page=1&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">« Primero</a>
           </li>
           <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">‹ Anterior</a>
+            <a class="page-link"
+               href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">‹ Anterior</a>
           </li>
         {% else %}
           <li class="page-item disabled"><span class="page-link">« Primero</span></li>
@@ -133,7 +142,8 @@
               <li class="page-item active"><span class="page-link">{{ i }}</span></li>
             {% else %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ i }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">{{ i }}</a>
+                <a class="page-link"
+                   href="?page={{ i }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">{{ i }}</a>
               </li>
             {% endif %}
           {% elif i == 2 and page_obj.number > 4 %}
@@ -146,10 +156,12 @@
         {# Siguiente / Última #}
         {% if page_obj.has_next %}
           <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">Siguiente ›</a>
+            <a class="page-link"
+               href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">Siguiente ›</a>
           </li>
           <li class="page-item">
-            <a class="page-link" href="?page={{ paginator.num_pages }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">Última »</a>
+            <a class="page-link"
+               href="?page={{ paginator.num_pages }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">Última »</a>
           </li>
         {% else %}
           <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
