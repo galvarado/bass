@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% load form_extras %}
 {% block title %}{% if object %}Editar Operador{% else %}Nuevo Operador{% endif %} · BASS{% endblock %}
-{% block content %}
 
+{% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">{% if object %}Editar Operador{% else %}Nuevo Operador{% endif %}</h1>
   <a href="{% url 'operators:list' %}" class="btn btn-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
@@ -12,133 +12,184 @@
   {% csrf_token %}
   <div class="card-body">
 
-    {# Errores generales (no asociados a un campo) #}
     {% if form.non_field_errors %}
       <div class="alert alert-danger">
         {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
       </div>
     {% endif %}
 
+    <!-- ===== DATOS PERSONALES ===== -->
+    <h6 class="text-primary mb-2"><i class="fas fa-user mr-1"></i> Datos personales</h6>
     <div class="form-row">
-      <div class="form-group col-md-4">
-        <label for="{{ form.first_name.id_for_label }}">Nombre(s)</label>
-        {% if form.first_name.errors %}
-          {{ form.first_name|add_class:"form-control is-invalid" }}
-          {% for e in form.first_name.errors %}
-            <div class="invalid-feedback d-block">{{ e }}</div>
-          {% endfor %}
-        {% else %}
-          {{ form.first_name|add_class:"form-control" }}
-        {% endif %}
-      </div>
-
-      <div class="form-group col-md-4">
-        <label for="{{ form.last_name_paterno.id_for_label }}">Apellido paterno</label>
-        {% if form.last_name_paterno.errors %}
-          {{ form.last_name_paterno|add_class:"form-control is-invalid" }}
-          {% for e in form.last_name_paterno.errors %}
-            <div class="invalid-feedback d-block">{{ e }}</div>
-          {% endfor %}
-        {% else %}
-          {{ form.last_name_paterno|add_class:"form-control" }}
-        {% endif %}
-      </div>
-
-      <div class="form-group col-md-4">
-        <label for="{{ form.last_name_materno.id_for_label }}">Apellido materno</label>
-        {% if form.last_name_materno.errors %}
-          {{ form.last_name_materno|add_class:"form-control is-invalid" }}
-          {% for e in form.last_name_materno.errors %}
-            <div class="invalid-feedback d-block">{{ e }}</div>
-          {% endfor %}
-        {% else %}
-          {{ form.last_name_materno|add_class:"form-control" }}
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group col-md-4">
-        <label for="{{ form.rfc.id_for_label }}">RFC</label>
-        {% if form.rfc.errors %}
-          {{ form.rfc|add_class:"form-control text-uppercase is-invalid" }}
-          <small class="text-muted d-block mt-1">{{ form.rfc.help_text }}</small>
-          {% for e in form.rfc.errors %}
-            <div class="invalid-feedback d-block">{{ e }}</div>
-          {% endfor %}
-        {% else %}
-          {{ form.rfc|add_class:"form-control text-uppercase" }}
-          <small class="text-muted d-block mt-1">{{ form.rfc.help_text }}</small>
-        {% endif %}
-      </div>
-
-      <div class="form-group col-md-4">
-        <label for="{{ form.license_number.id_for_label }}">No. de Licencia</label>
-        {% if form.license_number.errors %}
-          {{ form.license_number|add_class:"form-control is-invalid" }}
-          {% for e in form.license_number.errors %}
-            <div class="invalid-feedback d-block">{{ e }}</div>
-          {% endfor %}
-        {% else %}
-          {{ form.license_number|add_class:"form-control" }}
-        {% endif %}
-      </div>
-
-      <div class="form-group col-md-4">
-        <label for="{{ form.license_expires_at.id_for_label }}">Vigencia de licencia</label>
-        {% if form.license_expires_at.errors %}
-          {{ form.license_expires_at|add_class:"form-control is-invalid" }}
-          {% for e in form.license_expires_at.errors %}
-            <div class="invalid-feedback d-block">{{ e }}</div>
-          {% endfor %}
-        {% else %}
-          {{ form.license_expires_at|add_class:"form-control" }}
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group col-md-4">
-        <label for="{{ form.phone.id_for_label }}">Teléfono</label>
-        {% if form.phone.errors %}
-          {{ form.phone|add_class:"form-control is-invalid" }}
-          {% for e in form.phone.errors %}
-            <div class="invalid-feedback d-block">{{ e }}</div>
-          {% endfor %}
-        {% else %}
-          {{ form.phone|add_class:"form-control" }}
-        {% endif %}
-      </div>
-
       <div class="form-group col-md-6">
-        <label for="{{ form.email.id_for_label }}">Email</label>
-        {% if form.email.errors %}
-          {{ form.email|add_class:"form-control is-invalid" }}
-          {% for e in form.email.errors %}
-            <div class="invalid-feedback d-block">{{ e }}</div>
-          {% endfor %}
-        {% else %}
-          {{ form.email|add_class:"form-control" }}
-        {% endif %}
+        <label for="{{ form.nombre.id_for_label }}">Nombre completo</label>
+        {{ form.nombre|add_class:"form-control" }}
       </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.rfc.id_for_label }}">RFC</label>
+        {{ form.rfc|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.curp.id_for_label }}">CURP</label>
+        {{ form.curp|add_class:"form-control" }}
+      </div>
+    </div>
 
-      <div class="form-group col-md-2 d-flex align-items-center">
-        <div class="custom-control custom-switch mt-4">
-          <input type="checkbox"
-                 class="custom-control-input"
-                 id="{{ form.active.id_for_label }}"
-                 name="{{ form.active.name }}"
-                 {% if form.active.value %}checked{% endif %}>
-          <label class="custom-control-label" for="{{ form.active.id_for_label }}">Activo</label>
-          {% for e in form.active.errors %}
-            <div class="text-danger small d-block mt-1">{{ e }}</div>
-          {% endfor %}
-        </div>
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.tipo_sangre.id_for_label }}">Tipo de sangre</label>
+        {{ form.tipo_sangre|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.imss.id_for_label }}">IMSS</label>
+        {{ form.imss|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.fecha_nacimiento.id_for_label }}">Fecha nacimiento</label>
+        {{ form.fecha_nacimiento|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.fecha_ingreso.id_for_label }}">Fecha ingreso</label>
+        {{ form.fecha_ingreso|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- ===== DIRECCIÓN ===== -->
+    <hr>
+    <h6 class="text-primary mb-2"><i class="fas fa-map-marker-alt mr-1"></i> Dirección</h6>
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.calle.id_for_label }}">Calle</label>
+        {{ form.calle|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.no_ext.id_for_label }}">No. Ext</label>
+        {{ form.no_ext|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.colonia.id_for_label }}">Colonia</label>
+        {{ form.colonia|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.colonia_sat.id_for_label }}">Colonia SAT</label>
+        {{ form.colonia_sat|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.municipio.id_for_label }}">Municipio</label>
+        {{ form.municipio|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.estado.id_for_label }}">Estado</label>
+        {{ form.estado|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.pais.id_for_label }}">País</label>
+        {{ form.pais|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.cp.id_for_label }}">CP</label>
+        {{ form.cp|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.telefono.id_for_label }}">Teléfono</label>
+        {{ form.telefono|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- ===== CONTRATO Y SUELDO ===== -->
+    <hr>
+    <h6 class="text-primary mb-2"><i class="fas fa-briefcase mr-1"></i> Contrato y sueldo</h6>
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.puesto.id_for_label }}">Puesto</label>
+        {{ form.puesto|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.tipo_contrato.id_for_label }}">Tipo contrato</label>
+        {{ form.tipo_contrato|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.tipo_regimen.id_for_label }}">Tipo régimen</label>
+        {{ form.tipo_regimen|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.tipo_jornada.id_for_label }}">Tipo jornada</label>
+        {{ form.tipo_jornada|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.tipo_liquidacion.id_for_label }}">Tipo liquidación</label>
+        {{ form.tipo_liquidacion|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.periodicidad.id_for_label }}">Periodicidad</label>
+        {{ form.periodicidad|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.cuenta_bancaria.id_for_label }}">Cuenta bancaria</label>
+        {{ form.cuenta_bancaria|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.cuenta.id_for_label }}">Cuenta</label>
+        {{ form.cuenta|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.sueldo_fijo.id_for_label }}">Sueldo fijo</label>
+        {{ form.sueldo_fijo|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.comision.id_for_label }}">Comisión (%)</label>
+        {{ form.comision|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.tope.id_for_label }}">Tope ($)</label>
+        {{ form.tope|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- ===== DOCUMENTOS ===== -->
+    <hr>
+    <h6 class="text-primary mb-2"><i class="fas fa-id-card mr-1"></i> Documentos</h6>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-borderless mb-0">
+        <thead class="thead-light">
+          <tr>
+            <th>Documento</th>
+            <th>Folio / Número</th>
+            <th style="width:160px;">Vencimiento</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>INE</td><td>{{ form.ine|add_class:"form-control form-control-sm" }}</td><td>{{ form.ine_vencimiento|add_class:"form-control form-control-sm" }}</td></tr>
+          <tr><td>Licencia Federal</td><td>{{ form.licencia_federal|add_class:"form-control form-control-sm" }}</td><td>{{ form.licencia_federal_vencimiento|add_class:"form-control form-control-sm" }}</td></tr>
+          <tr><td>Visa</td><td>{{ form.visa|add_class:"form-control form-control-sm" }}</td><td>{{ form.visa_vencimiento|add_class:"form-control form-control-sm" }}</td></tr>
+          <tr><td>Pasaporte</td><td>{{ form.pasaporte|add_class:"form-control form-control-sm" }}</td><td>{{ form.pasaporte_vencimiento|add_class:"form-control form-control-sm" }}</td></tr>
+          <tr><td>Examen Médico</td><td>{{ form.examen_medico|add_class:"form-control form-control-sm" }}</td><td>{{ form.examen_medico_vencimiento|add_class:"form-control form-control-sm" }}</td></tr>
+          <tr><td>RControl</td><td>{{ form.rcontrol|add_class:"form-control form-control-sm" }}</td><td>{{ form.rcontrol_vencimiento|add_class:"form-control form-control-sm" }}</td></tr>
+          <tr><td>Antidoping</td><td>{{ form.antidoping|add_class:"form-control form-control-sm" }}</td><td>{{ form.antidoping_vencimiento|add_class:"form-control form-control-sm" }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ===== ESTATUS ===== -->
+    <hr>
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.status.id_for_label }}">Status</label>
+        {{ form.status|add_class:"form-control" }}
       </div>
     </div>
 
   </div>
-
   <div class="card-footer text-right py-2">
     <button class="btn btn-primary btn-sm" type="submit">
       {% if object %}
@@ -149,5 +200,4 @@
     </button>
   </div>
 </form>
-
 {% endblock %}

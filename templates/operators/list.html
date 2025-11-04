@@ -23,11 +23,12 @@
           </div>
         </div>
       </div>
+
       <!-- Filtro de estado -->
       <div class="col-md-3 mb-2">
         {{ search_form.status }}
       </div>
-      <!-- Espacio flexible (mantiene proporción) -->
+
       <div class="col-md-3 mb-2 d-none d-md-block"></div>
     </div>
   </div>
@@ -53,8 +54,8 @@
         <tr>
           <th>Nombre</th>
           <th>RFC</th>
-          <th>Licencia</th>
-          <th>Estado</th>
+          <th>Licencia Federal</th>
+          <th>Status</th>
           <th style="width: 120px;">Acciones</th>
         </tr>
       </thead>
@@ -63,12 +64,13 @@
           <tr>
             <td>
               <a href="{% url 'operators:detail' op.pk %}">
-                {{ op.first_name }} {{ op.last_name_paterno }} {{ op.last_name_materno }}
+                {{ op.nombre }}
               </a><br>
-              <small class="text-muted">
-                {% if op.phone %}<i class="fas fa-phone"></i> {{ op.phone }}{% endif %}
-              </small>
+              {% if op.telefono %}
+                <small class="text-muted"><i class="fas fa-phone"></i> {{ op.telefono }}</small>
+              {% endif %}
             </td>
+
             <td>
               {% if op.rfc %}
                 {{ op.rfc }}
@@ -76,24 +78,31 @@
                 <span class="text-muted">Sin RFC</span>
               {% endif %}
             </td>
+
             <td>
-              {{ op.license_number }}<br>
-              <small class="text-muted">
-                <i class="far fa-calendar-alt"></i>
-                {% if op.license_expires_at %}
-                  Vence {{ op.license_expires_at|date:"d/m/Y" }}
-                {% else %}
-                  Sin fecha
-                {% endif %}
-              </small>
-            </td>
-            <td>
-              {% if op.active %}
-                <span class="badge badge-success">Activo</span>
+              {% if op.licencia_federal %}
+                {{ op.licencia_federal }}<br>
+                <small class="text-muted">
+                  <i class="far fa-calendar-alt"></i>
+                  {% if op.licencia_federal_vencimiento %}
+                    Vence {{ op.licencia_federal_vencimiento|date:"d/m/Y" }}
+                  {% else %}
+                    Sin fecha
+                  {% endif %}
+                </small>
               {% else %}
-                <span class="badge badge-secondary">Inactivo</span>
+                <span class="text-muted">Sin licencia</span>
               {% endif %}
             </td>
+
+            <td>
+              {% if op.status == "ALTA" %}
+                <span class="badge badge-success">Alta</span>
+              {% else %}
+                <span class="badge badge-secondary">Baja</span>
+              {% endif %}
+            </td>
+
             <td class="text-right">
               <a href="{% url 'operators:update' op.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
                 <i class="fas fa-edit"></i>
@@ -105,7 +114,7 @@
           </tr>
         {% empty %}
           <tr>
-            <td colspan="6" class="text-center text-muted py-4">Sin resultados.</td>
+            <td colspan="5" class="text-center text-muted py-4">Sin resultados.</td>
           </tr>
         {% endfor %}
       </tbody>
@@ -117,7 +126,6 @@
     <nav aria-label="Paginación">
       <ul class="pagination pagination-sm mb-0">
 
-        {# Primera / Anterior #}
         {% if page_obj.has_previous %}
           <li class="page-item">
             <a class="page-link" href="?page=1&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">« Primero</a>
@@ -130,7 +138,6 @@
           <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
         {% endif %}
 
-        {# Números con elipsis #}
         {% for i in paginator.page_range %}
           {% if i == 1 or i == paginator.num_pages or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
             {% if page_obj.number == i %}
@@ -147,7 +154,6 @@
           {% endif %}
         {% endfor %}
 
-        {# Siguiente / Última #}
         {% if page_obj.has_next %}
           <li class="page-item">
             <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">Siguiente ›</a>
@@ -165,4 +171,5 @@
   </div>
   {% endif %}
 </div>
+
 {% endblock %}

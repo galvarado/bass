@@ -3,61 +3,108 @@ from django import forms
 from django.utils import timezone
 from .models import Operator
 
+
 class OperatorForm(forms.ModelForm):
     class Meta:
         model = Operator
         fields = [
-            "first_name", "last_name_paterno", "last_name_materno",
-            "rfc", "license_number", "license_expires_at",
-            "phone", "email", "active",
+            # Datos personales
+            "nombre", "rfc", "curp", "tipo_sangre", "imss",
+            "fecha_nacimiento", "fecha_ingreso", "puesto",
+
+            # Dirección
+            "calle", "no_ext", "colonia", "colonia_sat",
+            "municipio", "estado", "pais", "cp", "telefono",
+
+            # Contrato y régimen
+            "tipo_contrato", "tipo_regimen", "tipo_jornada",
+            "tipo_liquidacion", "periodicidad", "cuenta_bancaria", "cuenta",
+            "poblacion",
+
+            # Sueldos y topes
+            "sueldo_fijo", "comision", "tope",
+
+            # Documentos
+            "ine", "ine_vencimiento",
+            "licencia_federal", "licencia_federal_vencimiento",
+            "visa", "visa_vencimiento",
+            "pasaporte", "pasaporte_vencimiento",
+            "examen_medico", "examen_medico_vencimiento",
+            "rcontrol", "rcontrol_vencimiento",
+            "antidoping", "antidoping_vencimiento",
+
+            # Control
+            "status", 
         ]
+
         widgets = {
-            "license_expires_at": forms.DateInput(
-                attrs={"type": "date"},
-                format="%Y-%m-%d",
-            ),
+            # Fechas
+            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "fecha_ingreso": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "ine_vencimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "licencia_federal_vencimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "visa_vencimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "pasaporte_vencimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "examen_medico_vencimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "rcontrol_vencimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "antidoping_vencimiento": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
         }
 
+    # ---- Inicialización de estilos ----
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.update({"class": "form-check-input"})
-            elif not isinstance(field.widget, forms.DateInput):
-                field.widget.attrs.update({"class": "form-control"})
-        self.fields["license_expires_at"].widget.attrs.update({"class": "form-control"})
-        self.fields["license_expires_at"].input_formats = ["%Y-%m-%d"]
+            elif isinstance(field.widget, forms.Select):
+                field.widget.attrs.update({"class": "form-control form-control-sm"})
+            elif isinstance(field.widget, forms.DateInput):
+                field.widget.attrs.update({"class": "form-control form-control-sm"})
+            else:
+                field.widget.attrs.update({"class": "form-control form-control-sm"})
 
-    def clean_license_expires_at(self):
-        v = self.cleaned_data["license_expires_at"]
-        if v:  # permite vacío si decides hacerlo opcional algún día
-            if v < timezone.now().date():
-                raise forms.ValidationError("La vigencia de la licencia no puede estar en el pasado.")
+        # Define formato de fecha en todos los campos tipo date
+        for f in self.fields:
+            if isinstance(self.fields[f].widget, forms.DateInput):
+                self.fields[f].input_formats = ["%Y-%m-%d"]
+
+    # ---- Validaciones ----
+    def _check_future_or_present(self, field_name):
+        v = self.cleaned_data.get(field_name)
+        if v and v < timezone.now().date():
+            raise forms.ValidationError("La fecha de vencimiento no puede estar en el pasado.")
         return v
 
-    def clean_first_name(self):
-        return self.cleaned_data["first_name"].strip().title()
+    def clean_ine_vencimiento(self): return self._check_future_or_present("ine_vencimiento")
+    def clean_licencia_federal_vencimiento(self): return self._check_future_or_present("licencia_federal_vencimiento")
+    def clean_visa_vencimiento(self): return self._check_future_or_present("visa_vencimiento")
+    def clean_pasaporte_vencimiento(self): return self._check_future_or_present("pasaporte_vencimiento")
+    def clean_examen_medico_vencimiento(self): return self._check_future_or_present("examen_medico_vencimiento")
+    def clean_rcontrol_vencimiento(self): return self._check_future_or_present("rcontrol_vencimiento")
+    def clean_antidoping_vencimiento(self): return self._check_future_or_present("antidoping_vencimiento")
 
-    def clean_last_name_paterno(self):
-        return self.cleaned_data["last_name_paterno"].strip().title()
+    # ---- Normalización de texto ----
+    def clean_nombre(self):
+        return self.cleaned_data["nombre"].strip().title()
 
-    def clean_last_name_materno(self):
-        return self.cleaned_data["last_name_materno"].strip().title()
+    def clean_puesto(self):
+        value = self.cleaned_data.get("puesto")
+        return value.strip().title() if value else value
 
 
-# 🔎 Formulario de búsqueda para la vista de lista
+# 🔎 Formulario de búsqueda
 class OperatorSearchForm(forms.Form):
     q = forms.CharField(
         required=False,
         label="Buscar",
         widget=forms.TextInput(attrs={
-            "placeholder": "Nombre, apellidos, RFC, licencia, email o teléfono",
-            "class": "form-control",
+            "placeholder": "Nombre, RFC, CURP, licencia, teléfono o puesto",
+            "class": "form-control form-control-sm",
         }),
     )
     status = forms.ChoiceField(
         required=False,
         label="Estado",
         choices=(("", "Todos"), ("1", "Activos"), ("0", "Inactivos")),
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
     )

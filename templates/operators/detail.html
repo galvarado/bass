@@ -1,25 +1,94 @@
 {% extends "base.html" %}
 {% block title %}Detalle de Operador · BASS{% endblock %}
 {% block content %}
-<div class="card">
-  <div class="card-header d-flex justify-content-between">
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
     <strong>Detalle de Operador</strong>
     <div>
-      <a href="{% url 'operators:update' op.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i> Editar</a>
-      <a href="{% url 'operators:delete' op.pk %}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i> Eliminar</a>
+      <a href="{% url 'operators:update' op.pk %}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-edit"></i> Editar
+      </a>
+      <a href="{% url 'operators:delete' op.pk %}" class="btn btn-sm btn-outline-danger">
+        <i class="fas fa-trash"></i> Eliminar
+      </a>
     </div>
   </div>
+
   <div class="card-body">
-    <dl class="row mb-0">
-      <dt class="col-sm-3">Nombre</dt><dd class="col-sm-9">{{ op.first_name }} {{ op.last_name }}</dd>
-      <dt class="col-sm-3">RFC</dt><dd class="col-sm-9">{{ op.rfc }}</dd>
-      <dt class="col-sm-3">Licencia</dt><dd class="col-sm-9">{{ op.license_number }}</dd>
-      <dt class="col-sm-3">Vigencia</dt><dd class="col-sm-9">{{ op.license_expires_at|date:"d/m/Y" }}</dd>
-      <dt class="col-sm-3">Teléfono</dt><dd class="col-sm-9">{{ op.phone|default:"—" }}</dd>
-      <dt class="col-sm-3">Email</dt><dd class="col-sm-9">{{ op.email|default:"—" }}</dd>
-      <dt class="col-sm-3">Estado</dt>
-      <dd class="col-sm-9">{% if op.active %}<span class="badge badge-success">Activo</span>{% else %}<span class="badge badge-secondary">Inactivo</span>{% endif %}</dd>
+
+    <h6 class="text-primary mb-3"><i class="fas fa-user mr-1"></i> Datos personales</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Nombre completo</dt><dd class="col-sm-9">{{ op.nombre }}</dd>
+      <dt class="col-sm-3">RFC</dt><dd class="col-sm-9">{{ op.rfc|default:"—" }}</dd>
+      <dt class="col-sm-3">CURP</dt><dd class="col-sm-9">{{ op.curp|default:"—" }}</dd>
+      <dt class="col-sm-3">Tipo de sangre</dt><dd class="col-sm-9">{{ op.tipo_sangre|default:"—" }}</dd>
+      <dt class="col-sm-3">IMSS</dt><dd class="col-sm-9">{{ op.imss|default:"—" }}</dd>
+      <dt class="col-sm-3">Fecha de nacimiento</dt><dd class="col-sm-9">{{ op.fecha_nacimiento|date:"d/m/Y"|default:"—" }}</dd>
+      <dt class="col-sm-3">Fecha de ingreso</dt><dd class="col-sm-9">{{ op.fecha_ingreso|date:"d/m/Y"|default:"—" }}</dd>
     </dl>
+
+    <hr>
+
+    <h6 class="text-primary mb-3"><i class="fas fa-map-marker-alt mr-1"></i> Dirección</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Calle</dt><dd class="col-sm-9">{{ op.calle|default:"—" }}</dd>
+      <dt class="col-sm-3">No. Ext</dt><dd class="col-sm-9">{{ op.no_ext|default:"—" }}</dd>
+      <dt class="col-sm-3">Colonia</dt><dd class="col-sm-9">{{ op.colonia|default:"—" }}</dd>
+      <dt class="col-sm-3">Colonia SAT</dt><dd class="col-sm-9">{{ op.colonia_sat|default:"—" }}</dd>
+      <dt class="col-sm-3">Municipio</dt><dd class="col-sm-9">{{ op.municipio|default:"—" }}</dd>
+      <dt class="col-sm-3">Estado</dt><dd class="col-sm-9">{{ op.estado|default:"—" }}</dd>
+      <dt class="col-sm-3">País</dt><dd class="col-sm-9">{{ op.pais|default:"MÉXICO" }}</dd>
+      <dt class="col-sm-3">C.P.</dt><dd class="col-sm-9">{{ op.cp|default:"—" }}</dd>
+      <dt class="col-sm-3">Teléfono</dt><dd class="col-sm-9">{{ op.telefono|default:"—" }}</dd>
+    </dl>
+
+    <hr>
+
+    <h6 class="text-primary mb-3"><i class="fas fa-briefcase mr-1"></i> Contrato</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Puesto</dt><dd class="col-sm-9">{{ op.puesto|default:"—" }}</dd>
+      <dt class="col-sm-3">Tipo contrato</dt><dd class="col-sm-9">{{ op.tipo_contrato|default:"—" }}</dd>
+      <dt class="col-sm-3">Tipo régimen</dt><dd class="col-sm-9">{{ op.tipo_regimen|default:"—" }}</dd>
+      <dt class="col-sm-3">Tipo jornada</dt><dd class="col-sm-9">{{ op.tipo_jornada|default:"—" }}</dd>
+      <dt class="col-sm-3">Tipo liquidación</dt><dd class="col-sm-9">{{ op.tipo_liquidacion|default:"—" }}</dd>
+      <dt class="col-sm-3">Periodicidad</dt><dd class="col-sm-9">{{ op.periodicidad|default:"—" }}</dd>
+      <dt class="col-sm-3">Cuenta bancaria</dt><dd class="col-sm-9">{{ op.cuenta_bancaria|default:"—" }}</dd>
+      <dt class="col-sm-3">Cuenta</dt><dd class="col-sm-9">{{ op.cuenta|default:"—" }}</dd>
+      <dt class="col-sm-3">Salario diario</dt><dd class="col-sm-9">{{ op.salario_diario|floatformat:2|default:"—" }}</dd>
+      <dt class="col-sm-3">Sueldo fijo</dt><dd class="col-sm-9">{{ op.sueldo_fijo|floatformat:2|default:"—" }}</dd>
+      <dt class="col-sm-3">Comisión</dt><dd class="col-sm-9">{{ op.comision|default:"—" }} %</dd>
+      <dt class="col-sm-3">Tope</dt><dd class="col-sm-9">{{ op.tope|floatformat:2|default:"—" }}</dd>
+    </dl>
+
+    <hr>
+
+    <h6 class="text-primary mb-3"><i class="fas fa-id-card mr-1"></i> Documentos</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">INE</dt><dd class="col-sm-9">{{ op.ine|default:"—" }}{% if op.ine_vencimiento %} <small class="text-muted">(Vence {{ op.ine_vencimiento|date:"d/m/Y" }})</small>{% endif %}</dd>
+      <dt class="col-sm-3">Licencia Federal</dt><dd class="col-sm-9">{{ op.licencia_federal|default:"—" }}{% if op.licencia_federal_vencimiento %} <small class="text-muted">(Vence {{ op.licencia_federal_vencimiento|date:"d/m/Y" }})</small>{% endif %}</dd>
+      <dt class="col-sm-3">Visa</dt><dd class="col-sm-9">{{ op.visa|default:"—" }}{% if op.visa_vencimiento %} <small class="text-muted">(Vence {{ op.visa_vencimiento|date:"d/m/Y" }})</small>{% endif %}</dd>
+      <dt class="col-sm-3">Pasaporte</dt><dd class="col-sm-9">{{ op.pasaporte|default:"—" }}{% if op.pasaporte_vencimiento %} <small class="text-muted">(Vence {{ op.pasaporte_vencimiento|date:"d/m/Y" }})</small>{% endif %}</dd>
+      <dt class="col-sm-3">Examen médico</dt><dd class="col-sm-9">{{ op.examen_medico|default:"—" }}{% if op.examen_medico_vencimiento %} <small class="text-muted">(Vence {{ op.examen_medico_vencimiento|date:"d/m/Y" }})</small>{% endif %}</dd>
+      <dt class="col-sm-3">RControl</dt><dd class="col-sm-9">{{ op.rcontrol|default:"—" }}{% if op.rcontrol_vencimiento %} <small class="text-muted">(Vence {{ op.rcontrol_vencimiento|date:"d/m/Y" }})</small>{% endif %}</dd>
+      <dt class="col-sm-3">Antidoping</dt><dd class="col-sm-9">{{ op.antidoping|default:"—" }}{% if op.antidoping_vencimiento %} <small class="text-muted">(Vence {{ op.antidoping_vencimiento|date:"d/m/Y" }})</small>{% endif %}</dd>
+    </dl>
+
+    <hr>
+
+    <h6 class="text-primary mb-3"><i class="fas fa-info-circle mr-1"></i> Estado</h6>
+    <dl class="row small mb-0">
+      <dt class="col-sm-3">Estatus</dt>
+      <dd class="col-sm-9">
+        {% if op.status == "ALTA" %}
+          <span class="badge badge-success">Alta</span>
+        {% else %}
+          <span class="badge badge-secondary">Baja</span>
+        {% endif %}
+      </dd>
+    </dl>
+
   </div>
 </div>
+
 {% endblock %}

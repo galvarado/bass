@@ -22,7 +22,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
+    "django_postalcodes_mexico.apps.DjangoPostalcodesMexicoConfig",
     # Tus apps
     "accounts",
     "collection",
