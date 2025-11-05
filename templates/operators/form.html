@@ -54,106 +54,51 @@
       </div>
     </div>
 
-    <!-- ===== DIRECCIÓN ===== -->
-    <hr>
-    <h6 class="text-primary mb-2"><i class="fas fa-map-marker-alt mr-1"></i> Dirección</h6>
-    <div class="form-row">
-      <div class="form-group col-md-4">
-        <label for="{{ form.calle.id_for_label }}">Calle</label>
-        {{ form.calle|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-2">
-        <label for="{{ form.no_ext.id_for_label }}">No. Ext</label>
-        {{ form.no_ext|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.colonia.id_for_label }}">Colonia</label>
-        {{ form.colonia|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.colonia_sat.id_for_label }}">Colonia SAT</label>
-        {{ form.colonia_sat|add_class:"form-control" }}
-      </div>
-    </div>
+  <!-- Dirección -->
+<hr>
+<h6 class="text-primary mb-2"><i class="fas fa-map-marker-alt mr-1"></i> Dirección</h6>
 
-    <div class="form-row">
-      <div class="form-group col-md-3">
-        <label for="{{ form.municipio.id_for_label }}">Municipio</label>
-        {{ form.municipio|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.estado.id_for_label }}">Estado</label>
-        {{ form.estado|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-2">
-        <label for="{{ form.pais.id_for_label }}">País</label>
-        {{ form.pais|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-2">
-        <label for="{{ form.cp.id_for_label }}">CP</label>
-        {{ form.cp|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-2">
-        <label for="{{ form.telefono.id_for_label }}">Teléfono</label>
-        {{ form.telefono|add_class:"form-control" }}
-      </div>
-    </div>
+<div class="form-row">
+  <div class="form-group col-md-4">
+    <label for="{{ form.calle.id_for_label }}">Calle</label>
+    {{ form.calle|add_class:"form-control" }}
+  </div>
+  <div class="form-group col-md-2">
+    <label for="{{ form.no_ext.id_for_label }}">No. Ext</label>
+    {{ form.no_ext|add_class:"form-control" }}
+  </div>
+  <div class="form-group col-md-2">
+    <label for="{{ form.cp.id_for_label }}">CP</label>
+    {{ form.cp|add_class:"form-control" }}
+  </div>
+  <div class="form-group col-md-2">
+    <label for="{{ form.estado.id_for_label }}">Estado</label>
+    {{ form.estado|add_class:"form-control" }}
+  </div>
+  <div class="form-group col-md-2">
+    <label for="{{ form.municipio.id_for_label }}">Municipio</label>
+    {{ form.municipio|add_class:"form-control" }}
+  </div>
+</div>
 
-    <!-- ===== CONTRATO Y SUELDO ===== -->
-    <hr>
-    <h6 class="text-primary mb-2"><i class="fas fa-briefcase mr-1"></i> Contrato y sueldo</h6>
-    <div class="form-row">
-      <div class="form-group col-md-3">
-        <label for="{{ form.puesto.id_for_label }}">Puesto</label>
-        {{ form.puesto|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.tipo_contrato.id_for_label }}">Tipo contrato</label>
-        {{ form.tipo_contrato|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.tipo_regimen.id_for_label }}">Tipo régimen</label>
-        {{ form.tipo_regimen|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.tipo_jornada.id_for_label }}">Tipo jornada</label>
-        {{ form.tipo_jornada|add_class:"form-control" }}
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group col-md-3">
-        <label for="{{ form.tipo_liquidacion.id_for_label }}">Tipo liquidación</label>
-        {{ form.tipo_liquidacion|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.periodicidad.id_for_label }}">Periodicidad</label>
-        {{ form.periodicidad|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.cuenta_bancaria.id_for_label }}">Cuenta bancaria</label>
-        {{ form.cuenta_bancaria|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.cuenta.id_for_label }}">Cuenta</label>
-        {{ form.cuenta|add_class:"form-control" }}
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group col-md-3">
-        <label for="{{ form.sueldo_fijo.id_for_label }}">Sueldo fijo</label>
-        {{ form.sueldo_fijo|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.comision.id_for_label }}">Comisión (%)</label>
-        {{ form.comision|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-3">
-        <label for="{{ form.tope.id_for_label }}">Tope ($)</label>
-        {{ form.tope|add_class:"form-control" }}
-      </div>
-    </div>
+<div class="form-row">
+  <div class="form-group col-md-3">
+    <label for="{{ form.poblacion.id_for_label }}">Ciudad / Población</label>
+    {{ form.poblacion|add_class:"form-control" }}
+  </div>
+  <div class="form-group col-md-5">
+    <label for="{{ form.colonia.id_for_label }}">Colonia</label>
+    {{ form.colonia|add_class:"form-control" }}
+  </div>
+  <div class="form-group col-md-2">
+    <label for="{{ form.colonia_sat.id_for_label }}">Colonia SAT</label>
+    {{ form.colonia_sat|add_class:"form-control" }}
+  </div>
+  <div class="form-group col-md-2">
+    <label for="{{ form.pais.id_for_label }}">País</label>
+    {{ form.pais|add_class:"form-control" }}
+  </div>
+</div>
 
     <!-- ===== DOCUMENTOS ===== -->
     <hr>
@@ -200,4 +145,64 @@
     </button>
   </div>
 </form>
+<script>
+(function() {
+  const $cp = document.getElementById('id_cp');
+  const $estado = document.getElementById('id_estado');
+  const $municipio = document.getElementById('id_municipio');
+  const $poblacion = document.getElementById('id_poblacion');
+  const $colonia = document.getElementById('id_colonia');
+  const $coloniaSat = document.getElementById('id_colonia_sat');
+
+  function limpiarCampos() {
+    if ($estado) $estado.value = '';
+    if ($municipio) $municipio.value = '';
+    if ($poblacion) $poblacion.value = '';
+    if ($colonia) $colonia.innerHTML = '<option value="">Seleccione una colonia</option>';
+  }
+
+  async function fetchCP(cp) {
+    try {
+      const url = "{% url 'lookup_cp' %}?cp=" + encodeURIComponent(cp);  // <- usa tu namespace
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const data = await res.json();
+      if (!res.ok || !data.ok || !data.found) { limpiarCampos(); return; }
+
+      if ($estado)    $estado.value = data.estado || '';
+      if ($municipio) $municipio.value = data.municipio || '';
+      if ($poblacion) $poblacion.value = data.ciudad || ''; // ciudad SEPOMEX -> tu campo 'poblacion'
+
+      if ($colonia) {
+        const opts = ['<option value="">Seleccione una colonia</option>']
+          .concat((data.colonias || []).map(c => `<option value="${c}">${c}</option>`));
+        $colonia.innerHTML = opts.join('');
+      }
+    } catch (e) { console.error(e); limpiarCampos(); }
+  }
+
+  if ($colonia && $coloniaSat) {
+    $colonia.addEventListener('change', () => {
+      if (!$coloniaSat.value) $coloniaSat.value = $colonia.value || '';
+    });
+  }
+
+  let debounceId = null;
+  if ($cp) {
+    $cp.addEventListener('input', () => {
+      const v = ($cp.value || '').replace(/\d/g, d => d).slice(0,5);
+      $cp.value = v;
+      if (v.length === 5) {
+        clearTimeout(debounceId);
+        debounceId = setTimeout(() => fetchCP(v), 250);
+      } else {
+        limpiarCampos();
+      }
+    });
+    $cp.addEventListener('blur', () => {
+      const v = ($cp.value || '').trim();
+      if (v.length === 5) fetchCP(v);
+    });
+  }
+})();
+</script>
 {% endblock %}

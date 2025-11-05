@@ -64,7 +64,7 @@ class Operator(models.Model):
     colonia_sat = models.CharField(max_length=120, blank=True, null=True)
     municipio = models.CharField(max_length=120, blank=True, null=True)
     estado = models.CharField(max_length=120, blank=True, null=True)
-    pais = models.CharField(max_length=80, default='MÉXICO')
+    pais = models.CharField(max_length=80, default='México')
     cp = models.CharField(max_length=10, blank=True, null=True)
     telefono = models.CharField(max_length=50, blank=True, null=True)
     rfc = models.CharField(max_length=15, blank=True, null=True)
