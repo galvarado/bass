@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Clientes · BASS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Clientes</h1>
+  <a class="btn btn-primary" href="{% url 'customers:create' %}">
+    <i class="fas fa-plus"></i> Nuevo cliente
+  </a>
+</div>
+
+<form method="get" class="card mb-3">
+  <div class="card-body py-3">
+    <div class="form-row align-items-center form-compact">
+      <!-- Buscador -->
+      <div class="col-md-6 mb-2">
+        <div class="input-group input-group-sm">
+          {{ search_form.q }}
+          <div class="input-group-append">
+            <button class="btn btn-outline-primary" type="submit">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtro de estado -->
+      <div class="col-md-3 mb-2">
+        {{ search_form.status }}
+      </div>
+
+      <div class="col-md-3 mb-2 d-none d-md-block"></div>
+    </div>
+  </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if is_paginated and paginator.count %}
+      Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ paginator.count }}
+      · Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% elif paginator and paginator.count == 0 %}
+      0 resultados
+    {% else %}
+      {{ clients|length }} cliente{{ clients|length|pluralize:"s" }}
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="thead-light">
+        <tr>
+          <th>Nombre / Razón Social</th>
+          <th>RFC</th>
+          <th>Crédito</th>
+          <th>Pago / CFDI</th>
+          <th>Status</th>
+          <th style="width: 120px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clients %}
+          <tr>
+            <td>
+              <a href="{% url 'customers:detail' c.pk %}">
+                {{ c.nombre }}
+              </a>
+              {% if c.razon_social %}
+                <br><small class="text-muted">{{ c.razon_social }}</small>
+              {% endif %}
+              {% if c.telefono %}
+                <br><small class="text-muted"><i class="fas fa-phone"></i> {{ c.telefono }}</small>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if c.rfc %}
+                {{ c.rfc }}
+              {% else %}
+                <span class="text-muted">Sin RFC</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if c.limite_credito is not None %}
+                Límite: {{ c.limite_credito }}<br>
+              {% else %}
+                <span class="text-muted">Sin límite</span><br>
+              {% endif %}
+              <small class="text-muted">
+                Días: {% if c.dias_credito is not None %}{{ c.dias_credito }}{% else %}—{% endif %}
+              </small>
+            </td>
+
+            <td>
+              {% if c.forma_pago %}
+                {{ c.forma_pago }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+              <br>
+              <small class="text-muted">Uso CFDI: {{ c.uso_cfdi|default:"—" }}</small>
+            </td>
+
+            <td>
+              {% if c.status == "ALTA" %}
+                <span class="badge badge-success">Alta</span>
+              {% else %}
+                <span class="badge badge-secondary">Baja</span>
+              {% endif %}
+            </td>
+
+            <td class="text-right">
+              <a href="{% url 'customers:update' c.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a href="{% url 'customers:delete' c.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                <i class="fas fa-trash"></i>
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">Sin resultados.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+  <div class="card-footer py-2">
+    <nav aria-label="Paginación">
+      <ul class="pagination pagination-sm mb-0">
+
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">« Primero</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">‹ Anterior</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
+        {% endif %}
+
+        {% for i in paginator.page_range %}
+          {% if i == 1 or i == paginator.num_pages or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+            {% if page_obj.number == i %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ i }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% elif i == 2 and page_obj.number > 4 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% elif i == paginator.num_pages|add:'-1' and page_obj.number < paginator.num_pages|add:'-3' %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">Siguiente ›</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ paginator.num_pages }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">Última »</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
+          <li class="page-item disabled"><span class="page-link">Última »</span></li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

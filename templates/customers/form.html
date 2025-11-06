@@ -1,0 +1,211 @@
+{# templates/clients/form.html #}
+{% extends "base.html" %}
+{% load form_extras %}
+{% block title %}{% if object %}Editar Cliente{% else %}Nuevo Cliente{% endif %} · BASS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">{% if object %}Editar Cliente{% else %}Nuevo Cliente{% endif %}</h1>
+  <a href="{% url 'customers:list' %}" class="btn btn-light btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact">
+  {% csrf_token %}
+  <div class="card-body">
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- ===== DATOS DEL CLIENTE ===== -->
+    <h6 class="text-primary mb-2"><i class="fas fa-building mr-1"></i> Datos del cliente</h6>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label for="{{ form.nombre.id_for_label }}">Nombre (comercial)</label>
+        {{ form.nombre|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-6">
+        <label for="{{ form.razon_social.id_for_label }}">Razón social</label>
+        {{ form.razon_social|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.rfc.id_for_label }}">RFC</label>
+        {{ form.rfc|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-4">
+        <label for="{{ form.regimen_fiscal.id_for_label }}">Régimen fiscal</label>
+        {{ form.regimen_fiscal|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-4">
+        <label for="{{ form.id_tributario.id_for_label }}">ID tributario (extranjero)</label>
+        {{ form.id_tributario|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.telefono.id_for_label }}">Teléfono</label>
+        {{ form.telefono|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-8">
+        <label for="{{ form.observaciones.id_for_label }}">Observaciones</label>
+        {{ form.observaciones|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- ===== DIRECCIÓN ===== -->
+    <hr>
+    <h6 class="text-primary mb-2"><i class="fas fa-map-marker-alt mr-1"></i> Dirección</h6>
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.calle.id_for_label }}">Calle</label>
+        {{ form.calle|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.no_ext.id_for_label }}">No. Ext</label>
+        {{ form.no_ext|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.cp.id_for_label }}">CP</label>
+        {{ form.cp|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.estado.id_for_label }}">Estado</label>
+        {{ form.estado|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.municipio.id_for_label }}">Municipio</label>
+        {{ form.municipio|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.poblacion.id_for_label }}">Ciudad / Población</label>
+        {{ form.poblacion|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-5">
+        <label for="{{ form.colonia.id_for_label }}">Colonia</label>
+        {{ form.colonia|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.colonia_sat.id_for_label }}">Colonia SAT</label>
+        {{ form.colonia_sat|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.pais.id_for_label }}">País</label>
+        {{ form.pais|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- ===== CRÉDITO Y FACTURACIÓN ===== -->
+    <hr>
+    <h6 class="text-primary mb-2"><i class="fas fa-file-invoice-dollar mr-1"></i> Crédito y facturación</h6>
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.limite_credito.id_for_label }}">Límite de crédito</label>
+        {{ form.limite_credito|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.dias_credito.id_for_label }}">Días de crédito</label>
+        {{ form.dias_credito|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.forma_pago.id_for_label }}">Forma de pago</label>
+        {{ form.forma_pago|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.uso_cfdi.id_for_label }}">Uso de CFDI</label>
+        {{ form.uso_cfdi|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label for="{{ form.cuenta.id_for_label }}">Cuenta / Referencia</label>
+        {{ form.cuenta|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.status.id_for_label }}">Status</label>
+        {{ form.status|add_class:"form-control" }}
+      </div>
+    </div>
+
+  </div>
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      {% if object %}
+        <i class="fas fa-save"></i> Guardar cambios
+      {% else %}
+        <i class="fas fa-save"></i> Crear cliente
+      {% endif %}
+    </button>
+  </div>
+</form>
+
+<script>
+(function() {
+  const $cp = document.getElementById('id_cp');
+  const $estado = document.getElementById('id_estado');
+  const $municipio = document.getElementById('id_municipio');
+  const $poblacion = document.getElementById('id_poblacion');
+  const $colonia = document.getElementById('id_colonia');
+  const $coloniaSat = document.getElementById('id_colonia_sat');
+
+  function limpiarCampos() {
+    if ($estado) $estado.value = '';
+    if ($municipio) $municipio.value = '';
+    if ($poblacion) $poblacion.value = '';
+    if ($colonia) $colonia.innerHTML = '<option value="">Seleccione una colonia</option>';
+  }
+
+  async function fetchCP(cp) {
+    try {
+      const url = "{% url 'lookup_cp' %}?cp=" + encodeURIComponent(cp);
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const data = await res.json();
+      if (!res.ok || !data.ok || !data.found) { limpiarCampos(); return; }
+
+      if ($estado)    $estado.value = data.estado || '';
+      if ($municipio) $municipio.value = data.municipio || '';
+      if ($poblacion) $poblacion.value = data.ciudad || '';
+
+      if ($colonia) {
+        const opts = ['<option value="">Seleccione una colonia</option>']
+          .concat((data.colonias || []).map(c => `<option value="${c}">${c}</option>`));
+        $colonia.innerHTML = opts.join('');
+      }
+    } catch (e) { console.error(e); limpiarCampos(); }
+  }
+
+  if ($colonia && $coloniaSat) {
+    $colonia.addEventListener('change', () => {
+      if (!$coloniaSat.value) $coloniaSat.value = $colonia.value || '';
+    });
+  }
+
+  let debounceId = null;
+  if ($cp) {
+    $cp.addEventListener('input', () => {
+      const v = ($cp.value || '').replace(/\D/g, '').slice(0,5);
+      $cp.value = v;
+      if (v.length === 5) {
+        clearTimeout(debounceId);
+        debounceId = setTimeout(() => fetchCP(v), 250);
+      } else {
+        limpiarCampos();
+      }
+    });
+    $cp.addEventListener('blur', () => {
+      const v = ($cp.value || '').trim();
+      if (v.length === 5) fetchCP(v);
+    });
+  }
+})();
+</script>
+{% endblock %}

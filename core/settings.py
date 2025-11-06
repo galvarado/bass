@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "ctpat",
     "finance",
     "operators",
+    "customers",
     "settlement",
     "trips",
     "trucks",
