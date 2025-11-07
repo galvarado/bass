@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load form_extras %}
+{% block title %}{% if object %}Editar Caja{% else %}Nueva Caja{% endif %} · BASS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">{% if object %}Editar Caja refrigerada{% else %}Nueva Caja refrigerada{% endif %}</h1>
+  <a href="{% url 'trucks:list' %}" class="btn btn-light btn-sm">
+    <i class="fas fa-arrow-left"></i> Volver
+  </a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact">
+  {% csrf_token %}
+  <div class="card-body">
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- ===== DATOS GENERALES ===== -->
+    <h6 class="text-primary mb-2"><i class="fas fa-snowflake mr-1"></i> Datos generales</h6>
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.nombre.id_for_label }}">Nombre</label>
+        {{ form.nombre|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.numero_economico.id_for_label }}">Número económico</label>
+        {{ form.numero_economico|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.placas.id_for_label }}">Placas</label>
+        {{ form.placas|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.numero_serie.id_for_label }}">Número de serie</label>
+        {{ form.numero_serie|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.categoria.id_for_label }}">Categoría</label>
+        {{ form.categoria|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.marca.id_for_label }}">Marca</label>
+        {{ form.marca|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-4">
+        <label for="{{ form.modelo.id_for_label }}">Modelo</label>
+        {{ form.modelo|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-4">
+        <label for="{{ form.tipo_remolque.id_for_label }}">Tipo de remolque</label>
+        {{ form.tipo_remolque|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- ===== ESPECIFICACIONES ===== -->
+    <hr>
+    <h6 class="text-primary mb-2"><i class="fas fa-cogs mr-1"></i> Especificaciones</h6>
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.km.id_for_label }}">Kilometraje</label>
+        {{ form.km|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.peso_bruto.id_for_label }}">Peso bruto (kg)</label>
+        {{ form.peso_bruto|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.rin.id_for_label }}">Rin</label>
+        {{ form.rin|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.combustible.id_for_label }}">Combustible</label>
+        {{ form.combustible|add_class:"form-control" }}
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label for="{{ form.capacidad_thermo.id_for_label }}">Capacidad de Thermo</label>
+        {{ form.capacidad_thermo|add_class:"form-control" }}
+        <small class="form-text text-muted">BTU o HP, según tu estándar.</small>
+      </div>
+      <div class="form-group col-md-6">
+        <label for="{{ form.ciclo_mtto.id_for_label }}">Ciclo de mantenimiento</label>
+        {{ form.ciclo_mtto|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- ===== DOCUMENTOS ===== -->
+    <hr>
+    <h6 class="text-primary mb-2"><i class="fas fa-file-alt mr-1"></i> Documentos</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-borderless mb-0">
+        <thead class="thead-light">
+          <tr>
+            <th>Documento</th>
+            <th>Folio / Número</th>
+            <th style="width:160px;">Vencimiento</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Seguro</td>
+            <td>{{ form.seguro|add_class:"form-control form-control-sm" }}</td>
+            <td class="text-muted">—</td>
+          </tr>
+          <tr>
+            <td>Tarjeta de circulación</td>
+            <td>{{ form.tarjeta_circulacion|add_class:"form-control form-control-sm" }}</td>
+            <td class="text-muted">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      {% if object %}
+        <i class="fas fa-save"></i> Guardar cambios
+      {% else %}
+        <i class="fas fa-save"></i> Crear caja
+      {% endif %}
+    </button>
+  </div>
+</form>
+{% endblock %}

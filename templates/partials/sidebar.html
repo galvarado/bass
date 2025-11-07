@@ -98,7 +98,7 @@
       <a class="collapse-item {% if '/operators' in request.path %}active{% endif %}" href="{% url 'operators:list' %}">
         <i class="fas fa-user mr-2 text-muted"></i> Operadores
       </a>
-      <a class="collapse-item {% if '/vehicles' in request.path %}active{% endif %}" href="#">
+      <a class="collapse-item {% if '/vehicles' in request.path %}active{% endif %}" href="{% url 'trucks:list' %}">
         <i class="fas fa-truck mr-2 text-muted"></i> Vehículos
       </a>
     </div>

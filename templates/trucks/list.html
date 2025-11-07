@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Camiones y Cajas · BASS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Camiones y Cajas</h1>
+  <div class="btn-group">
+    <a class="btn btn-primary" href="{% url 'trucks:create' %}">
+      <i class="fas fa-plus"></i> Nuevo camión
+    </a>&nbsp;&nbsp;
+    <a class="btn btn-primary" href="{% url 'trucks:reeferbox_create' %}">
+      <i class="fas fa-plus"></i> Nueva caja
+    </a>
+  </div>
+</div>
+
+<form method="get" class="card mb-3">
+  <div class="card-body py-3">
+    <div class="form-row align-items-center form-compact">
+      <div class="col-md-8 mb-2">
+        <div class="input-group input-group-sm">
+          {{ search_form.q }}
+          <div class="input-group-append">
+            <button class="btn btn-outline-primary" type="submit">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-2 text-right d-none d-md-block text-muted small">
+        Mostrando {{ trucks|length }} camión{{ trucks|length|pluralize:"es" }} · {{ boxes|length }} caja{{ boxes|length|pluralize:"s" }}
+      </div>
+    </div>
+  </div>
+</form>
+
+<ul class="nav nav-tabs mb-3" id="truckTabs" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="tab-trucks" data-toggle="tab" href="#pane-trucks" role="tab">
+      <i class="fas fa-truck"></i> Camiones
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="tab-boxes" data-toggle="tab" href="#pane-boxes" role="tab">
+      <i class="fas fa-snowflake"></i> Cajas refrigeradas
+    </a>
+  </li>
+</ul>
+
+<div class="tab-content" id="truckTabsContent">
+  <!-- ===== CAMIONES ===== -->
+  <div class="tab-pane fade show active" id="pane-trucks" role="tabpanel">
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th>Nombre</th>
+              <th>Económico</th>
+              <th>Placas</th>
+              <th>Marca</th>
+              <th>Motor</th>
+              <th>Combustible</th>
+              <th>Categoría</th>
+              <th style="width:120px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in trucks %}
+              <tr>
+                <td>
+                  <a href="{% url 'trucks:detail' t.pk %}">
+                    {{ t.nombre|default:"—" }}
+                  </a>
+                </td>
+                <td>{{ t.numero_economico|default:"—" }}</td>
+                <td>{{ t.placas|default:"—" }}</td>
+                <td>{{ t.marca|default:"—" }}</td>
+                <td>{{ t.motor|default:"—" }}</td>
+                <td>{{ t.combustible|default:"—" }}</td>
+                <td>{{ t.categoria|default:"—" }}</td>
+                <td class="text-right">
+                  <a href="{% url 'trucks:update' t.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a href="{% url 'trucks:delete' t.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="8" class="text-center text-muted py-4">No hay camiones registrados.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CAJAS ===== -->
+  <div class="tab-pane fade" id="pane-boxes" role="tabpanel">
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th>Nombre</th>
+              <th>Económico</th>
+              <th>Placas</th>
+              <th>Marca</th>
+              <th>Modelo</th>
+              <th>Tipo remolque</th>
+              <th>Cap. Thermo</th>
+              <th style="width:120px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in boxes %}
+              <tr>
+                <td>
+                  <a href="{% url 'trucks:reeferbox_detail' b.pk %}">
+                    {{ b.nombre|default:"—" }}
+                  </a>
+                </td>
+                <td>{{ b.numero_economico|default:"—" }}</td>
+                <td>{{ b.placas|default:"—" }}</td>
+                <td>{{ b.marca|default:"—" }}</td>
+                <td>{{ b.modelo|default:"—" }}</td>
+                <td>{{ b.tipo_remolque|default:"—" }}</td>
+                <td>
+                  {% if b.capacidad_thermo %}
+                    {{ b.capacidad_thermo }}<small class="text-muted"> BTU</small>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  <a href="{% url 'trucks:reeferbox_update' b.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a href="{% url 'trucks:reeferbox_delete' b.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="8" class="text-center text-muted py-4">No hay cajas registradas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
