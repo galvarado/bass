@@ -159,37 +159,59 @@
     if ($municipio) $municipio.value = '';
     if ($poblacion) $poblacion.value = '';
     if ($colonia) $colonia.innerHTML = '<option value="">Seleccione una colonia</option>';
+    // No borramos colonia_sat para no perder un dato guardado sin intención.
+  }
+
+  function syncColoniaSat() {
+    if ($colonia && $coloniaSat) {
+      // Siempre espeja la colonia seleccionada (campo readonly, pero JS puede asignar)
+      $coloniaSat.value = $colonia.value || '';
+    }
   }
 
   async function fetchCP(cp) {
     try {
-      const url = "{% url 'lookup_cp' %}?cp=" + encodeURIComponent(cp);  // <- usa tu namespace
+      const url = "{% url 'lookup_cp' %}?cp=" + encodeURIComponent(cp);
       const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
       const data = await res.json();
       if (!res.ok || !data.ok || !data.found) { limpiarCampos(); return; }
 
       if ($estado)    $estado.value = data.estado || '';
       if ($municipio) $municipio.value = data.municipio || '';
-      if ($poblacion) $poblacion.value = data.ciudad || ''; // ciudad SEPOMEX -> tu campo 'poblacion'
+      if ($poblacion) $poblacion.value = data.ciudad || ''; // d_ciudad -> 'poblacion'
 
       if ($colonia) {
+        const current = $colonia.value; // recuerda selección actual (edición)
         const opts = ['<option value="">Seleccione una colonia</option>']
           .concat((data.colonias || []).map(c => `<option value="${c}">${c}</option>`));
         $colonia.innerHTML = opts.join('');
+
+        // restaura selección si todavía existe en el catálogo del CP
+        if (current && (data.colonias || []).includes(current)) {
+          $colonia.value = current;
+        }
+
+        // tras poblar/restaurar, sincroniza colonia_sat
+        syncColoniaSat();
       }
-    } catch (e) { console.error(e); limpiarCampos(); }
+    } catch (e) {
+      console.error(e);
+      limpiarCampos();
+    }
   }
 
+  // espejo colonia -> colonia_sat SIEMPRE
   if ($colonia && $coloniaSat) {
-    $colonia.addEventListener('change', () => {
-      if (!$coloniaSat.value) $coloniaSat.value = $colonia.value || '';
-    });
+    $colonia.addEventListener('change', syncColoniaSat);
+    // en edición: si ya hay valor al cargar, sincroniza una vez
+    if ($colonia.value) syncColoniaSat();
   }
 
+  // CP con debounce; solo 5 dígitos
   let debounceId = null;
   if ($cp) {
     $cp.addEventListener('input', () => {
-      const v = ($cp.value || '').replace(/\d/g, d => d).slice(0,5);
+      const v = ($cp.value || '').replace(/\D/g, '').slice(0, 5);
       $cp.value = v;
       if (v.length === 5) {
         clearTimeout(debounceId);

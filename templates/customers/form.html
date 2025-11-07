@@ -147,7 +147,6 @@
     </button>
   </div>
 </form>
-
 <script>
 (function() {
   const $cp = document.getElementById('id_cp');
@@ -162,6 +161,14 @@
     if ($municipio) $municipio.value = '';
     if ($poblacion) $poblacion.value = '';
     if ($colonia) $colonia.innerHTML = '<option value="">Seleccione una colonia</option>';
+    // No limpiamos colonia_sat automáticamente para no borrar un dato ya guardado sin intención.
+  }
+
+  function syncColoniaSat() {
+    if ($colonia && $coloniaSat) {
+      // IMPORTANTE: siempre sincroniza (aunque colonia_sat tenga valor); el campo es readonly, pero JS puede asignar.
+      $coloniaSat.value = $colonia.value || '';
+    }
   }
 
   async function fetchCP(cp) {
@@ -176,19 +183,30 @@
       if ($poblacion) $poblacion.value = data.ciudad || '';
 
       if ($colonia) {
+        const current = $colonia.value; // recuerda selección actual si existe
         const opts = ['<option value="">Seleccione una colonia</option>']
           .concat((data.colonias || []).map(c => `<option value="${c}">${c}</option>`));
         $colonia.innerHTML = opts.join('');
+
+        // intenta restaurar la selección previa si sigue existiendo
+        if (current && (data.colonias || []).includes(current)) {
+          $colonia.value = current;
+        }
+
+        // tras poblar, sincroniza colonia_sat (cubre caso de edición)
+        syncColoniaSat();
       }
     } catch (e) { console.error(e); limpiarCampos(); }
   }
 
+  // espejo colonia -> colonia_sat SIEMPRE
   if ($colonia && $coloniaSat) {
-    $colonia.addEventListener('change', () => {
-      if (!$coloniaSat.value) $coloniaSat.value = $colonia.value || '';
-    });
+    $colonia.addEventListener('change', syncColoniaSat);
+    // en edición: si ya hay una colonia seleccionada al cargar, sincroniza una vez
+    if ($colonia.value) syncColoniaSat();
   }
 
+  // CP con debounce
   let debounceId = null;
   if ($cp) {
     $cp.addEventListener('input', () => {
