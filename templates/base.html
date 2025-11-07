@@ -124,12 +124,12 @@
   <script>
     function updateTimes() {
       const now = new Date();
-      const mxOpts = { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-      const txOpts = { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      const mxOpts = { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' };
+      const txOpts = { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit' };
       document.getElementById('time-mx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇲🇽 CDMX ${now.toLocaleTimeString('es-MX', mxOpts)}`;
       document.getElementById('time-tx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇺🇸 Texas ${now.toLocaleTimeString('es-MX', txOpts)}`;
     }
-    updateTimes(); setInterval(updateTimes, 10000);
+    updateTimes(); setInterval(updateTimes, 60000);
 
     async function fetchUsdMxn() {
       const el = document.getElementById('usdMxn');
