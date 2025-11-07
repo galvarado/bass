@@ -80,19 +80,18 @@
     </a>
     <div id="collapseCatalogs" class="collapse" aria-labelledby="headingCatalogs" data-parent="#accordionSidebar">
       <div class="bg-white py-2 collapse-inner rounded">
+        <a class="collapse-item" href="{% url 'customers:list' %}">
+          <i class="fas fa-building mr-2 text-muted"></i> Clientes
+        </a>
+        <a class="collapse-item" href="{% url 'locations:list' %}">
+          <i class="fas fa-location-dot mr-2 text-muted"></i> Ubicaciones
+        </a>
         <a class="collapse-item" href="{% url 'operators:list' %}">
           <i class="fas fa-user mr-2 text-muted"></i> Operadores
         </a>
         <a class="collapse-item" href="">
           <i class="fas fa-truck mr-2 text-muted"></i> Vehículos
         </a>
-        <a class="collapse-item" href="{% url 'customers:list' %}">
-          <i class="fas fa-building mr-2 text-muted"></i> Clientes
-        </a>
-        <a class="collapse-item" href="">
-          <i class="fas fa-location-dot mr-2 text-muted"></i> Ubicaciones
-        </a>
-
       </div>
     </div>
   </li>

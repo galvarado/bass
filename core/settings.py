@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "finance",
     "operators",
     "customers",
+    "locations",
     "settlement",
     "trips",
     "trucks",

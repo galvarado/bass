@@ -30,6 +30,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("operators/", include("operators.urls", namespace="operators")),
     path("customers/", include("customers.urls", namespace="customers")),
+    path("locations/", include("locations.urls", namespace="locations")),
     path("audit/", include("audit.urls")),
     path("api/utils/header-info/", header_info, name="header_info"),
     path("api/utils/lookup-cp/", lookup_cp, name="lookup_cp"),
