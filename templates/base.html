@@ -129,7 +129,7 @@
       document.getElementById('time-mx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇲🇽 CDMX ${now.toLocaleTimeString('es-MX', mxOpts)}`;
       document.getElementById('time-tx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇺🇸 Texas ${now.toLocaleTimeString('es-MX', txOpts)}`;
     }
-    updateTimes(); setInterval(updateTimes, 1000);
+    updateTimes(); setInterval(updateTimes, 10000);
 
     async function fetchUsdMxn() {
       const el = document.getElementById('usdMxn');
