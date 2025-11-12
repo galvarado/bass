@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Detalle de Caja refrigerada · BASS{% endblock %}
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Detalle de Caja refrigerada</strong>
+    <div>
+      <a href="{% url 'trucks:reeferbox_update' box.pk %}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-edit"></i> Editar
+      </a>
+      <a href="{% url 'trucks:reeferbox_delete' box.pk %}" class="btn btn-sm btn-outline-danger">
+        <i class="fas fa-trash"></i> Eliminar
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body">
+
+    <!-- ===== DATOS GENERALES ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-snowflake mr-1"></i> Datos generales</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Nombre</dt><dd class="col-sm-9">{{ box.nombre|default:"—" }}</dd>
+      <dt class="col-sm-3">Número económico</dt><dd class="col-sm-9">{{ box.numero_economico|default:"—" }}</dd>
+      <dt class="col-sm-3">Placas</dt><dd class="col-sm-9">{{ box.placas|default:"—" }}</dd>
+      <dt class="col-sm-3">Número de serie</dt><dd class="col-sm-9">{{ box.numero_serie|default:"—" }}</dd>
+      <dt class="col-sm-3">Categoría</dt><dd class="col-sm-9">{{ box.categoria|default:"—" }}</dd>
+      <dt class="col-sm-3">Marca</dt><dd class="col-sm-9">{{ box.marca|default:"—" }}</dd>
+      <dt class="col-sm-3">Modelo</dt><dd class="col-sm-9">{{ box.modelo|default:"—" }}</dd>
+      <dt class="col-sm-3">Tipo de remolque</dt><dd class="col-sm-9">{{ box.tipo_remolque|default:"—" }}</dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== ESPECIFICACIONES ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-cogs mr-1"></i> Especificaciones</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Kilometraje</dt>
+      <dd class="col-sm-9">
+        {% if box.km %}{{ box.km }} km{% else %}—{% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Peso bruto</dt>
+      <dd class="col-sm-9">
+        {% if box.peso_bruto %}{{ box.peso_bruto }} kg{% else %}—{% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Rin</dt><dd class="col-sm-9">{{ box.rin|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Combustible</dt><dd class="col-sm-9">{{ box.combustible|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Capacidad de Thermo</dt>
+      <dd class="col-sm-9">{{ box.capacidad_thermo|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Ciclo de mantenimiento</dt>
+      <dd class="col-sm-9">{{ box.ciclo_mtto|default:"—" }}</dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== DOCUMENTOS ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-file-alt mr-1"></i> Documentos</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Seguro</dt>
+      <dd class="col-sm-9">{{ box.seguro|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Tarjeta de circulación</dt>
+      <dd class="col-sm-9">{{ box.tarjeta_circulacion|default:"—" }}</dd>
+    </dl>
+
+  </div>
+</div>
+
+{% endblock %}

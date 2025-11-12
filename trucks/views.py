@@ -61,20 +61,22 @@ class TruckReeferCombinedListView(ListView):
         show_deleted = self.request.GET.get("show_deleted") == "1"
         show_all = self.request.GET.get("show_all") == "1"
 
+        # Base queryset: si el modelo tiene all_objects, úsalo para ver todo;
+        # si no, usa objects.
         if hasattr(Model, "all_objects"):
-            if show_all:
-                return Model.all_objects.all()
-            elif show_deleted:
-                return Model.all_objects.filter(deleted=True)
-            else:
-                return Model.objects.all()
-        # fallback por si no hubiera managers especiales
-        if show_all:
-            return Model.objects.all()
-        elif show_deleted:
-            return Model.objects.filter(deleted=True)
+            base_qs = Model.all_objects.all()
         else:
-            return Model.objects.filter(deleted=False)
+            base_qs = Model.objects.all()
+
+        if show_all:
+            # Todos, sin filtrar por deleted
+            return base_qs
+        elif show_deleted:
+            # Solo los marcados como deleted=True
+            return base_qs.filter(deleted=True)
+        else:
+            # Por defecto, solo activos (deleted=False)
+            return base_qs.filter(deleted=False)
 
     def _paginate(self, qs, page_param, page_size_param, default_size=10):
         page = self.request.GET.get(page_param, 1)
@@ -142,7 +144,7 @@ class TruckCreateView(CreateView):
 class TruckUpdateView(UpdateView):
     model = Truck
     form_class = TruckForm
-    template_name = "trucks/form.html"
+    template_name = "trucks/trucks_form.html"
     success_url = reverse_lazy("trucks:list")
 
     def get_queryset(self):
@@ -156,7 +158,7 @@ class TruckUpdateView(UpdateView):
 
 class TruckDetailView(DetailView):
     model = Truck
-    template_name = "trucks/detail.html"
+    template_name = "trucks/trucks_detail.html"
     context_object_name = "truck"
 
     def get_queryset(self):
@@ -165,7 +167,7 @@ class TruckDetailView(DetailView):
 
 class TruckSoftDeleteView(DeleteView):
     model = Truck
-    template_name = "trucks/confirm_delete.html"
+    template_name = "trucks/trucks_confirm_delete.html"
     success_url = reverse_lazy("trucks:list")
 
     def get_queryset(self):
@@ -196,7 +198,7 @@ class ReeferBoxCreateView(CreateView):
 class ReeferBoxUpdateView(UpdateView):
     model = ReeferBox
     form_class = ReeferBoxForm
-    template_name = "reeferboxes/form.html"
+    template_name = "trucks/reeferbox_form.html"
     success_url = reverse_lazy("trucks:list")
 
     def get_queryset(self):
@@ -210,7 +212,7 @@ class ReeferBoxUpdateView(UpdateView):
 
 class ReeferBoxDetailView(DetailView):
     model = ReeferBox
-    template_name = "reeferboxes/detail.html"
+    template_name = "trucks/reeferbox_detail.html"
     context_object_name = "box"
 
     def get_queryset(self):
@@ -219,7 +221,7 @@ class ReeferBoxDetailView(DetailView):
 
 class ReeferBoxSoftDeleteView(DeleteView):
     model = ReeferBox
-    template_name = "reeferboxes/confirm_delete.html"
+    template_name = "trucks/reeferbox_confirm_delete.html"
     success_url = reverse_lazy("trucks:list")
 
     def get_queryset(self):

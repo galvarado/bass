@@ -61,7 +61,7 @@ class Truck(models.Model):
     deleted = models.BooleanField(default=False, db_index=True)
 
     # Managers
-    objects = SoftDeleteManager()
+    objects = models.Manager()       
     all_objects = SoftDeleteQuerySet.as_manager()
 
     class Meta:
@@ -142,7 +142,7 @@ class ReeferBox(models.Model):
     deleted = models.BooleanField(default=False, db_index=True)
 
     # Managers
-    objects = SoftDeleteManager()
+    objects = models.Manager()       
     all_objects = SoftDeleteQuerySet.as_manager()
 
     class Meta:
