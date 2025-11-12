@@ -1,0 +1,209 @@
+{# templates/trips/list.html #}
+{% extends "base.html" %}
+{% block title %}Viajes · BASS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Viajes</h1>
+  <a class="btn btn-primary" href="{% url 'trips:create' %}">
+    <i class="fas fa-plus"></i> Nuevo viaje
+  </a>
+</div>
+
+<form method="get" class="card mb-3">
+  <div class="card-body py-3">
+    <div class="form-row align-items-center form-compact">
+      <!-- Buscador -->
+      <div class="col-md-5 mb-2">
+        <div class="input-group input-group-sm">
+          {{ search_form.q }}
+          <div class="input-group-append">
+            <button class="btn btn-outline-primary" type="submit">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtro de status -->
+      <div class="col-md-3 mb-2">
+        {{ search_form.status }}
+      </div>
+
+      <!-- Filtro de transfer -->
+      <div class="col-md-3 mb-2">
+        {{ search_form.transfer }}
+      </div>
+
+      <div class="col-md-1 mb-2 d-none d-md-block"></div>
+    </div>
+  </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if is_paginated and paginator.count %}
+      Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ paginator.count }}
+      · Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% elif paginator and paginator.count == 0 %}
+      0 resultados
+    {% else %}
+      {{ trips|length }} viaje{{ trips|length|pluralize:"s" }}
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="thead-light">
+        <tr>
+          <th>Origen → Destino</th>
+          <th>Operador</th>
+          <th>Unidad</th>
+          <th>Transfer</th>
+          <th>Status</th>
+          <th style="width: 120px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in trips %}
+          <tr>
+            <td>
+              <a href="{% url 'trips:detail' t.pk %}">
+                {{ t.origin.nombre|default:t.origin }} → {{ t.destination.nombre|default:t.destination }}
+              </a>
+              <br>
+              <small class="text-muted">
+                Origen: {{ t.origin.estado|default:"—" }} · Destino: {{ t.destination.estado|default:"—" }}
+              </small>
+            </td>
+
+            <td>
+              {{ t.operator.nombre|default:t.operator }}
+              {% if t.operator.telefono %}
+                <br>
+                <small class="text-muted">
+                  <i class="fas fa-phone"></i> {{ t.operator.telefono }}
+                </small>
+              {% endif %}
+            </td>
+
+            <td>
+              {# Camión #}
+              {% if t.truck %}
+                <strong>Camión:</strong>
+                {{ t.truck.economico|default:t.truck }}
+                {% if t.truck.placas %}
+                  <br><small class="text-muted">Placas: {{ t.truck.placas }}</small>
+                {% endif %}
+              {% else %}
+                <span class="text-muted">Sin camión</span>
+              {% endif %}
+              <br>
+              {# Caja #}
+              {% if t.reefer_box %}
+                <strong>Caja:</strong>
+                {{ t.reefer_box.economico|default:t.reefer_box }}
+                {% if t.reefer_box.numero %}
+                  <br><small class="text-muted">Núm: {{ t.reefer_box.numero }}</small>
+                {% endif %}
+              {% else %}
+                <small class="text-muted">Sin caja</small>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if t.transfer and t.transfer != "NINGUNO" %}
+                <span class="badge badge-info">
+                  {{ t.get_transfer_display }}
+                </span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if t.status == "PROGRAMADO" %}
+                <span class="badge badge-primary">Programado</span>
+              {% elif t.status == "EN_CURSO" %}
+                <span class="badge badge-warning">En curso</span>
+              {% elif t.status == "COMPLETADO" %}
+                <span class="badge badge-success">Completado</span>
+              {% elif t.status == "CANCELADO" %}
+                <span class="badge badge-secondary">Cancelado</span>
+              {% else %}
+                <span class="badge badge-light">{{ t.status }}</span>
+              {% endif %}
+            </td>
+
+            <td class="text-right">
+              <a href="{% url 'trips:update' t.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a href="{% url 'trips:delete' t.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                <i class="fas fa-trash"></i>
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">Sin resultados.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+  <div class="card-footer py-2">
+    <nav aria-label="Paginación">
+      <ul class="pagination pagination-sm mb-0">
+
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&transfer={{ request.GET.transfer|urlencode }}">« Primero</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&transfer={{ request.GET.transfer|urlencode }}">‹ Anterior</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
+        {% endif %}
+
+        {% for i in paginator.page_range %}
+          {% if i == 1 or i == paginator.num_pages or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+            {% if page_obj.number == i %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ i }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&transfer={{ request.GET.transfer|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% elif i == 2 and page_obj.number > 4 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% elif i == paginator.num_pages|add:'-1' and page_obj.number < paginator.num_pages|add:'-3' %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&transfer={{ request.GET.transfer|urlencode }}">Siguiente ›</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ paginator.num_pages }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&transfer={{ request.GET.transfer|urlencode }}">Última »</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
+          <li class="page-item disabled"><span class="page-link">Última »</span></li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

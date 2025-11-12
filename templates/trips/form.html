@@ -1,0 +1,90 @@
+{# templates/trips/form.html #}
+{% extends "base.html" %}
+{% load form_extras %}
+{% block title %}{% if object %}Editar Viaje{% else %}Nuevo Viaje{% endif %} · BASS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">{% if object %}Editar Viaje{% else %}Nuevo Viaje{% endif %}</h1>
+  <a href="{% url 'trips:list' %}" class="btn btn-light btn-sm">
+    <i class="fas fa-arrow-left"></i> Volver
+  </a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact">
+  {% csrf_token %}
+  <div class="card-body">
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- ===== DATOS DEL VIAJE ===== -->
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-route mr-1"></i> Datos del viaje
+    </h6>
+    <div class="form-row">
+      <div class="form-group col-md-5">
+        <label for="{{ form.origin.id_for_label }}">Origen</label>
+        {{ form.origin|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-5">
+        <label for="{{ form.destination.id_for_label }}">Destino</label>
+        {{ form.destination|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.status.id_for_label }}">Estatus</label>
+        {{ form.status|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- ===== ASIGNACIÓN ===== -->
+    <hr>
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-truck mr-1"></i> Asignación
+    </h6>
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.operator.id_for_label }}">Operador</label>
+        {{ form.operator|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-4">
+        <label for="{{ form.truck.id_for_label }}">Camión</label>
+        {{ form.truck|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-4">
+        <label for="{{ form.reefer_box.id_for_label }}">Caja</label>
+        {{ form.reefer_box|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- ===== TRANSFER Y OBSERVACIONES ===== -->
+    <hr>
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-exchange-alt mr-1"></i> Detalles
+    </h6>
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.transfer.id_for_label }}">Tipo de transfer</label>
+        {{ form.transfer|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-9">
+        <label for="{{ form.observations.id_for_label }}">Observaciones</label>
+        {{ form.observations|add_class:"form-control" }}
+      </div>
+    </div>
+
+  </div>
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      {% if object %}
+        <i class="fas fa-save"></i> Guardar cambios
+      {% else %}
+        <i class="fas fa-save"></i> Crear viaje
+      {% endif %}
+    </button>
+  </div>
+</form>
+{% endblock %}

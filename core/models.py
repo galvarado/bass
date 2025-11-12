@@ -1,3 +1,5 @@
+from django.db import models
+
 class ExchangeRate(models.Model):
     """Almacena el tipo de cambio diario USD→MXN"""
     date = models.DateField(unique=True)
