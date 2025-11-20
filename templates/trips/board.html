@@ -4,21 +4,22 @@
 {% block content %}
 
 <style>
+  /* ===== TABLERO GENERAL ===== */
+
   .kanban-board {
     gap: 1.5rem;
     padding: 0.5rem 0.75rem;
   }
 
   .kanban-column {
-    background: #ffffff;              /* columnas blancas */
+    background: #ffffff;
     border-radius: 0.5rem;
     border: 1px solid #e3e6f0;
     padding: 0.5rem 0.5rem 1rem;
     min-width: 260px;
     display: flex;
     flex-direction: column;
-    /* altura casi de página (ajusta 220px si hace falta) */
-    min-height: calc(100vh - 220px);
+    min-height: calc(100vh - 220px); /* altura completa del tablero */
   }
 
   .kanban-header {
@@ -34,27 +35,85 @@
   .kanban-column-body {
     margin-top: 0.6rem;
     padding-right: 0.25rem;
-    flex: 1;                          /* ocupa el alto de la columna */
+    flex: 1;
     overflow-y: auto;
   }
 
   .kanban-column-body.kanban-column-over {
-    outline: 2px dashed #4e73df;
+    outline: 2px dashed #124174;
     outline-offset: -4px;
     background: #e8f0ff;
   }
 
-  .kanban-card {
+  /* ===== TARJETAS DE VIAJE (DISEÑO PREMIUM AZUL) ===== */
+
+  .kanban-trip-card {
+    background: linear-gradient(135deg, #124174 0%, #124174 100%);
+    color: white;
+    border-radius: 0.75rem;
+    padding: 0.75rem 0.85rem;
+    margin-bottom: 0.75rem;
     cursor: grab;
-    border-radius: 0.5rem;
-    background: #f1f3f7;              /* tarjetas grises */
-    border: 1px solid #d1d3e2;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
   }
 
-  .kanban-card.dragging {
-    opacity: 0.6;
+  .kanban-trip-card.dragging {
+    opacity: 0.7;
     cursor: grabbing;
+    transform: scale(0.98);
   }
+
+  .kanban-trip-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.22);
+  }
+
+  .ktc-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .ktc-body {
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+    line-height: 1.2rem;
+  }
+
+  .ktc-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .ktc-icon {
+    width: 16px;
+    margin-right: 6px;
+    opacity: 0.9;
+  }
+
+  .ktc-footer {
+    margin-top: 0.35rem;
+  }
+
+  /* Botón lupa refinado */
+  .ktc-btn {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(3px);
+    border-radius: 50%;
+    padding: 6px 8px;
+    color: white !important;
+    font-size: 0.75rem;
+    transition: all 0.15s ease;
+  }
+
+  .ktc-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.1);
+  }
+
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -67,7 +126,7 @@
 
   <!-- PROGRAMADO -->
   <div class="kanban-column flex-shrink-0">
-    <div class="kanban-header bg-secondary text-white px-3 py-2">
+    <div class="kanban-header bg-warning text-dark px-3 py-2">
       PROGRAMADO
       <span class="badge badge-light ml-1" data-counter="PROGRAMADO">{{ programados|length }}</span>
     </div>
@@ -75,7 +134,9 @@
       {% for trip in programados %}
         {% include "trips/partials/_trip_card.html" with trip=trip %}
       {% empty %}
-        <div class="text-muted small px-2">Sin viajes programados.</div>
+        <div class="text-muted small px-2 kanban-empty">
+          Sin viajes en programados.
+        </div>
       {% endfor %}
     </div>
   </div>
@@ -90,7 +151,9 @@
       {% for trip in en_origen %}
         {% include "trips/partials/_trip_card.html" with trip=trip %}
       {% empty %}
-        <div class="text-muted small px-2">Sin viajes en origen.</div>
+        <div class="text-muted small px-2 kanban-empty">
+          Sin viajes en origen.
+        </div>
       {% endfor %}
     </div>
   </div>
@@ -105,29 +168,33 @@
       {% for trip in en_curso %}
         {% include "trips/partials/_trip_card.html" with trip=trip %}
       {% empty %}
-        <div class="text-muted small px-2">Sin viajes en curso.</div>
+        <div class="text-muted small px-2 kanban-empty">
+          Sin viajes en curso.
+        </div>
       {% endfor %}
     </div>
   </div>
 
   <!-- EN DESTINO -->
   <div class="kanban-column flex-shrink-0">
-    <div class="kanban-header bg-warning text-dark px-3 py-2">
+    <div class="kanban-header bg-success text-white px-3 py-2">
       EN DESTINO
-      <span class="badge badge-dark ml-1" data-counter="EN_DESTINO">{{ en_destino|length }}</span>
+      <span class="badge badge-light ml-1" data-counter="EN_DESTINO">{{ en_destino|length }}</span>
     </div>
     <div class="kanban-column-body" data-status="EN_DESTINO">
       {% for trip in en_destino %}
         {% include "trips/partials/_trip_card.html" with trip=trip %}
       {% empty %}
-        <div class="text-muted small px-2">Sin viajes en destino.</div>
+        <div class="text-muted small px-2 kanban-empty">
+          Sin viajes en destino.
+        </div>
       {% endfor %}
     </div>
   </div>
 
   <!-- COMPLETADO (hoy) -->
   <div class="kanban-column flex-shrink-0">
-    <div class="kanban-header bg-success text-white px-3 py-2">
+    <div class="kanban-header bg-secondary text-white px-3 py-2">
       COMPLETADO (hoy)
       <span class="badge badge-light ml-1" data-counter="COMPLETADO">{{ completados|length }}</span>
     </div>
@@ -135,7 +202,9 @@
       {% for trip in completados %}
         {% include "trips/partials/_trip_card.html" with trip=trip %}
       {% empty %}
-        <div class="text-muted small px-2">Sin viajes completados hoy.</div>
+        <div class="text-muted small px-2 kanban-empty">
+          Sin viajes completados.
+        </div>
       {% endfor %}
     </div>
   </div>
@@ -144,7 +213,7 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const cards = document.querySelectorAll(".kanban-card");
+    const cards = document.querySelectorAll(".kanban-trip-card");
     const columns = document.querySelectorAll(".kanban-column-body");
 
     function getCookie(name) {
@@ -168,7 +237,35 @@
         const status = c.getAttribute("data-counter");
         const col = document.querySelector('.kanban-column-body[data-status="' + status + '"]');
         if (!col) return;
-        c.textContent = col.querySelectorAll(".kanban-card").length;
+        c.textContent = col.querySelectorAll(".kanban-trip-card").length;
+      });
+    }
+
+    function updateEmptyMessages() {
+      columns.forEach(col => {
+        const cardsInCol = col.querySelectorAll(".kanban-trip-card").length;
+        const emptyNode = col.querySelector(".kanban-empty");
+
+        if (cardsInCol > 0) {
+          if (emptyNode) emptyNode.remove();
+        } else {
+          // si no hay tarjetas y no hay mensaje vacío, crearlo
+          if (!emptyNode) {
+            const msg = document.createElement("div");
+            msg.className = "text-muted small px-2 kanban-empty";
+            const status = col.dataset.status;
+            let text = "Sin viajes.";
+
+            if (status === "PROGRAMADO") text = "Sin viajes programados.";
+            else if (status === "EN_ORIGEN") text = "Sin viajes en origen.";
+            else if (status === "EN_CURSO") text = "Sin viajes en curso.";
+            else if (status === "EN_DESTINO") text = "Sin viajes en destino.";
+            else if (status === "COMPLETADO") text = "Sin viajes completados hoy.";
+
+            msg.textContent = text;
+            col.appendChild(msg);
+          }
+        }
       });
     }
 
@@ -202,12 +299,17 @@
 
         const tripId = e.dataTransfer.getData("text/plain");
         const newStatus = col.dataset.status;
-        const card = document.querySelector('.kanban-card[data-trip-id="' + tripId + '"]');
+        const card = document.querySelector('.kanban-trip-card[data-trip-id="' + tripId + '"]');
 
         if (!card || !newStatus) return;
+
+        // columna origen ANTES de mover
+        const fromCol = card.closest(".kanban-column-body");
         const oldStatus = card.dataset.status;
+
         if (oldStatus === newStatus) {
           col.prepend(card);
+          updateEmptyMessages();
           return;
         }
 
@@ -215,6 +317,7 @@
         col.prepend(card);
         card.dataset.status = newStatus;
         recalcCounters();
+        updateEmptyMessages();
 
         fetch("{% url 'trips:change_status' %}", {
           method: "POST",
@@ -231,13 +334,7 @@
         .then(data => {
           if (!data.ok) {
             alert(data.error || "No se pudo actualizar el estatus.");
-            // si falló, recargamos para dejar todo consistente
             window.location.reload();
-            return;
-          }
-          const badge = card.querySelector("[data-role='status-badge']");
-          if (badge && data.status_display) {
-            badge.textContent = data.status_display;
           }
         })
         .catch(err => {
@@ -247,6 +344,9 @@
         });
       });
     });
+
+    // Ajusta mensajes vacíos al cargar
+    updateEmptyMessages();
   });
 </script>
 

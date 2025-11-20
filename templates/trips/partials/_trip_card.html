@@ -1,51 +1,42 @@
-<div class="card mb-2 shadow-sm border-0 kanban-card"
+<div class="kanban-trip-card"
      draggable="true"
      data-trip-id="{{ trip.id }}"
      data-status="{{ trip.status }}">
-  <div class="card-body p-2">
 
-    <!-- Encabezado -->
-    <div class="d-flex justify-content-between align-items-center mb-1">
-      <strong class="small">Viaje #{{ trip.id }}</strong>
+  <div class="ktc-header d-flex justify-content-between align-items-center">
+    <strong class="ktc-title">Viaje #{{ trip.id }}</strong>
+  </div>
+
+  <div class="ktc-body">
+
+    <div class="ktc-item">
+      <i class="fas fa-truck ktc-icon"></i>
+      {{ trip.truck.numero_economico }} · {{ trip.truck.placas }}
     </div>
 
-    <!-- Información -->
-    <div class="small text-muted">
-
-      <!-- Unidad -->
-      <div>
-        <i class="fas fa-truck mr-1"></i>
-        {{ trip.truck.numero_economico }} · {{ trip.truck.placas }}
-      </div>
-
-      <!-- Caja -->
-      <div>
-        <i class="fas fa-box mr-1"></i>
-        {{ trip.reefer_box.numero_economico|default:"—" }}
-      </div>
-
-      <!-- Operador -->
-      <div>
-        <i class="fas fa-user mr-1"></i>
-        {{ trip.operator }}
-      </div>
-
-      <!-- Destino -->
-      <div>
-        <i class="fas fa-map-marker-alt mr-1"></i>
-        {{ trip.destination }}
-      </div>
-
+    <div class="ktc-item">
+      <i class="fas fa-snowflake ktc-icon"></i>
+      Caja {{ trip.reefer_box.numero_economico|default:"—" }}
     </div>
 
-    <!-- Acciones -->
-    <div class="mt-2 d-flex justify-content-end align-items-center">
-      <a href="{% url 'trips:detail' trip.pk %}"
-         class="btn btn-sm btn-outline-secondary"
-         title="Ver detalles">
-        <i class="fas fa-search"></i>
-      </a>
+    <div class="ktc-item">
+      <i class="fas fa-user ktc-icon"></i>
+      {{ trip.operator }}
+    </div>
+
+    <div class="ktc-item">
+      <i class="fas fa-map-marker-alt ktc-icon"></i>
+      {{ trip.destination }}
     </div>
 
   </div>
+
+  <div class="ktc-footer d-flex justify-content-end">
+    <a href="{% url 'trips:detail' trip.pk %}"
+       class="ktc-btn"
+       title="Ver detalles">
+      <i class="fas fa-search"></i>
+    </a>
+  </div>
+
 </div>
