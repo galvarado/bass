@@ -16,7 +16,9 @@ class TransferType(models.TextChoices):
 
 class TripStatus(models.TextChoices):
     PROGRAMADO = "PROGRAMADO", "Programado"
+    EN_ORIGEN = "EN_ORIGEN", "En origen"
     EN_CURSO = "EN_CURSO", "En curso"
+    EN_DESTINO = "EN_DESTINO", "En destino"
     COMPLETADO = "COMPLETADO", "Completado"
     CANCELADO = "CANCELADO", "Cancelado"
 

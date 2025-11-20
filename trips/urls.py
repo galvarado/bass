@@ -9,4 +9,7 @@ urlpatterns = [
     path("<int:pk>/editar/", views.TripUpdateView.as_view(), name="update"),
     path("<int:pk>/", views.TripDetailView.as_view(), name="detail"),
     path("<int:pk>/eliminar/", views.TripSoftDeleteView.as_view(), name="delete"),
+    path("monitoreo/", views.TripBoardView.as_view(), name="board"),
+    path("monitoreo/cambiar-status/",views.TripChangeStatusView.as_view(), name="change_status",
+    ),
 ]

@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}Monitoreo de viajes · BASS{% endblock %}
+
+{% block content %}
+
+<style>
+  .kanban-board {
+    gap: 1.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .kanban-column {
+    background: #ffffff;              /* columnas blancas */
+    border-radius: 0.5rem;
+    border: 1px solid #e3e6f0;
+    padding: 0.5rem 0.5rem 1rem;
+    min-width: 260px;
+    display: flex;
+    flex-direction: column;
+    /* altura casi de página (ajusta 220px si hace falta) */
+    min-height: calc(100vh - 220px);
+  }
+
+  .kanban-header {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0.35rem;
+  }
+
+  .kanban-column-body {
+    margin-top: 0.6rem;
+    padding-right: 0.25rem;
+    flex: 1;                          /* ocupa el alto de la columna */
+    overflow-y: auto;
+  }
+
+  .kanban-column-body.kanban-column-over {
+    outline: 2px dashed #4e73df;
+    outline-offset: -4px;
+    background: #e8f0ff;
+  }
+
+  .kanban-card {
+    cursor: grab;
+    border-radius: 0.5rem;
+    background: #f1f3f7;              /* tarjetas grises */
+    border: 1px solid #d1d3e2;
+  }
+
+  .kanban-card.dragging {
+    opacity: 0.6;
+    cursor: grabbing;
+  }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Monitoreo de viajes</h1>
+  <small class="text-muted">Tablero del {{ today|date:"d/m/Y" }}</small>
+</div>
+
+<!-- SIN CARD, solo el board -->
+<div class="kanban-board d-flex flex-row flex-nowrap overflow-auto">
+
+  <!-- PROGRAMADO -->
+  <div class="kanban-column flex-shrink-0">
+    <div class="kanban-header bg-secondary text-white px-3 py-2">
+      PROGRAMADO
+      <span class="badge badge-light ml-1" data-counter="PROGRAMADO">{{ programados|length }}</span>
+    </div>
+    <div class="kanban-column-body" data-status="PROGRAMADO">
+      {% for trip in programados %}
+        {% include "trips/partials/_trip_card.html" with trip=trip %}
+      {% empty %}
+        <div class="text-muted small px-2">Sin viajes programados.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- EN ORIGEN -->
+  <div class="kanban-column flex-shrink-0">
+    <div class="kanban-header bg-info text-white px-3 py-2">
+      EN ORIGEN
+      <span class="badge badge-light ml-1" data-counter="EN_ORIGEN">{{ en_origen|length }}</span>
+    </div>
+    <div class="kanban-column-body" data-status="EN_ORIGEN">
+      {% for trip in en_origen %}
+        {% include "trips/partials/_trip_card.html" with trip=trip %}
+      {% empty %}
+        <div class="text-muted small px-2">Sin viajes en origen.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- EN CURSO -->
+  <div class="kanban-column flex-shrink-0">
+    <div class="kanban-header bg-primary text-white px-3 py-2">
+      EN CURSO
+      <span class="badge badge-light ml-1" data-counter="EN_CURSO">{{ en_curso|length }}</span>
+    </div>
+    <div class="kanban-column-body" data-status="EN_CURSO">
+      {% for trip in en_curso %}
+        {% include "trips/partials/_trip_card.html" with trip=trip %}
+      {% empty %}
+        <div class="text-muted small px-2">Sin viajes en curso.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- EN DESTINO -->
+  <div class="kanban-column flex-shrink-0">
+    <div class="kanban-header bg-warning text-dark px-3 py-2">
+      EN DESTINO
+      <span class="badge badge-dark ml-1" data-counter="EN_DESTINO">{{ en_destino|length }}</span>
+    </div>
+    <div class="kanban-column-body" data-status="EN_DESTINO">
+      {% for trip in en_destino %}
+        {% include "trips/partials/_trip_card.html" with trip=trip %}
+      {% empty %}
+        <div class="text-muted small px-2">Sin viajes en destino.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- COMPLETADO (hoy) -->
+  <div class="kanban-column flex-shrink-0">
+    <div class="kanban-header bg-success text-white px-3 py-2">
+      COMPLETADO (hoy)
+      <span class="badge badge-light ml-1" data-counter="COMPLETADO">{{ completados|length }}</span>
+    </div>
+    <div class="kanban-column-body" data-status="COMPLETADO">
+      {% for trip in completados %}
+        {% include "trips/partials/_trip_card.html" with trip=trip %}
+      {% empty %}
+        <div class="text-muted small px-2">Sin viajes completados hoy.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const cards = document.querySelectorAll(".kanban-card");
+    const columns = document.querySelectorAll(".kanban-column-body");
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + "=")) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    function recalcCounters() {
+      const counters = document.querySelectorAll("[data-counter]");
+      counters.forEach(c => {
+        const status = c.getAttribute("data-counter");
+        const col = document.querySelector('.kanban-column-body[data-status="' + status + '"]');
+        if (!col) return;
+        c.textContent = col.querySelectorAll(".kanban-card").length;
+      });
+    }
+
+    function attachCardDrag(card) {
+      card.addEventListener("dragstart", function (e) {
+        e.dataTransfer.setData("text/plain", card.dataset.tripId);
+        e.dataTransfer.effectAllowed = "move";
+        card.classList.add("dragging");
+      });
+      card.addEventListener("dragend", function () {
+        card.classList.remove("dragging");
+      });
+    }
+
+    cards.forEach(attachCardDrag);
+
+    columns.forEach(col => {
+      col.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        col.classList.add("kanban-column-over");
+      });
+
+      col.addEventListener("dragleave", function () {
+        col.classList.remove("kanban-column-over");
+      });
+
+      col.addEventListener("drop", function (e) {
+        e.preventDefault();
+        col.classList.remove("kanban-column-over");
+
+        const tripId = e.dataTransfer.getData("text/plain");
+        const newStatus = col.dataset.status;
+        const card = document.querySelector('.kanban-card[data-trip-id="' + tripId + '"]');
+
+        if (!card || !newStatus) return;
+        const oldStatus = card.dataset.status;
+        if (oldStatus === newStatus) {
+          col.prepend(card);
+          return;
+        }
+
+        // Optimistic UI: movemos la tarjeta de inmediato
+        col.prepend(card);
+        card.dataset.status = newStatus;
+        recalcCounters();
+
+        fetch("{% url 'trips:change_status' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({
+            trip_id: tripId,
+            status: newStatus,
+          }),
+        })
+        .then(resp => resp.json())
+        .then(data => {
+          if (!data.ok) {
+            alert(data.error || "No se pudo actualizar el estatus.");
+            // si falló, recargamos para dejar todo consistente
+            window.location.reload();
+            return;
+          }
+          const badge = card.querySelector("[data-role='status-badge']");
+          if (badge && data.status_display) {
+            badge.textContent = data.status_display;
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Error de comunicación. Recarga la página.");
+          window.location.reload();
+        });
+      });
+    });
+  });
+</script>
+
+{% endblock %}

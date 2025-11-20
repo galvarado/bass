@@ -1,16 +1,16 @@
-{# templates/clients/detail.html #}
 {% extends "base.html" %}
-{% block title %}Detalle de Cliente · BASS{% endblock %}
+{% block title %}Detalle de Viaje · BASS{% endblock %}
+
 {% block content %}
 
 <div class="card shadow-sm">
   <div class="card-header d-flex justify-content-between align-items-center">
-    <strong>Detalle de Cliente</strong>
+    <strong>Detalle del viaje #{{ trip.id }}</strong>
     <div>
-      <a href="{% url 'customers:update' client.pk %}" class="btn btn-sm btn-outline-secondary">
+      <a href="{% url 'trips:update' trip.pk %}" class="btn btn-sm btn-outline-secondary">
         <i class="fas fa-edit"></i> Editar
       </a>
-      <a href="{% url 'customers:delete' client.pk %}" class="btn btn-sm btn-outline-danger">
+      <a href="{% url 'trips:delete' trip.pk %}" class="btn btn-sm btn-outline-danger">
         <i class="fas fa-trash"></i> Eliminar
       </a>
     </div>
@@ -18,57 +18,103 @@
 
   <div class="card-body">
 
-    <!-- ===== DATOS DEL CLIENTE ===== -->
-    <h6 class="text-primary mb-3"><i class="fas fa-building mr-1"></i> Datos del cliente</h6>
+    <!-- ===== DATOS DEL VIAJE ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-route mr-1"></i> Datos del viaje
+    </h6>
+
     <dl class="row small">
-      <dt class="col-sm-3">Nombre (comercial)</dt><dd class="col-sm-9">{{ client.nombre }}</dd>
-      <dt class="col-sm-3">Razón social</dt><dd class="col-sm-9">{{ client.razon_social|default:"—" }}</dd>
-      <dt class="col-sm-3">RFC</dt><dd class="col-sm-9">{{ client.rfc|default:"—" }}</dd>
-      <dt class="col-sm-3">Régimen fiscal</dt><dd class="col-sm-9">{{ client.regimen_fiscal|default:"—" }}</dd>
-      <dt class="col-sm-3">ID tributario</dt><dd class="col-sm-9">{{ client.id_tributario|default:"—" }}</dd>
-      <dt class="col-sm-3">Teléfono</dt><dd class="col-sm-9">{{ client.telefono|default:"—" }}</dd>
-      <dt class="col-sm-3">Observaciones</dt><dd class="col-sm-9">{{ client.observaciones|default:"—" }}</dd>
+      <dt class="col-sm-3">ID del viaje</dt>
+      <dd class="col-sm-9">#{{ trip.id }}</dd>
+
+      <dt class="col-sm-3">Estatus</dt>
+      <dd class="col-sm-9">
+        <span class="badge badge-info text-uppercase">
+          {{ trip.get_status_display }}
+        </span>
+      </dd>
+
+      <dt class="col-sm-3">Observaciones</dt>
+      <dd class="col-sm-9">{{ trip.observations|default:"—" }}</dd>
     </dl>
 
     <hr>
 
-    <!-- ===== DIRECCIÓN ===== -->
-    <h6 class="text-primary mb-3"><i class="fas fa-map-marker-alt mr-1"></i> Dirección</h6>
+    <!-- ===== ORIGEN / DESTINO ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-map-marker-alt mr-1"></i> Origen y destino
+    </h6>
+
     <dl class="row small">
-      <dt class="col-sm-3">Calle</dt><dd class="col-sm-9">{{ client.calle|default:"—" }}</dd>
-      <dt class="col-sm-3">No. Ext</dt><dd class="col-sm-9">{{ client.no_ext|default:"—" }}</dd>
-      <dt class="col-sm-3">Colonia</dt><dd class="col-sm-9">{{ client.colonia|default:"—" }}</dd>
-      <dt class="col-sm-3">Colonia SAT</dt><dd class="col-sm-9">{{ client.colonia_sat|default:"—" }}</dd>
-      <dt class="col-sm-3">Municipio</dt><dd class="col-sm-9">{{ client.municipio|default:"—" }}</dd>
-      <dt class="col-sm-3">Estado</dt><dd class="col-sm-9">{{ client.estado|default:"—" }}</dd>
-      <dt class="col-sm-3">País</dt><dd class="col-sm-9">{{ client.pais|default:"MÉXICO" }}</dd>
-      <dt class="col-sm-3">C.P.</dt><dd class="col-sm-9">{{ client.cp|default:"—" }}</dd>
+      <dt class="col-sm-3">Origen</dt>
+      <dd class="col-sm-9">{{ trip.origin }}</dd>
+
+      <dt class="col-sm-3">Destino</dt>
+      <dd class="col-sm-9">{{ trip.destination }}</dd>
     </dl>
 
     <hr>
 
-    <!-- ===== CRÉDITO Y FACTURACIÓN ===== -->
-    <h6 class="text-primary mb-3"><i class="fas fa-file-invoice-dollar mr-1"></i> Crédito y facturación</h6>
+    <!-- ===== OPERADOR / CAMIÓN / CAJA ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-truck mr-1"></i> Unidad y operador
+    </h6>
+
     <dl class="row small">
-      <dt class="col-sm-3">Límite de crédito</dt><dd class="col-sm-9">{{ client.limite_credito|default:"—" }}</dd>
-      <dt class="col-sm-3">Días de crédito</dt><dd class="col-sm-9">{{ client.dias_credito|default:"—" }}</dd>
-      <dt class="col-sm-3">Forma de pago</dt><dd class="col-sm-9">{{ client.forma_pago|default:"—" }}</dd>
-      <dt class="col-sm-3">Uso de CFDI</dt><dd class="col-sm-9">{{ client.uso_cfdi|default:"—" }}</dd>
-      <dt class="col-sm-3">Cuenta / Referencia</dt><dd class="col-sm-9">{{ client.cuenta|default:"—" }}</dd>
+      <dt class="col-sm-3">Operador</dt>
+      <dd class="col-sm-9">{{ trip.operator }}</dd>
+
+      <dt class="col-sm-3">Camión</dt>
+      <dd class="col-sm-9">
+        {{ trip.truck.numero_economico }} — {{ trip.truck.placas }}
+      </dd>
+
+      <dt class="col-sm-3">Caja</dt>
+      <dd class="col-sm-9">
+        {{ trip.reefer_box.numero_economico|default:"—" }}
+      </dd>
+
+      <dt class="col-sm-3">Tipo de transfer</dt>
+      <dd class="col-sm-9">{{ trip.get_transfer_display }}</dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== TIEMPOS ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-clock mr-1"></i> Tiempos de monitoreo
+    </h6>
+
+    <dl class="row small">
+      <dt class="col-sm-3">Llegada a origen</dt>
+      <dd class="col-sm-9">
+        {{ trip.arrival_origin_at|date:"d/m/Y H:i"|default:"—" }}
+      </dd>
+
+      <dt class="col-sm-3">Salida de origen</dt>
+      <dd class="col-sm-9">
+        {{ trip.departure_origin_at|date:"d/m/Y H:i"|default:"—" }}
+      </dd>
+
+      <dt class="col-sm-3">Llegada a destino</dt>
+      <dd class="col-sm-9">
+        {{ trip.arrival_destination_at|date:"d/m/Y H:i"|default:"—" }}
+      </dd>
     </dl>
 
     <hr>
 
     <!-- ===== ESTADO ===== -->
-    <h6 class="text-primary mb-3"><i class="fas fa-info-circle mr-1"></i> Estado</h6>
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-info-circle mr-1"></i> Estado
+    </h6>
+
     <dl class="row small mb-0">
-      <dt class="col-sm-3">Estatus</dt>
+      <dt class="col-sm-3">Estatus actual</dt>
       <dd class="col-sm-9">
-        {% if client.status == "ALTA" %}
-          <span class="badge badge-success">Alta</span>
-        {% else %}
-          <span class="badge badge-secondary">Baja</span>
-        {% endif %}
+        <span class="badge badge-primary text-uppercase">
+          {{ trip.get_status_display }}
+        </span>
       </dd>
     </dl>
 

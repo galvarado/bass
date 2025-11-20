@@ -1,12 +1,19 @@
 # trips/views.py
+import json
+
 from django.contrib import messages
 from django.db.models import Q
 from django.urls import reverse_lazy
-from django.http import HttpResponseRedirect
-from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
+from django.http import HttpResponseRedirect, JsonResponse
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView, TemplateView
+from django.views import View
 
-from .models import Trip
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from .models import Trip, TripStatus
 from .forms import TripForm, TripSearchForm
+
+
 
 # Ajusta esta lista según lo que quieras auditar en tu bitácora
 FIELDS_AUDIT = [
@@ -142,3 +149,70 @@ class TripSoftDeleteView(DeleteView):
 
     def post(self, request, *args, **kwargs):
         return self.delete(request, *args, **kwargs)
+
+class TripBoardView(TemplateView):
+    template_name = "trips/board.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+
+        today = timezone.localdate()
+
+        # Base queryset: no eliminados y no cancelados
+        base_qs = Trip.objects.filter(deleted=False).exclude(
+            status=TripStatus.CANCELADO
+        )
+
+        ctx["programados"] = base_qs.filter(status=TripStatus.PROGRAMADO)
+        ctx["en_origen"] = base_qs.filter(status=TripStatus.EN_ORIGEN)
+        ctx["en_curso"] = base_qs.filter(status=TripStatus.EN_CURSO)
+        ctx["en_destino"] = base_qs.filter(status=TripStatus.EN_DESTINO)
+
+        # Completados SOLO los del día (ajusté a arrival_destination_at)
+        ctx["completados"] = Trip.objects.filter(
+            deleted=False,
+            status=TripStatus.COMPLETADO,
+            arrival_destination_at__date=today,
+        )
+
+        ctx["today"] = today
+        return ctx
+
+class TripChangeStatusView(View):
+    """
+    Endpoint simple para cambiar el estatus de un viaje desde el tablero.
+    Espera JSON: { "trip_id": 1, "status": "EN_CURSO" }
+    """
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+        except json.JSONDecodeError:
+            return JsonResponse({"ok": False, "error": "JSON inválido"}, status=400)
+
+        trip_id = data.get("trip_id")
+        new_status = data.get("status")
+
+        if not trip_id or not new_status:
+            return JsonResponse({"ok": False, "error": "Datos incompletos"}, status=400)
+
+        if new_status not in TripStatus.values:
+            return JsonResponse({"ok": False, "error": "Estatus inválido"}, status=400)
+
+        trip = get_object_or_404(Trip, pk=trip_id, deleted=False)
+
+        trip.status = new_status
+
+        # si lo marcas como completado y no tiene hora de llegada, la llenamos
+        if new_status == TripStatus.COMPLETADO and trip.arrival_destination_at is None:
+            trip.arrival_destination_at = timezone.now()
+            trip.save(update_fields=["status", "arrival_destination_at"])
+        else:
+            trip.save(update_fields=["status"])
+
+        return JsonResponse(
+            {
+                "ok": True,
+                "status": trip.status,
+                "status_display": trip.get_status_display(),
+            }
+        )
