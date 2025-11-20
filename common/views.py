@@ -72,9 +72,9 @@ def lookup_cp(request):
 def header_info(request):
     """
     Devuelve el tipo de cambio USD→MXN del día.
-    Si no existe en BD, consulta Banxico (serie SF43718 - FIX) y lo guarda.
+    Si no existe en BD, consulta Banxico (serie SF60653) y lo guarda.
     """
-    provider = "banxico.org.mx (SIE SF43718 FIX)"
+    provider = "banxico.org.mx (SIE SF60653)"
     today = date.today()
 
     # 1) Revisar si ya tenemos el tipo de cambio de hoy
@@ -94,9 +94,10 @@ def header_info(request):
             raise ValueError("BANXICO_SIE_TOKEN not configured")
 
         # Serie SF43718 = Tipo de cambio FIX
+        # https://www.banxico.org.mx/SieAPIRest/service/v1/doc/catalogoSeries#
         url = (
             "https://www.banxico.org.mx/SieAPIRest/service/v1/"
-            "series/SF43718/datos/oportuno"
+            "series/SF60653/datos/oportuno"
         )
 
         headers = {

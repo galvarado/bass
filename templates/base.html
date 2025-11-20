@@ -47,7 +47,7 @@
               <i class="far fa-clock mr-1"></i> 🇺🇸 Texas —
             </div>
             <div id="usdMxn" class="badge badge-light text-primary">
-              <i class="fas fa-dollar-sign mr-1"></i> USD/MXN —
+              <i class="fas fa-dollar-sign mr-1"></i> <a href="https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=6&accion=consultarCuadro&idCuadro=CF102&locale=es">USD/MXN —</a>
             </div>
           </div>
 
@@ -137,7 +137,7 @@
         const res = await fetch('/api/utils/header-info/', { credentials: 'same-origin' });
         const data = await res.json();
         if (data && data.usd_mxn)
-          el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN ${Number(data.usd_mxn).toFixed(4)}`;
+          el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN <a target="_blank" href="https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=6&accion=consultarCuadro&idCuadro=CF102&locale=es">${Number(data.usd_mxn).toFixed(4)}</a>`;
         else el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN —`;
       } catch { el.innerHTML = `<i class="fas fa-dollar-sign mr-1"></i> USD/MXN —`; }
     }
