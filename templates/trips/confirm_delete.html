@@ -1,66 +1,99 @@
-{# templates/clients/confirm_delete.html #}
+{# templates/trips/confirm_delete.html #}
 {% extends "base.html" %}
-{% block title %}Eliminar Cliente · BASS{% endblock %}
+{% block title %}Eliminar Viaje · BASS{% endblock %}
 {% block content %}
 
 <div class="card border-danger shadow-sm">
   <div class="card-header bg-danger text-white">
-    <strong>Confirmar eliminación</strong>
+    <strong>Confirmar eliminación de viaje</strong>
   </div>
+
   <div class="card-body">
     <p>
-      ¿Seguro que deseas eliminar al cliente
-      <strong>{{ object.nombre }}</strong>?
+      ¿Seguro que deseas eliminar el viaje con destino a
+      <strong>{{ object.destination.nombre }}</strong>?
     </p>
 
     <dl class="row small mb-3">
-      <dt class="col-sm-3">Razón social</dt>
-      <dd class="col-sm-9">{{ object.razon_social|default:"—" }}</dd>
 
-      <dt class="col-sm-3">RFC</dt>
-      <dd class="col-sm-9">{{ object.rfc|default:"—" }}</dd>
+      <dt class="col-sm-3">Origen</dt>
+      <dd class="col-sm-9">{{ object.origin.nombre|default:object.origin }}</dd>
 
-      <dt class="col-sm-3">Teléfono</dt>
-      <dd class="col-sm-9">{{ object.telefono|default:"—" }}</dd>
+      <dt class="col-sm-3">Destino</dt>
+      <dd class="col-sm-9">{{ object.destination.nombre|default:object.destination }}</dd>
 
-      <dt class="col-sm-3">Límite de crédito</dt>
+      <dt class="col-sm-3">Operador</dt>
       <dd class="col-sm-9">
-        {% if object.limite_credito %}
-          {{ object.limite_credito }}
+        {% if object.operator %}
+          {{ object.operator.nombre }}
+          {% if object.operator.telefono %}
+            <br><small class="text-muted"><i class="fas fa-phone"></i> {{ object.operator.telefono }}</small>
+          {% endif %}
         {% else %}
-          <span class="text-muted">Sin límite</span>
+          <span class="text-muted">Sin operador</span>
         {% endif %}
       </dd>
 
-      <dt class="col-sm-3">Días de crédito</dt>
-      <dd class="col-sm-9">{{ object.dias_credito|default:"—" }}</dd>
+      <dt class="col-sm-3">Unidad</dt>
+      <dd class="col-sm-9">
+        {% if object.truck %}
+          {{ object.truck.numero_economico }}
+        {% else %}
+          <span class="text-muted">Sin camión</span>
+        {% endif %}
+      </dd>
 
-      <dt class="col-sm-3">Forma de pago</dt>
-      <dd class="col-sm-9">{{ object.forma_pago|default:"—" }}</dd>
+      <dt class="col-sm-3">Caja</dt>
+      <dd class="col-sm-9">
+        {% if object.reefer_box %}
+          {{ object.reefer_box.numero_economico }}
+        {% else %}
+          <span class="text-muted">Sin caja</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Transfer</dt>
+      <dd class="col-sm-9">
+        {% if object.transfer and object.transfer != "NINGUNO" %}
+          {{ object.get_transfer_display }}
+        {% else %}
+          <span class="text-muted">No aplica</span>
+        {% endif %}
+      </dd>
 
       <dt class="col-sm-3">Status</dt>
       <dd class="col-sm-9">
-        {% if object.status == "ALTA" %}
-          <span class="badge badge-success">Alta</span>
+        {% if object.status == "PROGRAMADO" %}
+          <span class="badge badge-warning">Programado</span>
+        {% elif object.status == "EN_ORIGEN" %}
+          <span class="badge badge-info">En origen</span>
+        {% elif object.status == "EN_CURSO" %}
+          <span class="badge badge-primary">En curso</span>
+        {% elif object.status == "EN_DESTINO" %}
+          <span class="badge badge-success">En destino</span>
+        {% elif object.status == "COMPLETADO" %}
+          <span class="badge badge-secondary">Completado</span>
         {% else %}
-          <span class="badge badge-secondary">Baja</span>
+          <span class="badge badge-light">{{ object.status }}</span>
         {% endif %}
       </dd>
+
     </dl>
 
     <form method="post" class="mt-3">
       {% csrf_token %}
-      <a href="{% url 'customers:list' %}" class="btn btn-outline-secondary">
+      <a href="{% url 'trips:list' %}" class="btn btn-outline-secondary">
         Cancelar
       </a>
+
       <button type="submit" class="btn btn-danger">
-        <i class="fas fa-trash"></i> Eliminar
+        <i class="fas fa-trash"></i> Eliminar viaje
       </button>
     </form>
 
     <p class="text-muted mt-3 mb-0 small">
       <i class="fas fa-info-circle"></i>
-      Esta acción elimina el registro permanentemente; considera simplemente cambiar su status a <strong>Baja</strong>.
+      Esta acción realiza <strong>el borrado permanente</strong>. 
     </p>
   </div>
 </div>

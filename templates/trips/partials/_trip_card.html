@@ -3,40 +3,85 @@
      data-trip-id="{{ trip.id }}"
      data-status="{{ trip.status }}">
 
+  <!-- TÍTULO: DESTINO -->
   <div class="ktc-header d-flex justify-content-between align-items-center">
-    <strong class="ktc-title">Viaje #{{ trip.id }}</strong>
+    <strong class="ktc-title">
+      {{ trip.destination.nombre }}
+    </strong>
   </div>
 
   <div class="ktc-body">
 
+    <!-- CAMIÓN + CAJA EN LA MISMA LÍNEA -->
     <div class="ktc-item">
       <i class="fas fa-truck ktc-icon"></i>
-      {{ trip.truck.numero_economico }} · {{ trip.truck.placas }}
-    </div>
-
-    <div class="ktc-item">
+      {{ trip.truck.numero_economico }}
+      &nbsp;
       <i class="fas fa-snowflake ktc-icon"></i>
-      Caja {{ trip.reefer_box.numero_economico|default:"—" }}
+      {{ trip.reefer_box.numero_economico|default:"—" }}
     </div>
 
+    <!-- OPERADOR -->
     <div class="ktc-item">
       <i class="fas fa-user ktc-icon"></i>
       {{ trip.operator }}
     </div>
 
+    <!-- RUTA (origen → destino corto si quieres simplificar después) -->
     <div class="ktc-item">
       <i class="fas fa-map-marker-alt ktc-icon"></i>
-      {{ trip.destination }}
+      {{ trip.origin }}
+    </div>
+
+    <!-- TIEMPOS DEL VIAJE -->
+    <div class="ktc-times" data-trip-times="{{ trip.id }}">
+      {% if trip.arrival_origin_at %}
+        <div class="ktc-item" data-time="arrival_origin">
+          <i class="fas fa-clock ktc-icon"></i>
+          Llegada: {{ trip.arrival_origin_at|date:"H:i" }}
+          {% if trip.departure_origin_at %}
+          &nbsp;
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          &nbsp;
+          Salida: {{ trip.departure_origin_at|date:"H:i" }}
+          {% endif %}
+        </div>
+      {% endif %}
+      {% if trip.arrival_destination_at %}
+        <div class="ktc-item" data-time="arrival_destination">
+          <i class="fas fa-flag-checkered ktc-icon"></i>
+          Destino: {{ trip.arrival_destination_at|date:"H:i" }}
+        </div>
+      {% endif %}
     </div>
 
   </div>
 
-  <div class="ktc-footer d-flex justify-content-end">
-    <a href="{% url 'trips:detail' trip.pk %}"
-       class="ktc-btn"
-       title="Ver detalles">
+  <div class="ktc-footer d-flex justify-content-end gap-1">
+
+    <!-- Ver viaje -->
+    <a href="{% url 'trips:detail' trip.id %}"
+      class="ktc-btn mr-2"
+      title="Ver detalles del viaje">
       <i class="fas fa-search"></i>
     </a>
+
+    <!-- Seguimiento GPS -->
+    <a href="{% url 'trips:detail' trip.id %}"
+      class="ktc-btn mr-2"
+      title="Seguimiento GPS">
+      <i class="fas fa-map-marker-alt"></i>
+    </a>
+
+    <!-- Carta Porte (solo si NO está programado) -->
+    {% if trip.status != "PROGRAMADO" %}
+    <a href="{% url 'trips:detail' trip.id %}"
+      class="ktc-btn"
+      title="Ver Carta Porte">
+      <i class="fas fa-file-alt"></i>
+    </a>
+    {% endif %}
+
   </div>
 
 </div>

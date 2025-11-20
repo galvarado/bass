@@ -1,15 +1,19 @@
 # trips/views.py
 import json
-
+from datetime import datetime
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.urls import reverse_lazy
+from django.http import HttpResponseForbidden
 from django.contrib import messages
 from django.db.models import Q
 from django.urls import reverse_lazy
 from django.http import HttpResponseRedirect, JsonResponse
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView, TemplateView
 from django.views import View
-
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+
 from .models import Trip, TripStatus
 from .forms import TripForm, TripSearchForm
 
@@ -111,15 +115,22 @@ class TripUpdateView(UpdateView):
     template_name = "trips/form.html"
     success_url = reverse_lazy("trips:list")
 
-    def get_queryset(self):
-        # Permite editar cualquier viaje (si quieres sólo vivos, usa Trip.alive.all())
-        return Trip.objects.all()
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        # Bloqueo: solo se puede editar si está en PROGRAMADO
+        if self.object.status != "PROGRAMADO":
+            messages.warning(
+                request,
+                "Este viaje no puede ser editado porque ya no está en estado Programado."
+            )
+            return redirect("trips:list")
+
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        resp = super().form_valid(form)
         messages.success(self.request, "Viaje actualizado correctamente.")
-        return resp
-
+        return super().form_valid(form)
 
 class TripDetailView(DetailView):
     model = Trip
@@ -137,13 +148,37 @@ class TripSoftDeleteView(DeleteView):
     success_url = reverse_lazy("trips:list")
 
     def get_queryset(self):
-        # Solo permite eliminar no eliminados
+        # Solo viajes no eliminados
         return Trip.objects.filter(deleted=False)
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        if self.object.status != "PROGRAMADO":
+            messages.warning(
+                request,
+                "Este viaje no puede eliminarse porque ya no está en estado Programado."
+            )
+            return redirect("trips:list")
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        """Soft delete: marcar deleted=True en lugar de borrar."""
+        self.object = self.get_object()
+        self.object.deleted = True
+        self.object.save(update_fields=["deleted"])
+        messages.success(request, f"Viaje '{self.object}' eliminado correctamente.")
+        return HttpResponseRedirect(self.get_success_url())
+
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
+
 
     def delete(self, request, *args, **kwargs):
         """Soft delete en lugar de borrado físico."""
         self.object = self.get_object()
-        self.object.soft_delete()
+        self.object.delete()
         messages.success(request, f"Viaje '{self.object}' eliminado correctamente.")
         return HttpResponseRedirect(self.get_success_url())
 
@@ -179,10 +214,6 @@ class TripBoardView(TemplateView):
         return ctx
 
 class TripChangeStatusView(View):
-    """
-    Endpoint simple para cambiar el estatus de un viaje desde el tablero.
-    Espera JSON: { "trip_id": 1, "status": "EN_CURSO" }
-    """
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body.decode("utf-8"))
@@ -192,6 +223,10 @@ class TripChangeStatusView(View):
         trip_id = data.get("trip_id")
         new_status = data.get("status")
 
+        arrival_origin_at_str = data.get("arrival_origin_at")
+        departure_origin_at_str = data.get("departure_origin_at")
+        arrival_destination_at_str = data.get("arrival_destination_at")
+
         if not trip_id or not new_status:
             return JsonResponse({"ok": False, "error": "Datos incompletos"}, status=400)
 
@@ -200,19 +235,77 @@ class TripChangeStatusView(View):
 
         trip = get_object_or_404(Trip, pk=trip_id, deleted=False)
 
-        trip.status = new_status
+        def parse_dt(value: str):
+            try:
+                dt = datetime.fromisoformat(value)
+            except Exception:
+                return None
+            if timezone.is_naive(dt):
+                dt = timezone.make_aware(dt, timezone.get_current_timezone())
+            return dt
 
-        # si lo marcas como completado y no tiene hora de llegada, la llenamos
-        if new_status == TripStatus.COMPLETADO and trip.arrival_destination_at is None:
-            trip.arrival_destination_at = timezone.now()
+        # === Lógica por estatus ===
+
+        if new_status == TripStatus.EN_ORIGEN:
+            if not arrival_origin_at_str:
+                return JsonResponse(
+                    {"ok": False, "error": "Se requiere hora de llegada al origen"},
+                    status=400,
+                )
+            dt = parse_dt(arrival_origin_at_str)
+            if not dt:
+                return JsonResponse(
+                    {"ok": False, "error": "Fecha/hora inválida"}, status=400
+                )
+            trip.status = TripStatus.EN_ORIGEN
+            trip.arrival_origin_at = dt
+            trip.save(update_fields=["status", "arrival_origin_at"])
+
+        elif new_status == TripStatus.EN_CURSO:
+            if not departure_origin_at_str:
+                return JsonResponse(
+                    {"ok": False, "error": "Se requiere hora de salida del origen"},
+                    status=400,
+                )
+            dt = parse_dt(departure_origin_at_str)
+            if not dt:
+                return JsonResponse(
+                    {"ok": False, "error": "Fecha/hora inválida"}, status=400
+                )
+            trip.status = TripStatus.EN_CURSO
+            trip.departure_origin_at = dt
+            trip.save(update_fields=["status", "departure_origin_at"])
+
+        elif new_status == TripStatus.EN_DESTINO:
+            if not arrival_destination_at_str:
+                return JsonResponse(
+                    {"ok": False, "error": "Se requiere hora de llegada al destino"},
+                    status=400,
+                )
+            dt = parse_dt(arrival_destination_at_str)
+            if not dt:
+                return JsonResponse(
+                    {"ok": False, "error": "Fecha/hora inválida"}, status=400
+                )
+            trip.status = TripStatus.EN_DESTINO
+            trip.arrival_destination_at = dt
             trip.save(update_fields=["status", "arrival_destination_at"])
-        else:
-            trip.save(update_fields=["status"])
 
-        return JsonResponse(
-            {
-                "ok": True,
-                "status": trip.status,
-                "status_display": trip.get_status_display(),
+        else:
+            # PROGRAMADO, COMPLETADO, etc: solo cambiar status
+            trip.status = new_status
+            trip.save(update_fields=["status"])
+            
+        return JsonResponse({
+            "ok": True,
+            "status": trip.status,
+            "status_display": trip.get_status_display(),
+            "updated_times": {
+                "arrival_origin_at":
+                    trip.arrival_origin_at.strftime("%d/%m %H:%M") if trip.arrival_origin_at else None,
+                "departure_origin_at":
+                    trip.departure_origin_at.strftime("%d/%m %H:%M") if trip.departure_origin_at else None,
+                "arrival_destination_at":
+                    trip.arrival_destination_at.strftime("%d/%m %H:%M") if trip.arrival_destination_at else None,
             }
-        )
+        })

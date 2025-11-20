@@ -8,7 +8,6 @@ class TripForm(forms.ModelForm):
         model = Trip
         fields = [
             # Datos base del viaje
-            "status",
             "origin",
             "destination",
             "operator",

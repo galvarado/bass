@@ -123,28 +123,56 @@
               {% endif %}
             </td>
 
-            <td>
-              {% if t.status == "PROGRAMADO" %}
-                <span class="badge badge-primary">Programado</span>
-              {% elif t.status == "EN_CURSO" %}
-                <span class="badge badge-warning">En curso</span>
-              {% elif t.status == "COMPLETADO" %}
-                <span class="badge badge-success">Completado</span>
-              {% elif t.status == "CANCELADO" %}
-                <span class="badge badge-secondary">Cancelado</span>
-              {% else %}
-                <span class="badge badge-light">{{ t.status }}</span>
-              {% endif %}
-            </td>
+           <td>
+            {% if t.status == "PROGRAMADO" %}
+              {# Columna PROGRAMADO: bg-warning #}
+              <span class="badge badge-warning">Programado</span>
 
-            <td class="text-right">
-              <a href="{% url 'trips:update' t.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
-                <i class="fas fa-edit"></i>
-              </a>
-              <a href="{% url 'trips:delete' t.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                <i class="fas fa-trash"></i>
-              </a>
-            </td>
+            {% elif t.status == "EN_ORIGEN" %}
+              {# Columna EN ORIGEN: bg-info #}
+              <span class="badge badge-info">En origen</span>
+
+            {% elif t.status == "EN_CURSO" %}
+              {# Columna EN CURSO: bg-primary #}
+              <span class="badge badge-primary">En curso</span>
+
+            {% elif t.status == "EN_DESTINO" %}
+              {# Columna EN DESTINO: bg-success #}
+              <span class="badge badge-success">En destino</span>
+
+            {% elif t.status == "COMPLETADO" %}
+              {# Columna COMPLETADO: bg-secondary #}
+              <span class="badge badge-secondary">Completado</span>
+
+            {% elif t.status == "CANCELADO" %}
+              {# Extra: cancelado en rojo #}
+              <span class="badge badge-danger">Cancelado</span>
+
+            {% else %}
+              <span class="badge badge-light">{{ t.status }}</span>
+            {% endif %}
+          </td>
+
+          <td class="text-right">
+
+            {% if t.status == "PROGRAMADO" %}
+                <!-- Botón EDITAR habilitado -->
+                <a href="{% url 'trips:update' t.pk %}"
+                  class="btn btn-sm btn-outline-secondary"
+                  title="Editar viaje">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <a href="{% url 'trips:delete' t.pk %}"
+                  class="btn btn-sm btn-outline-danger"
+                  title="Eliminar">
+                  <i class="fas fa-trash"></i>
+                </a>
+            {% else %}
+                <!-- Botónes  deshabilitados -->
+            {% endif %}
+
+           
+          </td>
           </tr>
         {% empty %}
           <tr>

@@ -51,11 +51,16 @@
     background: linear-gradient(135deg, #124174 0%, #124174 100%);
     color: white;
     border-radius: 0.75rem;
-    padding: 0.75rem 0.85rem;
+    padding: 0.55rem 0.65rem !important;
     margin-bottom: 0.75rem;
     cursor: grab;
     box-shadow: 0 3px 8px rgba(0,0,0,0.15);
     transition: transform 0.12s ease, box-shadow 0.12s ease;
+
+    /* mismo tamaño para todas */
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
   }
 
   .kanban-trip-card.dragging {
@@ -76,16 +81,20 @@
   }
 
   .ktc-body {
-    margin-top: 0.4rem;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.15rem !important;
+    padding: 0 !important;
     font-size: 0.85rem;
     line-height: 1.2rem;
+    flex: 1; /* empuja el footer al fondo para todas */
   }
 
   .ktc-item {
     display: flex;
     align-items: center;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
     color: rgba(255, 255, 255, 0.85);
+    line-height: 1.1rem;
   }
 
   .ktc-icon {
@@ -95,26 +104,31 @@
   }
 
   .ktc-footer {
-    margin-top: 0.35rem;
+    margin-top: 0.1rem;
   }
 
-  /* Botón lupa refinado */
+  /* Botón lupa refinado y compacto */
   .ktc-btn {
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(3px);
     border-radius: 50%;
-    padding: 6px 8px;
+    padding: 4px 6px;
     color: white !important;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     transition: all 0.15s ease;
   }
 
   .ktc-btn:hover {
     background: rgba(255, 255, 255, 0.25);
-    transform: scale(1.1);
+    transform: scale(1.08);
   }
-
 </style>
+
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">Monitoreo de viajes</h1>
@@ -211,10 +225,93 @@
 
 </div>
 
+<!-- Modal de Notificación -->
+<div class="modal fade" id="notifModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0" style="border-radius: 12px;">
+      <div class="modal-header bg-danger text-white py-2" id="notifModalHeader">
+        <h6 class="modal-title mb-0" id="notifModalTitle">Error</h6>
+        <button type="button" class="close text-white" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body py-3" id="notifModalBody">
+        Texto del mensaje
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-sm btn-primary" data-dismiss="modal">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Hora de llegada a origen -->
+<div class="modal fade" id="arrivalOriginModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title" id="timeModalTitle">Hora</h6>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body py-2">
+        <div class="form-group mb-2">
+          <label for="arrivalOriginInput" class="small mb-1" id="timeModalLabel">
+            Fecha y hora
+          </label>
+          <input type="datetime-local"
+                 id="arrivalOriginInput"
+                 class="form-control form-control-sm">
+        </div>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-sm btn-light" id="arrivalOriginCancelBtn">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" id="arrivalOriginSaveBtn">
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const cards = document.querySelectorAll(".kanban-trip-card");
     const columns = document.querySelectorAll(".kanban-column-body");
+
+    // ===== ORDEN ESTRICTO DE ESTADOS =====
+    const STATUS_FLOW = ["PROGRAMADO", "EN_ORIGEN", "EN_CURSO", "EN_DESTINO", "COMPLETADO"];
+
+    // Movimiento pendiente cuando se requiere hora
+    let pendingMove = null;
+
+    // ===== Helpers =====
+
+    function showNotif(message, type="error") {
+        const modalTitle = document.getElementById("notifModalTitle");
+        const modalBody = document.getElementById("notifModalBody");
+        const modalHeader = document.getElementById("notifModalHeader");
+
+        modalBody.textContent = message;
+
+        if (type === "error") {
+            modalTitle.textContent = "Error";
+            modalHeader.className = "modal-header bg-danger text-white py-2";
+        } else if (type === "warning") {
+            modalTitle.textContent = "Advertencia";
+            modalHeader.className = "modal-header";
+        } else {
+            modalTitle.textContent = "Información";
+            modalHeader.className = "modal-header bg-primary text-white py-2";
+        }
+
+        $('#notifModal').modal('show');
+    }
+
 
     function getCookie(name) {
       let cookieValue = null;
@@ -245,17 +342,16 @@
       columns.forEach(col => {
         const cardsInCol = col.querySelectorAll(".kanban-trip-card").length;
         const emptyNode = col.querySelector(".kanban-empty");
+        const status = col.dataset.status;
 
         if (cardsInCol > 0) {
           if (emptyNode) emptyNode.remove();
         } else {
-          // si no hay tarjetas y no hay mensaje vacío, crearlo
           if (!emptyNode) {
             const msg = document.createElement("div");
             msg.className = "text-muted small px-2 kanban-empty";
-            const status = col.dataset.status;
-            let text = "Sin viajes.";
 
+            let text = "Sin viajes.";
             if (status === "PROGRAMADO") text = "Sin viajes programados.";
             else if (status === "EN_ORIGEN") text = "Sin viajes en origen.";
             else if (status === "EN_CURSO") text = "Sin viajes en curso.";
@@ -268,6 +364,8 @@
         }
       });
     }
+
+    // ===== Drag & Drop tarjetas =====
 
     function attachCardDrag(card) {
       card.addEventListener("dragstart", function (e) {
@@ -303,17 +401,90 @@
 
         if (!card || !newStatus) return;
 
-        // columna origen ANTES de mover
         const fromCol = card.closest(".kanban-column-body");
         const oldStatus = card.dataset.status;
 
+        // Si no cambió de status, solo reordenar
         if (oldStatus === newStatus) {
           col.prepend(card);
           updateEmptyMessages();
           return;
         }
 
-        // Optimistic UI: movemos la tarjeta de inmediato
+        // ===== VALIDACIÓN DE FLUJO =====
+        const fromIdx = STATUS_FLOW.indexOf(oldStatus);
+        const toIdx   = STATUS_FLOW.indexOf(newStatus);
+
+        if (fromIdx === -1 || toIdx === -1) {
+          showNotif("Estatus de viaje inválido.", "error");
+          return;
+        }
+
+        if (toIdx < fromIdx) {
+          showNotif("No puedes regresar un viaje a un estado anterior.", "warning");
+          return;
+        }
+
+        if (toIdx > fromIdx + 1) {
+          showNotif("No puedes saltar estados. El siguiente estado válido es: " + STATUS_FLOW[fromIdx + 1], "warning");
+          return;
+        }
+
+        // ===== STATUS QUE REQUIEREN HORA =====
+        const needsTime = ["EN_ORIGEN", "EN_CURSO", "EN_DESTINO"].includes(newStatus);
+
+        if (needsTime) {
+          pendingMove = {
+            tripId,
+            card,
+            fromCol,
+            toCol: col,
+            oldStatus,
+            newStatus,
+            field: null,
+          };
+
+          const labelEl = document.getElementById("timeModalLabel");
+          const titleEl = document.getElementById("timeModalTitle");
+
+          if (newStatus === "EN_ORIGEN") {
+            pendingMove.field = "arrival_origin_at";
+            titleEl.textContent = "Hora de llegada al origen";
+            labelEl.textContent = "Fecha y hora de llegada al origen";
+          } else if (newStatus === "EN_CURSO") {
+            pendingMove.field = "departure_origin_at";
+            titleEl.textContent = "Hora de salida del origen";
+            labelEl.textContent = "Fecha y hora de salida del origen";
+          } else if (newStatus === "EN_DESTINO") {
+            pendingMove.field = "arrival_destination_at";
+            titleEl.textContent = "Hora de llegada al destino";
+            labelEl.textContent = "Fecha y hora de llegada al destino";
+          }
+
+          // Mover visualmente
+          col.prepend(card);
+          card.dataset.status = newStatus;
+          recalcCounters();
+          updateEmptyMessages();
+
+          // Set default datetime
+          const input = document.getElementById("arrivalOriginInput");
+          if (input) {
+            const now = new Date();
+            const pad = n => n.toString().padStart(2, "0");
+            input.value =
+              now.getFullYear() + "-" +
+              pad(now.getMonth() + 1) + "-" +
+              pad(now.getDate()) + "T" +
+              pad(now.getHours()) + ":" +
+              pad(now.getMinutes());
+          }
+
+          $('#arrivalOriginModal').modal('show');
+          return;
+        }
+
+        // ===== Flujo normal (sin hora) =====
         col.prepend(card);
         card.dataset.status = newStatus;
         recalcCounters();
@@ -330,24 +501,106 @@
             status: newStatus,
           }),
         })
-        .then(resp => resp.json())
-        .then(data => {
-          if (!data.ok) {
-            alert(data.error || "No se pudo actualizar el estatus.");
+          .then(resp => resp.json())
+          .then(data => {
+            if (!data.ok) {
+              showNotif("No se pudo actualizar el estatus.", "error");
+              window.location.reload();
+            }
+          })
+          .catch(err => {
+            showNotif("Error de comunicación con el servidor.", "error");
             window.location.reload();
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          alert("Error de comunicación. Recarga la página.");
-          window.location.reload();
-        });
+          });
       });
     });
 
-    // Ajusta mensajes vacíos al cargar
+    // ===== Modal =====
+
+    const modalEl = document.getElementById("arrivalOriginModal");
+    const saveBtn = document.getElementById("arrivalOriginSaveBtn");
+    const cancelBtn = document.getElementById("arrivalOriginCancelBtn");
+
+    function revertPendingMove() {
+      if (!pendingMove) return;
+      const { card, fromCol, oldStatus } = pendingMove;
+      fromCol.prepend(card);
+      card.dataset.status = oldStatus;
+      pendingMove = null;
+      recalcCounters();
+      updateEmptyMessages();
+    }
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        $('#arrivalOriginModal').modal('hide');
+        revertPendingMove();
+      });
+    }
+
+    if (modalEl) {
+      $('#arrivalOriginModal').on('hidden.bs.modal', function () {
+        if (pendingMove) {
+          revertPendingMove();
+        }
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener("click", function () {
+        if (!pendingMove) {
+          $('#arrivalOriginModal').modal('hide');
+          return;
+        }
+
+        const input = document.getElementById("arrivalOriginInput");
+        const value = input ? input.value : "";
+
+        if (!value) {
+          alert("Debes capturar la fecha y hora.");
+          return;
+        }
+
+        const { tripId, newStatus, field } = pendingMove;
+
+        const payload = {
+          trip_id: tripId,
+          status: newStatus,
+        };
+
+        payload[field] = value;
+
+        fetch("{% url 'trips:change_status' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify(payload),
+        })
+          .then(resp => resp.json())
+          .then(data => {
+            if (!data.ok) {
+              alert(data.error || "No se pudo actualizar el estatus.");
+              revertPendingMove();
+            } else {
+              pendingMove = null;
+              window.location.reload();
+            }
+            $('#arrivalOriginModal').modal('hide');
+          })
+          .catch(err => {
+            alert("Error de comunicación.");
+            revertPendingMove();
+            $('#arrivalOriginModal').modal('hide');
+          });
+      });
+    }
+
     updateEmptyMessages();
   });
 </script>
+
+
 
 {% endblock %}
