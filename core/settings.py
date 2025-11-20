@@ -12,7 +12,10 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-cambia-esto")
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-
+BANXICO_SIE_TOKEN = os.getenv(
+    "BANXICO_SIE_TOKEN",
+    "ac2bdbef4b2aaa29af891d4619537a50f2dd88b107587ba8bcd221e33eac3b7b",
+)
 # ==== Apps ====
 INSTALLED_APPS = [
     # Django

@@ -33,7 +33,6 @@ class SoftDeleteManager(models.Manager):
 
 class Truck(models.Model):
     # ===== Datos generales =====
-    nombre = models.CharField("Nombre", max_length=15, unique=True)
     placas = models.CharField("Placas", max_length=15, unique=True)
     numero_economico = models.CharField("Número económico", max_length=20, unique=True)
     serie = models.CharField("Serie (VIN)", max_length=50, blank=True, null=True)

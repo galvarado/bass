@@ -7,7 +7,7 @@ class TruckForm(forms.ModelForm):
     class Meta:
         model = Truck
         fields = [
-             "nombre","placas","numero_economico","serie","marca",
+            "placas","numero_economico","serie","marca",
             "motor","combustible","capacidad_combustible","peso_bruto",
             "categoria","rin",
             "ciclo_mtto",
@@ -73,7 +73,7 @@ class ReeferBoxForm(forms.ModelForm):
     class Meta:
         model = ReeferBox
         fields = [
-            "nombre","categoria","numero_economico","modelo","marca","numero_serie","placas",
+            "categoria","numero_economico","modelo","marca","numero_serie","placas",
             "km","ciclo_mtto","rin","peso_bruto","combustible","capacidad_thermo","tipo_remolque",
             "seguro","tarjeta_circulacion",
         ]

@@ -72,13 +72,13 @@ def lookup_cp(request):
 def header_info(request):
     """
     Devuelve el tipo de cambio USD→MXN del día.
-    Si no existe, consulta OpenExchangeRates y lo guarda.
+    Si no existe en BD, consulta Banxico (serie SF43718 - FIX) y lo guarda.
     """
-    provider = "openexchangerates.org"
+    provider = "banxico.org.mx (SIE SF43718 FIX)"
     today = date.today()
-    rate_obj = ExchangeRate.objects.filter(date=today).first()
 
-    # Si ya hay un registro de hoy, devolvemos ese valor
+    # 1) Revisar si ya tenemos el tipo de cambio de hoy
+    rate_obj = ExchangeRate.objects.filter(date=today).first()
     if rate_obj:
         return JsonResponse({
             "now": timezone.now().isoformat(),
@@ -86,28 +86,53 @@ def header_info(request):
             "provider": rate_obj.provider,
         })
 
-    # Si no existe, consultamos la API y guardamos
+    # 2) Consultar Banxico
     rate = None
     try:
-        app_id = getattr(settings, "OPENEXCHANGE_APP_ID", None)
-        if not app_id:
-            raise ValueError("OPENEXCHANGE_APP_ID not configured")
+        token = getattr(settings, "BANXICO_SIE_TOKEN", None)
+        if not token:
+            raise ValueError("BANXICO_SIE_TOKEN not configured")
 
-        url = getattr(settings, "OPENEXCHANGE_BASE_URL", "https://openexchangerates.org/api/latest.json")
-        r = requests.get(url, params={"app_id": app_id, "symbols": "MXN"}, timeout=8)
+        # Serie SF43718 = Tipo de cambio FIX
+        url = (
+            "https://www.banxico.org.mx/SieAPIRest/service/v1/"
+            "series/SF43718/datos/oportuno"
+        )
+
+        headers = {
+            "Bmx-Token": token,
+            "Accept": "application/json",
+        }
+
+        r = requests.get(url, headers=headers, timeout=8)
         r.raise_for_status()
 
         data = r.json()
-        rate = data.get("rates", {}).get("MXN")
+        # Navegar estructura: bmx -> series[0] -> datos[0] -> dato
+        series = data.get("bmx", {}).get("series", [])
+        if not series:
+            raise ValueError("No 'series' in Banxico response")
 
-        if rate:
-            rate_obj = ExchangeRate.objects.create(
-                date=today,
-                usd_mxn=rate,
-                provider=provider,
-            )
+        datos = series[0].get("datos", [])
+        if not datos:
+            raise ValueError("No 'datos' in Banxico response")
+
+        dato_str = datos[0].get("dato")
+        if not dato_str:
+            raise ValueError("No 'dato' in Banxico response")
+
+        # Banxico manda string, lo convertimos a float
+        rate = float(dato_str)
+
+        # 3) Guardar en la base de datos
+        rate_obj = ExchangeRate.objects.create(
+            date=today,
+            usd_mxn=rate,
+            provider=provider,
+        )
+
     except Exception as e:
-        # fallback: si no hay API y no hay valor previo, rate queda None
+        # Si algo falla y no había valor previo, devolvemos rate=None
         provider = f"{provider} (error: {e})"
 
     return JsonResponse({
