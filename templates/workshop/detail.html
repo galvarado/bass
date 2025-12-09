@@ -20,7 +20,23 @@
       <dd class="col-sm-9">{{ ot.folio_interno }}</dd>
 
       <dt class="col-sm-3">Unidad</dt>
-      <dd class="col-sm-9">{{ ot.unidad_display }}</dd>
+      <dd class="col-sm-9">
+
+        {% if ot.truck %}
+          <a href="{% url 'trucks:detail' ot.truck.id %}">
+            {{ ot.unidad_display }}
+          </a>
+
+        {% elif ot.reefer_box %}
+          <a href="{% url 'trucks:reeferbox_detail' ot.reefer_box.id %}">
+            {{ ot.unidad_display }}
+          </a>
+
+        {% else %}
+          <span class="text-muted">Sin unidad</span>
+        {% endif %}
+
+      </dd>
 
       <dt class="col-sm-3">Tipo</dt>
       <dd class="col-sm-9">
