@@ -12,7 +12,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView, TemplateView
 from django.views import View
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import Trip, TripStatus
 from .forms import TripForm, TripSearchForm
@@ -309,3 +309,67 @@ class TripChangeStatusView(View):
                     trip.arrival_destination_at.strftime("%d/%m %H:%M") if trip.arrival_destination_at else None,
             }
         })
+
+from .models import Trip, CartaPorteCFDI
+from .forms import (
+    CartaPorteCFDIForm,
+    CartaPorteLocationFormSet,
+    CartaPorteGoodsFormSet,
+    CartaPorteTransportFigureFormSet,
+)
+
+
+class CartaPorteCreateUpdateView(View):
+    template_name = "trips/carta_porte_form.html"
+
+    def get_trip_and_cp(self, pk):
+        trip = get_object_or_404(Trip, pk=pk)
+        carta_porte, created = CartaPorteCFDI.objects.get_or_create(trip=trip)
+        return trip, carta_porte
+
+    def get(self, request, trip_id):
+        trip, carta_porte = self.get_trip_and_cp(trip_id)
+
+        form = CartaPorteCFDIForm(instance=carta_porte)
+        location_formset = CartaPorteLocationFormSet(instance=carta_porte)
+        goods_formset = CartaPorteGoodsFormSet(instance=carta_porte)
+        figures_formset = CartaPorteTransportFigureFormSet(instance=carta_porte)
+
+        context = {
+            "trip": trip,
+            "form": form,
+            "location_formset": location_formset,
+            "goods_formset": goods_formset,
+            "figures_formset": figures_formset,
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, trip_id):
+        trip, carta_porte = self.get_trip_and_cp(trip_id)
+
+        form = CartaPorteCFDIForm(request.POST, instance=carta_porte)
+        location_formset = CartaPorteLocationFormSet(request.POST, instance=carta_porte)
+        goods_formset = CartaPorteGoodsFormSet(request.POST, instance=carta_porte)
+        figures_formset = CartaPorteTransportFigureFormSet(request.POST, instance=carta_porte)
+
+        if (
+            form.is_valid()
+            and location_formset.is_valid()
+            and goods_formset.is_valid()
+            and figures_formset.is_valid()
+        ):
+            form.save()
+            location_formset.save()
+            goods_formset.save()
+            figures_formset.save()
+            # aquí podrías redirigir a detalle del viaje o a "previsualizar / timbrar"
+            return redirect("trips:detail", pk=trip.id)
+
+        context = {
+            "trip": trip,
+            "form": form,
+            "location_formset": location_formset,
+            "goods_formset": goods_formset,
+            "figures_formset": figures_formset,
+        }
+        return render(request, self.template_name, context)

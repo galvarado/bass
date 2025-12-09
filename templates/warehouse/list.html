@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% load currency_extras %}
+
 {% block title %}Refacciones y Compras · BASS{% endblock %}
 {% block content %}
 
@@ -183,7 +185,7 @@
 
                 <td>
                   {% if p.total %}
-                    ${{ p.total }}
+                    ${{ p.total|money_mx }}
                   {% else %}
                     <span class="text-muted">—</span>
                   {% endif %}

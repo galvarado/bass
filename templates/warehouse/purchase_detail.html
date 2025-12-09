@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% load currency_extras %}
+
 {% block title %}Detalle de compra · BASS{% endblock %}
 {% block content %}
 
@@ -41,7 +43,7 @@
       <dt class="col-sm-3">Total</dt>
       <dd class="col-sm-9">
         {% if purchase.total %}
-          ${{ purchase.total }}
+          ${{ purchase.total|money_mx}}
         {% else %}
           <span class="text-muted">—</span>
         {% endif %}
@@ -118,7 +120,7 @@
 
             <td>
               {% if item.unit_price %}
-                ${{ item.unit_price }}
+                ${{ item.unit_price|money_mx }}
               {% else %}
                 <span class="text-muted">—</span>
               {% endif %}
@@ -126,7 +128,7 @@
 
             <td>
               {% if item.subtotal %}
-                ${{ item.subtotal }}
+                ${{ item.subtotal|money_mx }}
               {% else %}
                 <span class="text-muted">—</span>
               {% endif %}

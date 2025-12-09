@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Carta Porte · Viaje {{ trip.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Carta Porte – Viaje {{ trip.id }}</h1>
+  <a href="{% url 'trips:detail' trip.id %}" class="btn btn-light btn-sm">
+    <i class="fas fa-arrow-left"></i> Volver al viaje
+  </a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact">
+  {% csrf_token %}
+  <div class="card-body">
+
+    <h5 class="mb-3">Datos generales CFDI</h5>
+    {{ form.non_field_errors }}
+    <div class="row">
+      {% for field in form %}
+      <div class="col-md-4 mb-2">
+        <div class="form-group">
+          <label>{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+          <div class="text-danger small">{{ field.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <hr>
+
+    <h5>Ubicaciones (Origen / Destino / Escalas)</h5>
+    {{ location_formset.management_form }}
+    {% for form in location_formset %}
+      <div class="border rounded p-2 mb-2">
+        {% for field in form.visible_fields %}
+          <div class="form-group mb-1">
+            <label class="small">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div class="text-danger small">{{ field.errors|striptags }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+        {% if form.can_delete %}
+          <div class="form-check">
+            {{ form.DELETE }} <label class="form-check-label small">Eliminar</label>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <hr>
+
+    <h5>Mercancías</h5>
+    {{ goods_formset.management_form }}
+    {% for form in goods_formset %}
+      <div class="border rounded p-2 mb-2">
+        {% for field in form.visible_fields %}
+          <div class="form-group mb-1">
+            <label class="small">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div class="text-danger small">{{ field.errors|striptags }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+        {% if form.can_delete %}
+          <div class="form-check">
+            {{ form.DELETE }} <label class="form-check-label small">Eliminar</label>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <hr>
+
+    <h5>Figura Transporte</h5>
+    {{ figures_formset.management_form }}
+    {% for form in figures_formset %}
+      <div class="border rounded p-2 mb-2">
+        {% for field in form.visible_fields %}
+          <div class="form-group mb-1">
+            <label class="small">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div class="text-danger small">{{ field.errors|striptags }}</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+        {% if form.can_delete %}
+          <div class="form-check">
+            {{ form.DELETE }} <label class="form-check-label small">Eliminar</label>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+  </div>
+
+  <div class="card-footer text-right">
+    <button type="submit" class="btn btn-primary">
+      <i class="fas fa-save"></i> Guardar Carta Porte
+    </button>
+  </div>
+</form>
+{% endblock %}

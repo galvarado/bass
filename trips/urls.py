@@ -10,6 +10,6 @@ urlpatterns = [
     path("<int:pk>/", views.TripDetailView.as_view(), name="detail"),
     path("<int:pk>/eliminar/", views.TripSoftDeleteView.as_view(), name="delete"),
     path("monitoreo/", views.TripBoardView.as_view(), name="board"),
-    path("monitoreo/cambiar-status/",views.TripChangeStatusView.as_view(), name="change_status",
-    ),
+    path("monitoreo/cambiar-status/",views.TripChangeStatusView.as_view(), name="change_status",),
+    path("viajes/<int:trip_id>/carta-porte/", views.CartaPorteCreateUpdateView.as_view(), name="carta_porte_form"),
 ]
