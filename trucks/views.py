@@ -161,8 +161,12 @@ class TruckDetailView(DetailView):
     template_name = "trucks/trucks_detail.html"
     context_object_name = "truck"
 
-    def get_queryset(self):
-        return Truck.all_objects.all()
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        truck = self.object
+        # Solo órdenes NO eliminadas
+        ctx["orders_workshop"] = truck.ordenes_taller.filter(deleted=False).order_by("-fecha_entrada")
+        return ctx
 
 
 class TruckSoftDeleteView(DeleteView):
@@ -215,8 +219,12 @@ class ReeferBoxDetailView(DetailView):
     template_name = "trucks/reeferbox_detail.html"
     context_object_name = "box"
 
-    def get_queryset(self):
-        return ReeferBox.all_objects.all()
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        box = self.object
+        # Solo órdenes NO eliminadas
+        ctx["orders_workshop"] = box.ordenes_taller.filter(deleted=False).order_by("-fecha_entrada")
+        return ctx
 
 
 class ReeferBoxSoftDeleteView(DeleteView):

@@ -107,7 +107,7 @@
           </tr>
         </thead>
         <tbody>
-          {% for ot in box.ordenes_taller.all %}
+          {% for ot in orders_workshop %}
           <tr class="small">
             <td>
               <a href="{% url 'workshop:detail' ot.pk %}">
