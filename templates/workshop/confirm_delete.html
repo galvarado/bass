@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Eliminar Orden de Taller · BASS{% endblock %}
+{% block content %}
+
+<div class="card border-danger shadow-sm">
+  <div class="card-header bg-danger text-white">
+    <strong>Confirmar eliminación</strong>
+  </div>
+
+  <div class="card-body">
+
+    <p>
+      ¿Seguro que deseas eliminar la orden de taller
+      <strong>{{ object.folio_interno }}</strong>?
+    </p>
+
+    <dl class="row small mb-3">
+
+      <!-- Unidad -->
+      <dt class="col-sm-3">Unidad</dt>
+      <dd class="col-sm-9">{{ object.unidad_display }}</dd>
+
+      <!-- Estado -->
+      <dt class="col-sm-3">Estado</dt>
+      <dd class="col-sm-9">
+        {% if object.estado == "ABIERTA" %}
+          <span class="badge badge-warning">Abierta</span>
+        {% elif object.estado == "REPARACION" %}
+          <span class="badge badge-primary">En reparación</span>
+        {% elif object.estado == "ESPERA_REFACCION" %}
+          <span class="badge badge-info">Espera refacción</span>
+        {% elif object.estado == "TERMINADA" %}
+          <span class="badge badge-success">Terminada</span>
+        {% elif object.estado == "CANCELADA" %}
+          <span class="badge badge-danger">Cancelada</span>
+        {% else %}
+          <span class="badge badge-secondary">—</span>
+        {% endif %}
+      </dd>
+
+      <!-- Descripción -->
+      <dt class="col-sm-3">Descripción</dt>
+      <dd class="col-sm-9">
+        {% if object.descripcion %}
+          {{ object.descripcion|truncatechars:80 }}
+        {% else %}
+          <span class="text-muted">Sin descripción</span>
+        {% endif %}
+      </dd>
+
+      <!-- Fechas -->
+      <dt class="col-sm-3">Fecha entrada</dt>
+      <dd class="col-sm-9">
+        {% if object.fecha_entrada %}
+          {{ object.fecha_entrada|date:"d/m/Y H:i" }}
+        {% else %}
+          —
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Salida estimada</dt>
+      <dd class="col-sm-9">
+        {% if object.fecha_salida_estimada %}
+          {{ object.fecha_salida_estimada|date:"d/m/Y" }}
+        {% else %}
+          <span class="text-muted">Sin estimar</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Salida real</dt>
+      <dd class="col-sm-9">
+        {% if object.fecha_salida_real %}
+          {{ object.fecha_salida_real|date:"d/m/Y H:i" }}
+        {% else %}
+          —
+        {% endif %}
+      </dd>
+
+    </dl>
+
+    <form method="post" class="mt-3">
+      {% csrf_token %}
+      <a href="{% url 'workshop:list' %}" class="btn btn-outline-secondary">
+        Cancelar
+      </a>
+      <button type="submit" class="btn btn-danger">
+        <i class="fas fa-trash"></i> Eliminar
+      </button>
+    </form>
+
+    <p class="text-muted mt-3 mb-0 small">
+      <i class="fas fa-info-circle"></i>
+      Esta acción realizará un <strong>borrado</strong>.  
+    </p>
+
+  </div>
+</div>
+
+{% endblock %}
