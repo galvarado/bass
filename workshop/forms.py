@@ -13,6 +13,7 @@ class WorkshopOrderForm(forms.ModelForm):
             "reefer_box",
             "fecha_salida_estimada",
             "descripcion",
+            "estado",
             "costo_mano_obra",
             "costo_refacciones",
             "otros_costos",
@@ -28,7 +29,9 @@ class WorkshopOrderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Estilo Bootstrap pequeño
+        instance = getattr(self, "instance", None)
+
+        # ===== Estilo Bootstrap pequeño =====
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.update({"class": "form-check-input"})
@@ -44,12 +47,33 @@ class WorkshopOrderForm(forms.ModelForm):
         # Solo unidades vivas
         self.fields["truck"].queryset = Truck.all_objects.alive()
         self.fields["truck"].required = False
+
         self.fields["reefer_box"].queryset = ReeferBox.all_objects.alive()
         self.fields["reefer_box"].required = False
 
         # UX
         self.fields["descripcion"].widget.attrs.setdefault("rows", 3)
         self.fields["notas_internas"].widget.attrs.setdefault("rows", 3)
+
+        # ===== Lógica según creación / edición =====
+        if instance and instance.pk:
+            # --- EDICIÓN ---
+            # No permitir cambiar la unidad ni la descripción
+            self.fields["truck"].disabled = True
+            self.fields["reefer_box"].disabled = True
+            self.fields["descripcion"].disabled = True
+
+            # Estado editable en edición
+            self.fields["estado"].required = True
+
+        else:
+            # --- CREACIÓN ---
+            # Estado no se usa en el template al crear, pero forzamos default
+            self.fields["estado"].initial = "ABIERTA"
+            self.fields["estado"].required = False
+
+            # En creación la descripción sí debe ser obligatoria
+            self.fields["descripcion"].required = True
 
 
 class WorkshopOrderSearchForm(forms.Form):

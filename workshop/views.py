@@ -3,6 +3,8 @@ from django.contrib import messages
 from django.db.models import Q
 from django.urls import reverse_lazy
 from django.http import HttpResponseRedirect
+from django.utils import timezone
+
 from django.views.generic import (
     ListView, CreateView, UpdateView, DetailView, DeleteView
 )
@@ -103,9 +105,13 @@ class WorkshopOrderCreateView(CreateView):
     success_url = reverse_lazy("workshop:list")
 
     def form_valid(self, form):
-        resp = super().form_valid(form)
+        # fuerza estado ABIERTA al crear
+        ot = form.save(commit=False)
+        ot.estado = "ABIERTA"
+        ot.save()
+        form.save_m2m()
         messages.success(self.request, "Orden de taller creada correctamente.")
-        return resp
+        return HttpResponseRedirect(self.success_url)
 
 
 class WorkshopOrderUpdateView(UpdateView):
@@ -115,14 +121,42 @@ class WorkshopOrderUpdateView(UpdateView):
     success_url = reverse_lazy("workshop:list")
 
     def get_queryset(self):
-        # Puedes decidir si permites editar eliminadas; aquí dejamos todas
-        return WorkshopOrder.objects.all()
+        # Solo órdenes no eliminadas
+        return WorkshopOrder.objects.filter(deleted=False)
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        No permitir editar órdenes TERMINADA o CANCELADA.
+        """
+        self.object = self.get_object()
+        if self.object.estado in ("TERMINADA", "CANCELADA"):
+            messages.error(
+                request,
+                "No puedes editar una orden de taller que está terminada o cancelada."
+            )
+            return HttpResponseRedirect(
+                reverse_lazy("workshop:detail", kwargs={"pk": self.object.pk})
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        resp = super().form_valid(form)
-        messages.success(self.request, "Orden de taller actualizada correctamente.")
-        return resp
+        # Obtener el estado anterior directo de la base de datos
+        original = WorkshopOrder.objects.get(pk=self.object.pk)
+        old_estado = original.estado
 
+        ot = form.save(commit=False)
+
+        # Si se cambió de cualquier otro estado a TERMINADA,
+        # y no tiene salida real, la ponemos ahora
+        if old_estado != "TERMINADA" and ot.estado == "TERMINADA":
+            if ot.fecha_salida_real is None:
+                ot.fecha_salida_real = timezone.now()
+
+        ot.save()
+        form.save_m2m()
+
+        messages.success(self.request, "Orden de taller actualizada correctamente.")
+        return HttpResponseRedirect(self.success_url)
 
 class WorkshopOrderDetailView(DetailView):
     model = WorkshopOrder
@@ -140,7 +174,23 @@ class WorkshopOrderSoftDeleteView(DeleteView):
     success_url = reverse_lazy("workshop:list")
 
     def get_queryset(self):
+        # Solo órdenes no eliminadas
         return WorkshopOrder.objects.filter(deleted=False)
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        No permitir eliminar órdenes TERMINADA o CANCELADA.
+        """
+        self.object = self.get_object()
+        if self.object.estado in ("TERMINADA", "CANCELADA"):
+            messages.error(
+                request,
+                "No puedes eliminar una orden de taller que está terminada o cancelada."
+            )
+            return HttpResponseRedirect(
+                reverse_lazy("workshop:detail", kwargs={"pk": self.object.pk})
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()

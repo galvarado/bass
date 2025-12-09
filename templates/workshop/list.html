@@ -161,7 +161,7 @@
           <th>Descripción</th>
           <th>Estado</th>
           <th>Fecha entrada</th>
-          <th>Salida estimada</th>
+          <th>Salida real</th>
         </tr>
       </thead>
 
@@ -200,7 +200,7 @@
           <td>{{ ot.fecha_entrada|date:"d/m/Y H:i" }}</td>
 
           <td>
-            {% if ot.fecha_salida_estimada %}
+            {% if ot.fecha_salida_real %}
               {{ ot.fecha_salida_estimada|date:"d/m/Y" }}
             {% else %}
               <span class="text-muted">Sin estimar</span>

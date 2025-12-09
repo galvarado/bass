@@ -28,14 +28,28 @@
     </h6>
 
     <div class="form-row">
-      <div class="form-group col-md-4" id="field-truck">
-        <label for="{{ form.truck.id_for_label }}">Camión</label>
-        {{ form.truck|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-4" id="field-reefer-box">
-        <label for="{{ form.reefer_box.id_for_label }}">Caja</label>
-        {{ form.reefer_box|add_class:"form-control" }}
-      </div>
+
+      {% if object %}
+        <!-- En edición: mostrar unidad solo como texto -->
+        <div class="form-group col-md-4">
+          <label>Unidad</label>
+          <input type="text"
+                 class="form-control form-control-sm"
+                 value="{{ object.unidad_display }}"
+                 readonly>
+        </div>
+      {% else %}
+        <!-- En creación: elegir camión / caja (XOR) -->
+        <div class="form-group col-md-4" id="field-truck">
+          <label for="{{ form.truck.id_for_label }}">Camión</label>
+          {{ form.truck|add_class:"form-control" }}
+        </div>
+        <div class="form-group col-md-4" id="field-reefer-box">
+          <label for="{{ form.reefer_box.id_for_label }}">Caja</label>
+          {{ form.reefer_box|add_class:"form-control" }}
+        </div>
+      {% endif %}
+
       <div class="form-group col-md-4">
         <label>Fecha de entrada</label>
         <input type="text"
@@ -45,11 +59,19 @@
       </div>
     </div>
 
+    <!-- Fecha salida estimada + (solo en edición) estado -->
     <div class="form-row">
       <div class="form-group col-md-4">
         <label for="{{ form.fecha_salida_estimada.id_for_label }}">Fecha salida estimada</label>
         {{ form.fecha_salida_estimada|add_class:"form-control" }}
       </div>
+
+      {% if object %}
+        <div class="form-group col-md-4">
+          <label for="{{ form.estado.id_for_label }}">Estado</label>
+          {{ form.estado|add_class:"form-control" }}
+        </div>
+      {% endif %}
     </div>
 
     <!-- ===== DESCRIPCIÓN ===== -->
@@ -60,13 +82,21 @@
 
     <div class="form-row">
       <div class="form-group col-md-12">
-        <label for="{{ form.descripcion.id_for_label }}">Motivo por el que entra a taller</label>
-        {{ form.descripcion|add_class:"form-control" }}
+        <label>Motivo por el que entra a taller</label>
+        {% if object %}
+          <!-- En edición: solo lectura -->
+          <textarea class="form-control form-control-sm" rows="3" readonly>
+{{ object.descripcion }}
+          </textarea>
+        {% else %}
+          <!-- En creación: editable -->
+          {{ form.descripcion|add_class:"form-control" }}
+        {% endif %}
       </div>
     </div>
 
     {% if object %}
-      <!-- ===== COSTOS ===== -->
+      <!-- ===== COSTOS (solo edición) ===== -->
       <hr>
       <h6 class="text-primary mb-2">
         <i class="fas fa-dollar-sign mr-1"></i> Costos
@@ -87,7 +117,7 @@
         </div>
       </div>
 
-      <!-- ===== NOTAS ===== -->
+      <!-- ===== NOTAS (solo edición) ===== -->
       <hr>
       <h6 class="text-primary mb-2">
         <i class="fas fa-sticky-note mr-1"></i> Notas internas
@@ -116,29 +146,28 @@
 
 <script>
 (function() {
+  // Esta lógica solo aplica cuando existen los selects (creación)
   const truckSelect = document.getElementById('id_truck');
   const boxSelect = document.getElementById('id_reefer_box');
 
   function updateUnidadLock() {
-    const truckVal = truckSelect ? truckSelect.value : '';
-    const boxVal = boxSelect ? boxSelect.value : '';
+    if (!truckSelect || !boxSelect) return;
 
-    if (truckSelect) {
-      if (boxVal) {
-        truckSelect.value = '';
-        truckSelect.disabled = true;
-      } else {
-        truckSelect.disabled = false;
-      }
+    const truckVal = truckSelect.value;
+    const boxVal = boxSelect.value;
+
+    if (truckVal) {
+      boxSelect.value = '';
+      boxSelect.disabled = true;
+    } else {
+      boxSelect.disabled = false;
     }
 
-    if (boxSelect) {
-      if (truckVal) {
-        boxSelect.value = '';
-        boxSelect.disabled = true;
-      } else {
-        boxSelect.disabled = false;
-      }
+    if (boxVal) {
+      truckSelect.value = '';
+      truckSelect.disabled = true;
+    } else {
+      truckSelect.disabled = false;
     }
   }
 
@@ -149,7 +178,7 @@
     boxSelect.addEventListener('change', updateUnidadLock);
   }
 
-  // Para edición
+  // Inicializar estado al cargar
   updateUnidadLock();
 })();
 </script>
