@@ -35,6 +35,7 @@ urlpatterns = [
     path("trips/", include("trips.urls", namespace="trips")),
     path("audit/", include("audit.urls")),
     path("workshop/", include("workshop.urls")),
+    path("warehouse/", include("warehouse.urls")),
     path("api/utils/header-info/", header_info, name="header_info"),
     path("api/utils/lookup-cp/", lookup_cp, name="lookup_cp"),
 ]

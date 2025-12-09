@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load form_extras %}
+{% block title %}Nueva compra de refacciones · BASS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Nueva compra de refacciones</h1>
+  <a href="#" class="btn btn-light btn-sm">
+    <i class="fas fa-arrow-left"></i> Volver
+  </a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact">
+  {% csrf_token %}
+  <div class="card-body">
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- CABECERA -->
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-file-invoice mr-1"></i> Datos de la compra
+    </h6>
+
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label for="{{ form.supplier_name.id_for_label }}">Proveedor</label>
+        {{ form.supplier_name|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.invoice_number.id_for_label }}">Factura / Folio</label>
+        {{ form.invoice_number|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.date.id_for_label }}">Fecha</label>
+        {{ form.date|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.notes.id_for_label }}">Notas</label>
+      {{ form.notes|add_class:"form-control" }}
+    </div>
+
+    <hr>
+
+    <!-- PARTIDAS -->
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-list-ul mr-1"></i> Partidas de refacciones
+    </h6>
+
+    {{ item_formset.management_form }}
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered mb-0">
+        <thead class="thead-light">
+          <tr class="small text-center">
+            <th style="width: 45%;">Refacción</th>
+            <th style="width: 15%;">Cantidad</th>
+            <th style="width: 20%;">Precio unitario</th>
+            <th>Notas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in item_formset.forms %}
+          <tr class="small">
+            <td>{{ f.spare_part|add_class:"form-control form-control-sm" }}</td>
+            <td>{{ f.quantity|add_class:"form-control form-control-sm" }}</td>
+            <td>{{ f.unit_price|add_class:"form-control form-control-sm" }}</td>
+            <td>{{ f.notes|add_class:"form-control form-control-sm" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if item_formset.non_form_errors %}
+      <div class="alert alert-danger mt-2">
+        {% for e in item_formset.non_form_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+  </div>
+
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      <i class="fas fa-save"></i> Guardar compra
+    </button>
+  </div>
+</form>
+{% endblock %}

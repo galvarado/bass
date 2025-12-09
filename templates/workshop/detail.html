@@ -156,6 +156,48 @@
 
     <hr>
 
+    <!-- ===== REFACCIONES USADAS ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-cog mr-1"></i> Refacciones usadas en esta orden
+    </h6>
+
+    {% if spare_parts_used %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+          <thead class="thead-light">
+            <tr class="small">
+              <th>Refacción</th>
+              <th style="width: 120px;">Cantidad</th>
+              <th style="width: 160px;">Fecha uso</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for mv in spare_parts_used %}
+              <tr class="small">
+                <td>
+                  <a href="{% url 'warehouse:sparepart_detail' mv.spare_part.id %}">
+                      {{ mv.spare_part.code }} - {{ mv.spare_part.name }}
+                    </a>                
+                </td>
+                <td>
+                  {{ mv.display_quantity }} {{ mv.spare_part.unit }}
+                </td>
+                <td>
+                  {{ mv.date|date:"d/m/Y H:i" }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted small mb-0">
+        Esta orden no tiene refacciones registradas.
+      </p>
+    {% endif %}
+
+    <hr>
+
     <!-- ===== NOTAS INTERNAS ===== -->
     <h6 class="text-primary mb-3">
       <i class="fas fa-sticky-note mr-1"></i> Notas internas

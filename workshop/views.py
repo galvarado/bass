@@ -1,17 +1,18 @@
-# workshop/views.py
+
 from django.contrib import messages
 from django.db.models import Q
 from django.urls import reverse_lazy
 from django.http import HttpResponseRedirect
 from django.utils import timezone
+from django.db import transaction
 
 from django.views.generic import (
     ListView, CreateView, UpdateView, DetailView, DeleteView
 )
 
 from .models import WorkshopOrder
-from .forms import WorkshopOrderForm, WorkshopOrderSearchForm
-
+from .forms import WorkshopOrderForm, WorkshopOrderSearchForm, SparePartUsageFormSet
+from warehouse.models import SparePartMovement
 
 # Campos que podrías auditar (ajusta según tu bitácora real)
 FIELDS_AUDIT = [
@@ -124,36 +125,67 @@ class WorkshopOrderUpdateView(UpdateView):
         # Solo órdenes no eliminadas
         return WorkshopOrder.objects.filter(deleted=False)
 
-    def dispatch(self, request, *args, **kwargs):
-        """
-        No permitir editar órdenes TERMINADA o CANCELADA.
-        """
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        if self.request.method == "POST":
+            ctx["formset"] = SparePartUsageFormSet(
+                self.request.POST,
+                instance=self.object,
+            )
+        else:
+            ctx["formset"] = SparePartUsageFormSet(
+                instance=self.object,
+            )
+        return ctx
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        if self.object.estado in ("TERMINADA", "CANCELADA"):
-            messages.error(
-                request,
-                "No puedes editar una orden de taller que está terminada o cancelada."
-            )
-            return HttpResponseRedirect(
-                reverse_lazy("workshop:detail", kwargs={"pk": self.object.pk})
-            )
-        return super().dispatch(request, *args, **kwargs)
+        form = self.get_form()
+        formset = SparePartUsageFormSet(self.request.POST, instance=self.object)
 
-    def form_valid(self, form):
-        # Obtener el estado anterior directo de la base de datos
-        original = WorkshopOrder.objects.get(pk=self.object.pk)
-        old_estado = original.estado
+        if form.is_valid() and formset.is_valid():
+            return self.form_valid_with_items(form, formset)
+        else:
+            return self.form_invalid(form)
 
-        ot = form.save(commit=False)
+    def form_valid_with_items(self, form, formset):
+        """
+        Guarda la OT + refacciones usadas.
+        Convierte cantidad positiva en movimiento negativo (salida de inventario).
+        """
+        ot = form.save()
 
-        # Si se cambió de cualquier otro estado a TERMINADA,
-        # y no tiene salida real, la ponemos ahora
-        if old_estado != "TERMINADA" and ot.estado == "TERMINADA":
-            if ot.fecha_salida_real is None:
-                ot.fecha_salida_real = timezone.now()
+        # Recorremos cada form del formset
+        instances = formset.save(commit=False)
 
-        ot.save()
-        form.save_m2m()
+        # Marcar como borrados los que el usuario seleccionó para eliminar
+        for obj in formset.deleted_objects:
+            if isinstance(obj, SparePartMovement):
+                obj.deleted = True
+                obj.save(update_fields=["deleted"])
+
+        for mv in instances:
+            # Tipo fijo para este formset
+            mv.movement_type = "WORKSHOP_USAGE"
+            mv.workshop_order = ot
+
+            # Si el usuario dejó la cantidad vacía, no se guarda
+            if mv.quantity is None:
+                continue
+
+            # La cantidad capturada es positiva → la convertimos a negativa
+            if mv.quantity > 0:
+                mv.quantity = -mv.quantity
+
+            mv.save()
+
+        # Recalcular costo_refacciones si quieres (opcional)
+        # total_ref = ot.spare_part_movements.filter(deleted=False).aggregate(
+        #     total=Sum(F("quantity") * F("unit_cost"))
+        # )["total"] or 0
+        # ot.costo_refacciones = abs(total_ref)
+        # ot.save(update_fields=["costo_refacciones"])
 
         messages.success(self.request, "Orden de taller actualizada correctamente.")
         return HttpResponseRedirect(self.success_url)
@@ -166,6 +198,24 @@ class WorkshopOrderDetailView(DetailView):
     def get_queryset(self):
         # Permite ver detalle tanto vivas como eliminadas
         return WorkshopOrder.objects.all()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ot = self.object
+
+        movements = (
+            ot.spare_part_movements
+              .filter(movement_type="WORKSHOP_USAGE", deleted=False)
+              .select_related("spare_part")
+              .order_by("date", "id")
+        )
+
+        # Cantidad para mostrar siempre positiva
+        for mv in movements:
+            mv.display_quantity = abs(mv.quantity or 0)
+
+        ctx["spare_parts_used"] = movements
+        return ctx
 
 
 class WorkshopOrderSoftDeleteView(DeleteView):

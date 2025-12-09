@@ -1,10 +1,15 @@
 # workshop/forms.py
 from django import forms
+from django.forms import inlineformset_factory, BaseInlineFormSet
 
 from .models import WorkshopOrder
 from trucks.models import Truck, ReeferBox
+from warehouse.models import SparePartMovement
 
 
+# =======================
+#   FORMULARIO DE OT
+# =======================
 class WorkshopOrderForm(forms.ModelForm):
     class Meta:
         model = WorkshopOrder
@@ -15,7 +20,6 @@ class WorkshopOrderForm(forms.ModelForm):
             "descripcion",
             "estado",
             "costo_mano_obra",
-            "costo_refacciones",
             "otros_costos",
             "notas_internas",
         ]
@@ -31,7 +35,7 @@ class WorkshopOrderForm(forms.ModelForm):
 
         instance = getattr(self, "instance", None)
 
-        # ===== Estilo Bootstrap pequeño =====
+        # ===== Bootstrap pequeño =====
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.update({"class": "form-check-input"})
@@ -44,7 +48,7 @@ class WorkshopOrderForm(forms.ModelForm):
         if isinstance(self.fields["fecha_salida_estimada"].widget, forms.DateInput):
             self.fields["fecha_salida_estimada"].input_formats = ["%Y-%m-%d"]
 
-        # Solo unidades vivas
+        # === Unidades vivas ===
         self.fields["truck"].queryset = Truck.all_objects.alive()
         self.fields["truck"].required = False
 
@@ -55,27 +59,24 @@ class WorkshopOrderForm(forms.ModelForm):
         self.fields["descripcion"].widget.attrs.setdefault("rows", 3)
         self.fields["notas_internas"].widget.attrs.setdefault("rows", 3)
 
-        # ===== Lógica según creación / edición =====
+        # ===== CREACIÓN vs EDICIÓN =====
         if instance and instance.pk:
             # --- EDICIÓN ---
-            # No permitir cambiar la unidad ni la descripción
             self.fields["truck"].disabled = True
             self.fields["reefer_box"].disabled = True
             self.fields["descripcion"].disabled = True
-
-            # Estado editable en edición
             self.fields["estado"].required = True
 
         else:
             # --- CREACIÓN ---
-            # Estado no se usa en el template al crear, pero forzamos default
             self.fields["estado"].initial = "ABIERTA"
             self.fields["estado"].required = False
-
-            # En creación la descripción sí debe ser obligatoria
             self.fields["descripcion"].required = True
 
 
+# ================================
+#   BUSCADOR
+# ================================
 class WorkshopOrderSearchForm(forms.Form):
     q = forms.CharField(
         required=False,
@@ -86,7 +87,6 @@ class WorkshopOrderSearchForm(forms.Form):
         }),
     )
 
-    # Filtro virtual de tipo de unidad (no es campo del modelo)
     tipo_unidad = forms.ChoiceField(
         required=False,
         label="Tipo de unidad",
@@ -97,3 +97,61 @@ class WorkshopOrderSearchForm(forms.Form):
         ],
         widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
     )
+
+
+# ================================
+#   REFACCIONES USADAS EN OT
+# ================================
+class SparePartUsageForm(forms.ModelForm):
+    """
+    Formulario para capturar refacciones usadas en una orden de taller.
+    La cantidad se captura en positivo, pero se convertirá a negativa al guardar.
+    """
+
+    class Meta:
+        model = SparePartMovement
+        fields = ["spare_part", "quantity", "unit_cost", "description"]
+        labels = {
+            "spare_part": "Refacción",
+            "quantity": "Cantidad usada",
+            "unit_cost": "Costo unitario",
+            "description": "Descripción",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Bootstrap pequeño
+        for f in self.fields.values():
+            f.widget.attrs["class"] = "form-control form-control-sm"
+
+        # Cantidad obligatoria si se captura refacción
+        self.fields["quantity"].required = False
+
+    def clean_quantity(self):
+        qty = self.cleaned_data.get("quantity")
+        if qty is None or qty == "":
+            return None
+        if qty <= 0:
+            raise forms.ValidationError("La cantidad debe ser mayor que cero.")
+        return qty
+
+
+class BaseSparePartUsageFormSet(BaseInlineFormSet):
+    def get_queryset(self):
+        """
+        Solo movimientos vivos y de tipo WORKSHOP_USAGE.
+        """
+        qs = super().get_queryset()
+        return qs.filter(movement_type="WORKSHOP_USAGE", deleted=False)
+
+
+SparePartUsageFormSet = inlineformset_factory(
+    parent_model=WorkshopOrder,
+    model=SparePartMovement,
+    form=SparePartUsageForm,
+    formset=BaseSparePartUsageFormSet,
+    fk_name="workshop_order",
+    extra=3,
+    can_delete=True,
+)

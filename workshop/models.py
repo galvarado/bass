@@ -94,13 +94,6 @@ class WorkshopOrder(models.Model):
         blank=True,
         null=True,
     )
-    costo_refacciones = models.DecimalField(
-        "Costo refacciones",
-        max_digits=12,
-        decimal_places=2,
-        blank=True,
-        null=True,
-    )
     otros_costos = models.DecimalField(
         "Otros costos",
         max_digits=12,

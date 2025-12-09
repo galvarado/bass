@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Detalle de Refacción · BASS{% endblock %}
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Detalle de Refacción</strong>
+    <div>
+      <a href="{% url 'warehouse:sparepart_update' part.pk %}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-edit"></i> Editar
+      </a>
+      <a href="{% url 'warehouse:sparepart_delete' part.pk %}" class="btn btn-sm btn-outline-danger">
+        <i class="fas fa-trash"></i> Eliminar
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body">
+
+    <!-- ===== DATOS GENERALES ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-cogs mr-1"></i> Datos generales</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Código</dt>
+      <dd class="col-sm-9">{{ part.code|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Nombre</dt>
+      <dd class="col-sm-9">{{ part.name|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Descripción</dt>
+      <dd class="col-sm-9">
+        {% if part.description %}
+          {{ part.description }}
+        {% else %}
+          <span class="text-muted">Sin descripción</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Unidad de medida</dt>
+      <dd class="col-sm-9">{{ part.unit|default:"pieza" }}</dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== INVENTARIO ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-warehouse mr-1"></i> Inventario</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Stock actual</dt>
+      <dd class="col-sm-9">
+        <span class="badge {% if part.stock_actual <= part.min_stock %}badge-danger{% else %}badge-success{% endif %}">
+          {{ part.stock_actual }} {{ part.unit }}
+        </span>
+      </dd>
+
+      <dt class="col-sm-3">Stock mínimo</dt>
+      <dd class="col-sm-9">
+        {% if part.min_stock %}
+          {{ part.min_stock }} {{ part.unit }}
+        {% else %}
+          — 
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Notas internas</dt>
+      <dd class="col-sm-9">
+        {% if part.notes %}
+          {{ part.notes }}
+        {% else %}
+          <span class="text-muted">Sin notas</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+  </div>
+</div>
+
+<!-- ==========================
+     MOVIMIENTOS DE INVENTARIO
+=========================== -->
+<div class="card shadow-sm mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong><i class="fas fa-history mr-1"></i> Movimientos de inventario</strong>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="thead-light">
+          <tr class="small">
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+            <th>Costo unitario</th>
+            <th>Origen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mv in movements %}
+          <tr class="small">
+            <td>{{ mv.date|date:"d/m/Y H:i" }}</td>
+
+            <td>
+              {% if mv.movement_type == "INITIAL" %}
+                <span class="badge badge-secondary">Carga inicial</span>
+              {% elif mv.movement_type == "PURCHASE" %}
+                <span class="badge badge-primary">Compra</span>
+              {% elif mv.movement_type == "WORKSHOP_USAGE" %}
+                <span class="badge badge-warning">Consumo taller</span>
+              {% elif mv.movement_type == "ADJUST_IN" %}
+                <span class="badge badge-success">Ajuste (+)</span>
+              {% elif mv.movement_type == "ADJUST_OUT" %}
+                <span class="badge badge-danger">Ajuste (-)</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if mv.quantity < 0 %}
+                <span class="text-danger">{{ mv.quantity }} {{ part.unit }}</span>
+              {% else %}
+                <span class="text-success">{{ mv.quantity }} {{ part.unit }}</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if mv.unit_cost %}
+                ${{ mv.unit_cost }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <td>
+              {% if mv.purchase_item %}
+                Compra <a href="{% url 'warehouse:purchase_detail' mv.purchase_item.purchase.id %}">{{ mv.purchase_item.purchase.id }}</a>
+              {% elif mv.workshop_order %}
+                Orden <a href="{% url 'workshop:detail' mv.workshop_order.folio_interno %}">{{ mv.workshop_order.folio_interno }}</a> 
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-3 small">
+              No hay movimientos registrados para esta refacción.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

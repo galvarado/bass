@@ -22,7 +22,9 @@
       </div>
     {% endif %}
 
-    <!-- ===== DATOS DE LA ORDEN ===== -->
+    <!-- =======================
+         DATOS DE LA ORDEN
+    ======================== -->
     <h6 class="text-primary mb-2">
       <i class="fas fa-tools mr-1"></i> Datos de la orden
     </h6>
@@ -30,7 +32,6 @@
     <div class="form-row">
 
       {% if object %}
-        <!-- En edición: mostrar unidad solo como texto -->
         <div class="form-group col-md-4">
           <label>Unidad</label>
           <input type="text"
@@ -39,7 +40,6 @@
                  readonly>
         </div>
       {% else %}
-        <!-- En creación: elegir camión / caja (XOR) -->
         <div class="form-group col-md-4" id="field-truck">
           <label for="{{ form.truck.id_for_label }}">Camión</label>
           {{ form.truck|add_class:"form-control" }}
@@ -54,12 +54,11 @@
         <label>Fecha de entrada</label>
         <input type="text"
                class="form-control form-control-sm"
-               value="{% if object and object.fecha_entrada %}{{ object.fecha_entrada|date:'d/m/Y H:i' }}{% else %}Se asignará automáticamente al crear la orden{% endif %}"
+               value="{% if object %}{{ object.fecha_entrada|date:'d/m/Y H:i' }}{% else %}Se asignará automáticamente{% endif %}"
                readonly>
       </div>
     </div>
 
-    <!-- Fecha salida estimada + (solo en edición) estado -->
     <div class="form-row">
       <div class="form-group col-md-4">
         <label for="{{ form.fecha_salida_estimada.id_for_label }}">Fecha salida estimada</label>
@@ -74,7 +73,9 @@
       {% endif %}
     </div>
 
-    <!-- ===== DESCRIPCIÓN ===== -->
+    <!-- =========================
+         DESCRIPCIÓN
+    ========================== -->
     <hr>
     <h6 class="text-primary mb-2">
       <i class="fas fa-exclamation-triangle mr-1"></i> Descripción de la falla
@@ -84,19 +85,17 @@
       <div class="form-group col-md-12">
         <label>Motivo por el que entra a taller</label>
         {% if object %}
-          <!-- En edición: solo lectura -->
-          <textarea class="form-control form-control-sm" rows="3" readonly>
-{{ object.descripcion }}
-          </textarea>
+          <textarea class="form-control form-control-sm" rows="3" readonly>{{ object.descripcion }}</textarea>
         {% else %}
-          <!-- En creación: editable -->
           {{ form.descripcion|add_class:"form-control" }}
         {% endif %}
       </div>
     </div>
 
     {% if object %}
-      <!-- ===== COSTOS (solo edición) ===== -->
+      <!-- =========================
+           COSTOS
+      ========================== -->
       <hr>
       <h6 class="text-primary mb-2">
         <i class="fas fa-dollar-sign mr-1"></i> Costos
@@ -108,27 +107,68 @@
           {{ form.costo_mano_obra|add_class:"form-control" }}
         </div>
         <div class="form-group col-md-4">
-          <label for="{{ form.costo_refacciones.id_for_label }}">Refacciones</label>
-          {{ form.costo_refacciones|add_class:"form-control" }}
-        </div>
-        <div class="form-group col-md-4">
           <label for="{{ form.otros_costos.id_for_label }}">Otros costos</label>
           {{ form.otros_costos|add_class:"form-control" }}
         </div>
       </div>
 
-      <!-- ===== NOTAS (solo edición) ===== -->
+            <!-- =========================
+           REFACCIONES USADAS
+      ========================== -->
+      <hr>
+      <h6 class="text-primary mb-2">
+        <i class="fas fa-cog mr-1"></i> Refacciones usadas en esta orden
+      </h6>
+
+      {{ formset.management_form }}
+
+      <table class="table table-sm table-bordered">
+        <thead class="thead-light">
+          <tr class="small">
+            <th style="width: 70%;">Refacción</th>
+            <th style="width: 20%;">Cantidad</th>
+            <th style="width: 10%;">Eliminar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in formset %}
+            <tr>
+              <td>{{ f.spare_part }}</td>
+              <td>{{ f.quantity }}</td>
+              <td class="text-center">
+                <!-- Checkbox DELETE oculto -->
+                <span class="d-none">
+                  {{ f.DELETE }}
+                </span>
+                <!-- Botón que marca el DELETE -->
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger btn-delete-usage-row"
+                        title="Eliminar refacción de esta orden">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <p class="text-muted small mb-0">
+        Las cantidades se descuentan automáticamente del inventario al guardar.
+      </p>
+
+      <!-- =========================
+           NOTAS
+      ========================== -->
       <hr>
       <h6 class="text-primary mb-2">
         <i class="fas fa-sticky-note mr-1"></i> Notas internas
       </h6>
 
-      <div class="form-row">
-        <div class="form-group col-md-12">
-          <label for="{{ form.notas_internas.id_for_label }}">Notas</label>
-          {{ form.notas_internas|add_class:"form-control" }}
-        </div>
+      <div class="form-group">
+        <label for="{{ form.notas_internas.id_for_label }}">Notas</label>
+        {{ form.notas_internas|add_class:"form-control" }}
       </div>
+
     {% endif %}
 
   </div>
@@ -144,43 +184,60 @@
   </div>
 </form>
 
+<!-- ======================
+     Script para bloqueo TRUCK vs BOX
+====================== -->
 <script>
 (function() {
-  // Esta lógica solo aplica cuando existen los selects (creación)
   const truckSelect = document.getElementById('id_truck');
-  const boxSelect = document.getElementById('id_reefer_box');
+  const boxSelect   = document.getElementById('id_reefer_box');
 
   function updateUnidadLock() {
     if (!truckSelect || !boxSelect) return;
 
     const truckVal = truckSelect.value;
-    const boxVal = boxSelect.value;
+    const boxVal   = boxSelect.value;
 
-    if (truckVal) {
-      boxSelect.value = '';
-      boxSelect.disabled = true;
-    } else {
-      boxSelect.disabled = false;
-    }
+    boxSelect.disabled  = !!truckVal;
+    truckSelect.disabled = !!boxVal;
 
-    if (boxVal) {
-      truckSelect.value = '';
-      truckSelect.disabled = true;
-    } else {
-      truckSelect.disabled = false;
-    }
+    if (truckVal) boxSelect.value = "";
+    if (boxVal) truckSelect.value = "";
   }
 
-  if (truckSelect) {
-    truckSelect.addEventListener('change', updateUnidadLock);
-  }
-  if (boxSelect) {
-    boxSelect.addEventListener('change', updateUnidadLock);
-  }
+  if (truckSelect) truckSelect.addEventListener('change', updateUnidadLock);
+  if (boxSelect)   boxSelect.addEventListener('change', updateUnidadLock);
 
-  // Inicializar estado al cargar
   updateUnidadLock();
 })();
 </script>
+<script>
+(function() {
+  // Botón "Eliminar" en filas de refacciones usadas
+  function hookDeleteButtons() {
+    document.querySelectorAll('.btn-delete-usage-row').forEach(function(btn) {
+      if (btn._wired) return;
+      btn._wired = true;
+
+      btn.addEventListener('click', function() {
+        const row = this.closest('tr');
+        if (!row) return;
+
+        const checkbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+        if (checkbox) {
+          checkbox.checked = true;
+          // Opcional: ocultar visualmente la fila
+          row.classList.add('table-danger');
+          row.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  // Ejecutar al cargar
+  hookDeleteButtons();
+})();
+</script>
+
 
 {% endblock %}

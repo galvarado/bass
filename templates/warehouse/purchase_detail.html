@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Detalle de compra · BASS{% endblock %}
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Detalle de compra de refacciones</strong>
+    <div>
+      <!---a href="#" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-edit"></i> Editar
+      </a>
+      <a href="#" class="btn btn-sm btn-outline-danger">
+        <i class="fas fa-trash"></i> Eliminar
+      </a--->
+      <a href="{% url 'warehouse:sparepart_list' %}" class="btn btn-sm btn-light">
+        <i class="fas fa-arrow-left"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body">
+
+    <!-- ===== DATOS GENERALES ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-file-invoice-dollar mr-1"></i> Datos generales</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Proveedor</dt>
+      <dd class="col-sm-9">{{ purchase.supplier_name|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Factura / Folio</dt>
+      <dd class="col-sm-9">{{ purchase.invoice_number|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Fecha de compra</dt>
+      <dd class="col-sm-9">
+        {% if purchase.date %}
+          {{ purchase.date|date:"d/m/Y" }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Total</dt>
+      <dd class="col-sm-9">
+        {% if purchase.total %}
+          ${{ purchase.total }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Notas</dt>
+      <dd class="col-sm-9">
+        {% if purchase.notes %}
+          {{ purchase.notes|linebreaksbr }}
+        {% else %}
+          <span class="text-muted">Sin notas</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+  </div>
+</div>
+
+<!-- ==========================
+     PARTIDAS DE LA COMPRA
+=========================== -->
+<div class="card shadow-sm mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong><i class="fas fa-cogs mr-1"></i> Partidas de refacciones</strong>
+    <span class="small text-muted">
+      {{ items|length }} partida{{ items|length|pluralize:"s" }}
+    </span>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="thead-light">
+          <tr class="small">
+            <th style="width: 35%;">Refacción</th>
+            <th style="width: 15%;">Código</th>
+            <th style="width: 15%;">Cantidad</th>
+            <th style="width: 15%;">Precio unitario</th>
+            <th style="width: 20%;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr class="small">
+            <td>
+              {% if item.spare_part %}
+                {{ item.spare_part.name }}
+                {% if item.notes %}
+                  <br>
+                  <small class="text-muted">{{ item.notes|truncatechars:80 }}</small>
+                {% endif %}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if item.spare_part %}
+                <span class="font-monospace">
+                  {{ item.spare_part.code }}
+                </span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if item.quantity %}
+                {{ item.quantity }} {{ item.spare_part.unit|default:"pieza" }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if item.unit_price %}
+                ${{ item.unit_price }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if item.subtotal %}
+                ${{ item.subtotal }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-3 small">
+              Esta compra no tiene partidas registradas.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
