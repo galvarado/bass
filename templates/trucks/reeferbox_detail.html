@@ -20,13 +20,26 @@
     <!-- ===== DATOS GENERALES ===== -->
     <h6 class="text-primary mb-3"><i class="fas fa-snowflake mr-1"></i> Datos generales</h6>
     <dl class="row small">
-      <dt class="col-sm-3">Número económico</dt><dd class="col-sm-9">{{ box.numero_economico|default:"—" }}</dd>
-      <dt class="col-sm-3">Placas</dt><dd class="col-sm-9">{{ box.placas|default:"—" }}</dd>
-      <dt class="col-sm-3">Número de serie</dt><dd class="col-sm-9">{{ box.numero_serie|default:"—" }}</dd>
-      <dt class="col-sm-3">Categoría</dt><dd class="col-sm-9">{{ box.categoria|default:"—" }}</dd>
-      <dt class="col-sm-3">Marca</dt><dd class="col-sm-9">{{ box.marca|default:"—" }}</dd>
-      <dt class="col-sm-3">Modelo</dt><dd class="col-sm-9">{{ box.modelo|default:"—" }}</dd>
-      <dt class="col-sm-3">Tipo de remolque</dt><dd class="col-sm-9">{{ box.tipo_remolque|default:"—" }}</dd>
+      <dt class="col-sm-3">Número económico</dt>
+      <dd class="col-sm-9">{{ box.numero_economico|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Placas</dt>
+      <dd class="col-sm-9">{{ box.placas|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Número de serie</dt>
+      <dd class="col-sm-9">{{ box.numero_serie|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Categoría</dt>
+      <dd class="col-sm-9">{{ box.categoria|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Marca</dt>
+      <dd class="col-sm-9">{{ box.marca|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Modelo</dt>
+      <dd class="col-sm-9">{{ box.modelo|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Tipo de remolque</dt>
+      <dd class="col-sm-9">{{ box.tipo_remolque|default:"—" }}</dd>
     </dl>
 
     <hr>
@@ -44,9 +57,11 @@
         {% if box.peso_bruto %}{{ box.peso_bruto }} kg{% else %}—{% endif %}
       </dd>
 
-      <dt class="col-sm-3">Rin</dt><dd class="col-sm-9">{{ box.rin|default:"—" }}</dd>
+      <dt class="col-sm-3">Rin</dt>
+      <dd class="col-sm-9">{{ box.rin|default:"—" }}</dd>
 
-      <dt class="col-sm-3">Combustible</dt><dd class="col-sm-9">{{ box.combustible|default:"—" }}</dd>
+      <dt class="col-sm-3">Combustible</dt>
+      <dd class="col-sm-9">{{ box.combustible|default:"—" }}</dd>
 
       <dt class="col-sm-3">Capacidad de Thermo</dt>
       <dd class="col-sm-9">{{ box.capacidad_thermo|default:"—" }}</dd>
@@ -67,6 +82,97 @@
       <dd class="col-sm-9">{{ box.tarjeta_circulacion|default:"—" }}</dd>
     </dl>
 
+  </div>
+</div>
+
+<!-- ==========================
+     HISTORIAL DE ORDENES TALLER
+=========================== -->
+<div class="card shadow-sm mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong><i class="fas fa-tools mr-1"></i> Historial de órdenes de taller</strong>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="thead-light">
+          <tr class="small">
+            <th>Folio</th>
+            <th>Descripción</th>
+            <th>Estado</th>
+            <th>Fecha entrada</th>
+            <th>Salida estimada</th>
+            <th>Salida real</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ot in box.ordenes_taller.all %}
+          <tr class="small">
+            <td>
+              <a href="{% url 'workshop:detail' ot.pk %}">
+                {{ ot.folio_interno }}
+              </a>
+            </td>
+
+            <td>
+              {% if ot.descripcion %}
+                {{ ot.descripcion|truncatechars:60 }}
+              {% else %}
+                <span class="text-muted">Sin descripción</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if ot.estado == "ABIERTA" %}
+                <span class="badge badge-warning">Abierta</span>
+              {% elif ot.estado == "REPARACION" %}
+                <span class="badge badge-primary">En reparación</span>
+              {% elif ot.estado == "ESPERA_REFACCION" %}
+                <span class="badge badge-info">Espera refacción</span>
+              {% elif ot.estado == "TERMINADA" %}
+                <span class="badge badge-success">Terminada</span>
+              {% elif ot.estado == "CANCELADA" %}
+                <span class="badge badge-danger">Cancelada</span>
+              {% else %}
+                <span class="badge badge-secondary">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if ot.fecha_entrada %}
+                {{ ot.fecha_entrada|date:"d/m/Y H:i" }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if ot.fecha_salida_estimada %}
+                {{ ot.fecha_salida_estimada|date:"d/m/Y" }}
+              {% else %}
+                <span class="text-muted">Sin estimar</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if ot.fecha_salida_real %}
+                {{ ot.fecha_salida_real|date:"d/m/Y H:i" }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-3 small">
+              Esta caja no tiene órdenes de taller registradas.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 

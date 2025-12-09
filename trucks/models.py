@@ -1,14 +1,10 @@
-# trucks/models.py
 from django.db import models
-
 
 class SoftDeleteQuerySet(models.QuerySet):
     def delete(self):
-        # Soft delete en lote
         return super().update(deleted=True)
 
     def hard_delete(self):
-        # Borrado físico
         return super().delete()
 
     def alive(self):
@@ -23,7 +19,6 @@ class SoftDeleteManager(models.Manager):
     def get_queryset(self):
         return SoftDeleteQuerySet(self.model, using=self._db).filter(deleted=False)
 
-    # Accesos convenientes
     def with_deleted(self):
         return SoftDeleteQuerySet(self.model, using=self._db)
 
@@ -77,10 +72,6 @@ class Truck(models.Model):
         if not self.deleted:
             self.deleted = True
             self.save(update_fields=["deleted"])
-
-# reeferboxes/models.py
-from django.db import models
-
 
 class SoftDeleteQuerySet(models.QuerySet):
     def delete(self):

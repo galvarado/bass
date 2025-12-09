@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Orden de taller #{{ ot.folio_interno }} · BASS{% endblock %}
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <strong>Orden de taller</strong>
+    </div>
+  </div>
+
+  <div class="card-body">
+
+    <!-- ===== RESUMEN / UNIDAD ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-truck-monster mr-1"></i> Unidad y folio
+    </h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Folio interno</dt>
+      <dd class="col-sm-9">{{ ot.folio_interno }}</dd>
+
+      <dt class="col-sm-3">Unidad</dt>
+      <dd class="col-sm-9">{{ ot.unidad_display }}</dd>
+
+      <dt class="col-sm-3">Tipo</dt>
+      <dd class="col-sm-9">
+        {% if ot.truck %}
+          <span class="badge badge-primary">Camión</span>
+        {% elif ot.reefer_box %}
+          <span class="badge badge-info">Caja</span>
+        {% else %}
+          <span class="badge badge-secondary">Sin unidad</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Estado</dt>
+      <dd class="col-sm-9">
+        {% if ot.estado == "ABIERTA" %}
+          <span class="badge badge-warning">Abierta</span>
+        {% elif ot.estado == "REPARACION" %}
+          <span class="badge badge-primary">En reparación</span>
+        {% elif ot.estado == "ESPERA_REFACCION" %}
+          <span class="badge badge-info">En espera de refacción</span>
+        {% elif ot.estado == "TERMINADA" %}
+          <span class="badge badge-success">Terminada</span>
+        {% elif ot.estado == "CANCELADA" %}
+          <span class="badge badge-danger">Cancelada</span>
+        {% else %}
+          <span class="badge badge-secondary">—</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== FECHAS ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="far fa-calendar-alt mr-1"></i> Fechas
+    </h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Fecha de entrada</dt>
+      <dd class="col-sm-9">
+        {% if ot.fecha_entrada %}
+          {{ ot.fecha_entrada|date:"d/m/Y H:i" }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Salida estimada</dt>
+      <dd class="col-sm-9">
+        {% if ot.fecha_salida_estimada %}
+          {{ ot.fecha_salida_estimada|date:"d/m/Y" }}
+        {% else %}
+          <span class="text-muted">Sin estimar</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Salida real</dt>
+      <dd class="col-sm-9">
+        {% if ot.fecha_salida_real %}
+          {{ ot.fecha_salida_real|date:"d/m/Y H:i" }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== DESCRIPCIÓN / TRABAJO ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-clipboard-list mr-1"></i> Descripción del trabajo
+    </h6>
+
+    <div class="row small">
+      <div class="col-md-12 mb-2">
+        <strong>Descripción</strong><br>
+        {% if ot.descripcion %}
+          <p class="mb-0">{{ ot.descripcion|linebreaksbr }}</p>
+        {% else %}
+          <span class="text-muted">Sin descripción.</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- ===== COSTOS ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-dollar-sign mr-1"></i> Costos
+    </h6>
+
+    <div class="row small">
+      <div class="col-md-4">
+        <strong>Mano de obra</strong><br>
+        {% if ot.costo_mano_obra %}
+          $ {{ ot.costo_mano_obra }}
+        {% else %}
+          <span class="text-muted">No capturado</span>
+        {% endif %}
+      </div>
+      <div class="col-md-4">
+        <strong>Refacciones</strong><br>
+        {% if ot.costo_refacciones %}
+          $ {{ ot.costo_refacciones }}
+        {% else %}
+          <span class="text-muted">No capturado</span>
+        {% endif %}
+      </div>
+      <div class="col-md-4">
+        <strong>Otros costos</strong><br>
+        {% if ot.otros_costos %}
+          $ {{ ot.otros_costos }}
+        {% else %}
+          <span class="text-muted">No capturado</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- ===== NOTAS INTERNAS ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-sticky-note mr-1"></i> Notas internas
+    </h6>
+
+    <div class="small">
+      {% if ot.notas_internas %}
+        <p class="mb-0">{{ ot.notas_internas|linebreaksbr }}</p>
+      {% else %}
+        <span class="text-muted">Sin notas.</span>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

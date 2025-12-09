@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load form_extras %}
+{% block title %}{% if object %}Editar orden de taller{% else %}Nueva orden de taller{% endif %} · BASS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">
+    {% if object %}Editar orden de taller{% else %}Nueva orden de taller{% endif %}
+  </h1>
+  <a href="{% url 'workshop:list' %}" class="btn btn-light btn-sm">
+    <i class="fas fa-arrow-left"></i> Volver
+  </a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact">
+  {% csrf_token %}
+  <div class="card-body">
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- ===== DATOS DE LA ORDEN ===== -->
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-tools mr-1"></i> Datos de la orden
+    </h6>
+
+    <div class="form-row">
+      <div class="form-group col-md-4" id="field-truck">
+        <label for="{{ form.truck.id_for_label }}">Camión</label>
+        {{ form.truck|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-4" id="field-reefer-box">
+        <label for="{{ form.reefer_box.id_for_label }}">Caja</label>
+        {{ form.reefer_box|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-4">
+        <label>Fecha de entrada</label>
+        <input type="text"
+               class="form-control form-control-sm"
+               value="{% if object and object.fecha_entrada %}{{ object.fecha_entrada|date:'d/m/Y H:i' }}{% else %}Se asignará automáticamente al crear la orden{% endif %}"
+               readonly>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.fecha_salida_estimada.id_for_label }}">Fecha salida estimada</label>
+        {{ form.fecha_salida_estimada|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- ===== DESCRIPCIÓN ===== -->
+    <hr>
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-exclamation-triangle mr-1"></i> Descripción de la falla
+    </h6>
+
+    <div class="form-row">
+      <div class="form-group col-md-12">
+        <label for="{{ form.descripcion.id_for_label }}">Motivo por el que entra a taller</label>
+        {{ form.descripcion|add_class:"form-control" }}
+      </div>
+    </div>
+
+    {% if object %}
+      <!-- ===== COSTOS ===== -->
+      <hr>
+      <h6 class="text-primary mb-2">
+        <i class="fas fa-dollar-sign mr-1"></i> Costos
+      </h6>
+
+      <div class="form-row">
+        <div class="form-group col-md-4">
+          <label for="{{ form.costo_mano_obra.id_for_label }}">Mano de obra</label>
+          {{ form.costo_mano_obra|add_class:"form-control" }}
+        </div>
+        <div class="form-group col-md-4">
+          <label for="{{ form.costo_refacciones.id_for_label }}">Refacciones</label>
+          {{ form.costo_refacciones|add_class:"form-control" }}
+        </div>
+        <div class="form-group col-md-4">
+          <label for="{{ form.otros_costos.id_for_label }}">Otros costos</label>
+          {{ form.otros_costos|add_class:"form-control" }}
+        </div>
+      </div>
+
+      <!-- ===== NOTAS ===== -->
+      <hr>
+      <h6 class="text-primary mb-2">
+        <i class="fas fa-sticky-note mr-1"></i> Notas internas
+      </h6>
+
+      <div class="form-row">
+        <div class="form-group col-md-12">
+          <label for="{{ form.notas_internas.id_for_label }}">Notas</label>
+          {{ form.notas_internas|add_class:"form-control" }}
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      {% if object %}
+        <i class="fas fa-save"></i> Guardar cambios
+      {% else %}
+        <i class="fas fa-save"></i> Crear orden
+      {% endif %}
+    </button>
+  </div>
+</form>
+
+<script>
+(function() {
+  const truckSelect = document.getElementById('id_truck');
+  const boxSelect = document.getElementById('id_reefer_box');
+
+  function updateUnidadLock() {
+    const truckVal = truckSelect ? truckSelect.value : '';
+    const boxVal = boxSelect ? boxSelect.value : '';
+
+    if (truckSelect) {
+      if (boxVal) {
+        truckSelect.value = '';
+        truckSelect.disabled = true;
+      } else {
+        truckSelect.disabled = false;
+      }
+    }
+
+    if (boxSelect) {
+      if (truckVal) {
+        boxSelect.value = '';
+        boxSelect.disabled = true;
+      } else {
+        boxSelect.disabled = false;
+      }
+    }
+  }
+
+  if (truckSelect) {
+    truckSelect.addEventListener('change', updateUnidadLock);
+  }
+  if (boxSelect) {
+    boxSelect.addEventListener('change', updateUnidadLock);
+  }
+
+  // Para edición
+  updateUnidadLock();
+})();
+</script>
+
+{% endblock %}

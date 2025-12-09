@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% block title %}Taller · BASS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Órdenes de taller</h1>
+  <a class="btn btn-primary" href="{% url 'workshop:create' %}">
+    <i class="fas fa-plus"></i> Nueva orden
+  </a>
+</div>
+
+<!-- =======================
+     FORMULARIO DE BÚSQUEDA
+======================== -->
+<form method="get" class="card mb-3">
+  <div class="card-body py-3">
+    <div class="form-row align-items-center form-compact">
+
+      <!-- Buscador -->
+      <div class="col-md-6 mb-2">
+        <div class="input-group input-group-sm">
+          {{ search_form.q }}
+          <div class="input-group-append">
+            <button class="btn btn-outline-primary" type="submit">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtro tipo de unidad -->
+      <div class="col-md-3 mb-2">
+        {{ search_form.tipo_unidad }}
+      </div>
+
+      <div class="col-md-3 mb-2 d-none d-md-block"></div>
+
+    </div>
+  </div>
+</form>
+
+
+<!-- ==========================
+     TABLA SUPERIOR: ACTIVAS
+=========================== -->
+<h5 class="text-primary mt-4 mb-2">
+  <i class="fas fa-wrench"></i> Órdenes activas
+</h5>
+
+<div class="card mb-4">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="thead-light">
+        <tr>
+          <th>Folio</th>
+          <th>Unidad</th>
+          <th>Tipo</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+          <th>Fecha entrada</th>
+          <th>Salida estimada</th>
+          <th style="width: 140px;">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for ot in active_orders %}
+        <tr>
+          <td>
+            <a href="{% url 'workshop:detail' ot.pk %}">
+              {{ ot.folio_interno }}
+            </a>
+          </td>
+
+          <td>{{ ot.unidad_display }}</td>
+
+          <td>
+            {% if ot.truck %}
+              <span class="badge badge-primary">Camión</span>
+            {% elif ot.reefer_box %}
+              <span class="badge badge-info">Caja</span>
+            {% else %}
+              <span class="badge badge-secondary">Sin unidad</span>
+            {% endif %}
+          </td>
+
+          <td>{{ ot.descripcion|default:"Sin descripción"|truncatechars:60 }}</td>
+
+          <!-- Estado -->
+          <td>
+            {% if ot.estado == "ABIERTA" %}
+              <span class="badge badge-warning">Abierta</span>
+            {% elif ot.estado == "REPARACION" %}
+              <span class="badge badge-primary">En reparación</span>
+            {% elif ot.estado == "ESPERA_REFACCION" %}
+              <span class="badge badge-info">Espera refacción</span>
+            {% else %}
+              <span class="badge badge-secondary">—</span>
+            {% endif %}
+          </td>
+
+          <td>{{ ot.fecha_entrada|date:"d/m/Y H:i" }}</td>
+
+          <td>
+            {% if ot.fecha_salida_estimada %}
+              {{ ot.fecha_salida_estimada|date:"d/m/Y" }}
+            {% else %}
+              <span class="text-muted">Sin estimar</span>
+            {% endif %}
+          </td>
+
+          <td class="text-right">
+            <a href="{% url 'workshop:update' ot.pk %}" class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-edit"></i>
+            </a>
+            <a href="{% url 'workshop:delete' ot.pk %}" class="btn btn-sm btn-outline-danger">
+              <i class="fas fa-trash"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">No hay órdenes activas.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+
+    </table>
+  </div>
+</div>
+
+
+<!-- ==========================
+     TABLA INFERIOR: HISTÓRICO
+=========================== -->
+<h5 class="text-secondary mt-4 mb-2">
+  <i class="fas fa-archive"></i> Historial de órdenes terminadas / canceladas
+</h5>
+
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if is_paginated and paginator.count %}
+      Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ paginator.count }}
+      · Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% elif paginator and paginator.count == 0 %}
+      0 resultados
+    {% else %}
+      {{ orders|length }} orden{{ orders|length|pluralize:"es" }}
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="thead-light">
+        <tr>
+          <th>Folio</th>
+          <th>Unidad</th>
+          <th>Tipo</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+          <th>Fecha entrada</th>
+          <th>Salida estimada</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for ot in orders %}
+        <tr>
+          <td>
+            <a href="{% url 'workshop:detail' ot.pk %}">
+              {{ ot.folio_interno }}
+            </a>
+          </td>
+
+          <td>{{ ot.unidad_display }}</td>
+
+          <td>
+            {% if ot.truck %}
+              <span class="badge badge-primary">Camión</span>
+            {% elif ot.reefer_box %}
+              <span class="badge badge-info">Caja</span>
+            {% else %}
+              <span class="badge badge-secondary">Sin unidad</span>
+            {% endif %}
+          </td>
+
+          <td>{{ ot.descripcion|default:"Sin descripción"|truncatechars:60 }}</td>
+
+          <!-- Estado -->
+          <td>
+            {% if ot.estado == "TERMINADA" %}
+              <span class="badge badge-success">Terminada</span>
+            {% elif ot.estado == "CANCELADA" %}
+              <span class="badge badge-danger">Cancelada</span>
+            {% endif %}
+          </td>
+
+          <td>{{ ot.fecha_entrada|date:"d/m/Y H:i" }}</td>
+
+          <td>
+            {% if ot.fecha_salida_estimada %}
+              {{ ot.fecha_salida_estimada|date:"d/m/Y" }}
+            {% else %}
+              <span class="text-muted">Sin estimar</span>
+            {% endif %}
+          </td>
+        </tr>
+
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            No hay órdenes terminadas ni canceladas.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+
+    </table>
+  </div>
+
+  <!-- Paginación SOLO para el historial -->
+  {% if is_paginated %}
+  <div class="card-footer py-2">
+    <nav aria-label="Paginación">
+      <ul class="pagination pagination-sm mb-0">
+
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">« Primero</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">‹ Anterior</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
+        {% endif %}
+
+        {% for i in paginator.page_range %}
+          {% if i == 1 or i == paginator.num_pages or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+            {% if page_obj.number == i %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ i }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% elif i == 2 and page_obj.number > 4 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% elif i == paginator.num_pages|add:'-1' and page_obj.number < paginator.num_pages|add:'-3' %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">Siguiente ›</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ paginator.num_pages }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">Última »</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
+          <li class="page-item disabled"><span class="page-link">Última »</span></li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
