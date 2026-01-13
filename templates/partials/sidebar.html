@@ -73,21 +73,17 @@
 {% endwith %}
 
 <li class="nav-item">
-  <a class="nav-link {% if '/customers' in request.path or '/locations' in request.path or '/operators' in request.path or '/vehicles' in request.path %}active{% else %}collapsed{% endif %}"
+  <a class="nav-link collapsed"
      href="#"
      data-toggle="collapse"
      data-target="#collapseCatalogs"
-     aria-expanded="{% if '/customers' in request.path or '/locations' in request.path or '/operators' in request.path or '/vehicles' in request.path %}true{% else %}false{% endif %}"
+     aria-expanded="false"
      aria-controls="collapseCatalogs">
     <i class="fas fa-list"></i>
     <span>Catálogos</span>
   </a>
 
-  <div id="collapseCatalogs"
-       class="collapse {% if '/customers' in request.path or '/locations' in request.path or '/operators' in request.path or '/vehicles' in request.path %}show{% endif %}"
-       aria-labelledby="headingCatalogs"
-       data-parent="#accordionSidebar">
-
+  <div id="collapseCatalogs" class="collapse" aria-labelledby="headingCatalogs">
     <div class="bg-white py-2 collapse-inner rounded">
       <a class="collapse-item {% if '/customers' in request.path %}active{% endif %}" href="{% url 'customers:list' %}">
         <i class="fas fa-building mr-2 text-muted"></i> Clientes
@@ -98,7 +94,7 @@
       <a class="collapse-item {% if '/operators' in request.path %}active{% endif %}" href="{% url 'operators:list' %}">
         <i class="fas fa-user mr-2 text-muted"></i> Operadores
       </a>
-      <a class="collapse-item {% if '/vehicles' in request.path %}active{% endif %}" href="{% url 'trucks:list' %}">
+      <a class="collapse-item {% if '/trucks' in request.path %}active{% endif %}" href="{% url 'trucks:list' %}">
         <i class="fas fa-truck mr-2 text-muted"></i> Vehículos
       </a>
     </div>

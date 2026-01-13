@@ -133,6 +133,34 @@
     }
     updateTimes(); setInterval(updateTimes, 60000);
 
+    (function () {
+      const key = "sidebar.collapseCatalogs.open";
+      const $collapse = $("#collapseCatalogs");
+      const $toggle = $('a[data-target="#collapseCatalogs"]');
+
+      // Al cargar: restaura estado
+      const shouldBeOpen = localStorage.getItem(key) === "1";
+      if (shouldBeOpen) {
+        $collapse.addClass("show");
+        $toggle.removeClass("collapsed").attr("aria-expanded", "true");
+      } else {
+        $collapse.removeClass("show");
+        $toggle.addClass("collapsed").attr("aria-expanded", "false");
+      }
+
+      // Cuando se abre: guarda
+      $collapse.on("shown.bs.collapse", function () {
+        localStorage.setItem(key, "1");
+        $toggle.removeClass("collapsed").attr("aria-expanded", "true");
+      });
+
+      // Cuando se cierra: guarda
+      $collapse.on("hidden.bs.collapse", function () {
+        localStorage.setItem(key, "0");
+        $toggle.addClass("collapsed").attr("aria-expanded", "false");
+      });
+    })();
+
     async function fetchUsdMxn() {
       const el = document.getElementById('usdMxn');
       try {
