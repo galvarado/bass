@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load currency_extras %}
+
+{% block title %}Detalle de pago · BASS{% endblock %}
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Detalle de pago a proveedor</strong>
+    <div>
+
+
+      <a href="{% url 'warehouse:sparepart_list' %}" class="btn btn-sm btn-light">
+        <i class="fas fa-arrow-left"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body">
+
+    <!-- ===== DATOS GENERALES ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-money-check-alt mr-1"></i> Datos generales
+    </h6>
+
+    <dl class="row small">
+      <dt class="col-sm-3">Proveedor</dt>
+      <dd class="col-sm-9">
+        {{ payment.supplier.nombre|default:payment.supplier|default:"—" }}
+      </dd>
+
+      <dt class="col-sm-3">Fecha</dt>
+      <dd class="col-sm-9">
+        {% if payment.date %}
+          {{ payment.date|date:"d/m/Y" }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Método</dt>
+      <dd class="col-sm-9">
+        {% if payment.get_method_display %}
+          {{ payment.get_method_display }}
+        {% else %}
+          {{ payment.method|default:"—" }}
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Referencia</dt>
+      <dd class="col-sm-9">
+        {% if payment.reference %}
+          <span class="font-monospace">{{ payment.reference }}</span>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Monto</dt>
+      <dd class="col-sm-9">
+        {% if payment.amount %}
+          <strong>${{ payment.amount|money_mx }}</strong>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Notas</dt>
+      <dd class="col-sm-9">
+        {% if payment.notes %}
+          {{ payment.notes|linebreaksbr }}
+        {% else %}
+          <span class="text-muted">Sin notas</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+  </div>
+</div>
+
+<!-- ==========================
+     APLICACIONES DEL PAGO
+=========================== -->
+<div class="card shadow-sm mt-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong><i class="fas fa-file-invoice-dollar mr-1"></i> Aplicaciones a compras</strong>
+    <span class="small text-muted">
+      {{ allocations|length }} aplicación{{ allocations|length|pluralize:"es" }}
+    </span>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="thead-light">
+          <tr class="small">
+            <th style="width: 40%;">Compra</th>
+            <th style="width: 20%;">Factura / Folio</th>
+            <th style="width: 15%;">Fecha</th>
+            <th style="width: 12%;">Total compra</th>
+            <th style="width: 13%;">Monto aplicado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in allocations %}
+          <tr class="small">
+            <td>
+              {% if a.purchase %}
+                <a href="{% url 'warehouse:purchase_detail' a.purchase.pk %}">
+                  Compra #{{ a.purchase.id }}
+                </a>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if a.purchase and a.purchase.invoice_number %}
+                {{ a.purchase.invoice_number }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if a.purchase and a.purchase.date %}
+                {{ a.purchase.date|date:"d/m/Y" }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if a.purchase and a.purchase.total %}
+                ${{ a.purchase.total|money_mx }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if a.amount_applied %}
+                <strong>${{ a.amount_applied|money_mx }}</strong>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-3 small">
+              Este pago no tiene aplicaciones registradas.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

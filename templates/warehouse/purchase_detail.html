@@ -8,12 +8,9 @@
   <div class="card-header d-flex justify-content-between align-items-center">
     <strong>Detalle de compra de refacciones</strong>
     <div>
-      <!---a href="#" class="btn btn-sm btn-outline-secondary">
+      <a href="{% url 'warehouse:purchase_edit' purchase.pk %}" class="btn btn-sm btn-outline-secondary">
         <i class="fas fa-edit"></i> Editar
       </a>
-      <a href="#" class="btn btn-sm btn-outline-danger">
-        <i class="fas fa-trash"></i> Eliminar
-      </a--->
       <a href="{% url 'warehouse:sparepart_list' %}" class="btn btn-sm btn-light">
         <i class="fas fa-arrow-left"></i> Volver
       </a>
@@ -26,7 +23,7 @@
     <h6 class="text-primary mb-3"><i class="fas fa-file-invoice-dollar mr-1"></i> Datos generales</h6>
     <dl class="row small">
       <dt class="col-sm-3">Proveedor</dt>
-      <dd class="col-sm-9">{{ purchase.supplier_name|default:"—" }}</dd>
+      <dd class="col-sm-9">{{ purchase.supplier|default:"—" }}</dd>
 
       <dt class="col-sm-3">Factura / Folio</dt>
       <dd class="col-sm-9">{{ purchase.invoice_number|default:"—" }}</dd>
@@ -49,6 +46,29 @@
         {% endif %}
       </dd>
 
+      <!-- ✅ PAGADO -->
+      <dt class="col-sm-3">Pagado</dt>
+      <dd class="col-sm-9">
+        {% if purchase.amount_paid %}
+          ${{ purchase.amount_paid|money_mx }}
+        {% else %}
+          <span class="text-muted">$0.00</span>
+        {% endif %}
+      </dd>
+
+      <!-- ✅ SALDO + PAGADA -->
+      <dt class="col-sm-3">Saldo</dt>
+      <dd class="col-sm-9">
+        {% if purchase.balance <= 0 %}
+          <span class="badge badge-info">
+            <i class="fas fa-check-circle"></i> Pagada
+          </span>
+          <span class="text-muted ml-2">$0.00</span>
+        {% else %}
+          ${{ purchase.balance|money_mx }}
+        {% endif %}
+      </dd>
+
       <dt class="col-sm-3">Notas</dt>
       <dd class="col-sm-9">
         {% if purchase.notes %}
@@ -57,8 +77,20 @@
           <span class="text-muted">Sin notas</span>
         {% endif %}
       </dd>
-    </dl>
 
+      <dt class="col-sm-3">Estatus</dt>
+      <dd class="col-sm-9">
+        {% if purchase.status == "APPROVED" %}
+          <span class="badge badge-success">Aprobada</span>
+        {% elif purchase.status == "SUBMITTED" %}
+          <span class="badge badge-warning">Pendiente</span>
+        {% elif purchase.status == "REJECTED" %}
+          <span class="badge badge-danger">Rechazada</span>
+        {% else %}
+          <span class="badge badge-secondary">{{ purchase.status }}</span>
+        {% endif %}
+      </dd>
+    </dl>
   </div>
 </div>
 
@@ -146,5 +178,4 @@
     </div>
   </div>
 </div>
-
 {% endblock %}

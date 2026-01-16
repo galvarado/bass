@@ -12,6 +12,9 @@
     </a>&nbsp;&nbsp;
     <a class="btn btn-primary" href="{% url 'warehouse:purchase_create' %}">
       <i class="fas fa-file-invoice-dollar"></i> Registrar compra
+    </a>&nbsp;&nbsp;
+    <a class="btn btn-primary" href="{% url 'warehouse:payment_create' %}">
+      <i class="fas fa-money-bill-wave"></i> Registrar pago
     </a>
   </div>
 </div>
@@ -32,6 +35,7 @@
       <div class="col-md-4 mb-2 text-right d-none d-md-block text-muted small">
         Mostrando {{ spareparts|length }} refacción{{ spareparts|length|pluralize:"es" }}
         · {{ purchases|length }} compra{{ purchases|length|pluralize:"s" }}
+        · {{ payments|length }} pago{{ payments|length|pluralize:"s" }}
       </div>
     </div>
   </div>
@@ -48,9 +52,15 @@
       <i class="fas fa-file-invoice-dollar"></i> Compras
     </a>
   </li>
+  <li class="nav-item">
+    <a class="nav-link" id="tab-payments" data-toggle="tab" href="#pane-payments" role="tab">
+      <i class="fas fa-money-bill-wave"></i> Pagos
+    </a>
+  </li>
 </ul>
 
 <div class="tab-content" id="warehouseTabsContent">
+
   <!-- ===== REFACCIONES ===== -->
   <div class="tab-pane fade show active" id="pane-spareparts" role="tabpanel">
     <div class="card">
@@ -68,64 +78,30 @@
           <tbody>
             {% for part in spareparts %}
               <tr>
-                <!-- Refacción: nombre + descripción corta -->
                 <td>
-                  <a href="{% url 'warehouse:sparepart_detail' part.pk %}">
-                    {{ part.name }}
-                  </a>
+                  <a href="{% url 'warehouse:sparepart_detail' part.pk %}">{{ part.name }}</a>
                   {% if part.description %}
-                    <br>
-                    <small class="text-muted">
-                      {{ part.description|truncatechars:80 }}
-                    </small>
+                    <br><small class="text-muted">{{ part.description|truncatechars:80 }}</small>
                   {% endif %}
                 </td>
-
-                <!-- Código -->
-                <td>
-                  <span class="font-monospace">{{ part.code }}</span>
-                </td>
-
-                <!-- Stock actual (con alerta si está bajo el mínimo) -->
+                <td><span class="font-monospace">{{ part.code }}</span></td>
                 <td>
                   {% with stock=part.stock_actual %}
                     {% if stock <= part.min_stock %}
-                      <span class="badge badge-danger">
-                        {{ stock }} {{ part.unit }}
-                      </span>
-                      <br>
-                      <small class="text-muted">
-                        Mínimo: {{ part.min_stock }} {{ part.unit }}
-                      </small>
+                      <span class="badge badge-danger">{{ stock }} {{ part.unit }}</span>
                     {% else %}
-                      <span class="badge badge-success">
-                        {{ stock }} {{ part.unit }}
-                      </span>
-                      {% if part.min_stock %}
-                        <br>
-                        <small class="text-muted">
-                          Mínimo: {{ part.min_stock }} {{ part.unit }}
-                        </small>
-                      {% endif %}
+                      <span class="badge badge-success">{{ stock }} {{ part.unit }}</span>
                     {% endif %}
                   {% endwith %}
                 </td>
-
-                <!-- Unidad de medida -->
-                <td>
-                  {{ part.unit|default:"pieza" }}
-                </td>
-
-                <!-- Acciones -->
+                <td>{{ part.unit|default:"pieza" }}</td>
                 <td class="text-right">
                   <a href="{% url 'warehouse:sparepart_update' part.pk %}"
-                     class="btn btn-sm btn-outline-secondary"
-                     title="Editar">
+                     class="btn btn-sm btn-outline-secondary" title="Editar">
                     <i class="fas fa-edit"></i>
                   </a>
                   <a href="{% url 'warehouse:sparepart_delete' part.pk %}"
-                     class="btn btn-sm btn-outline-danger"
-                     title="Eliminar">
+                     class="btn btn-sm btn-outline-danger" title="Eliminar">
                     <i class="fas fa-trash"></i>
                   </a>
                 </td>
@@ -150,11 +126,13 @@
         <table class="table table-hover mb-0">
           <thead class="thead-light">
             <tr>
-              <th style="width: 15%;">Fecha</th>
-              <th style="width: 30%;">Proveedor</th>
-              <th style="width: 15%;">Factura / Folio</th>
-              <th style="width: 15%;">Total</th>
-              <th style="width: 15%;">Partidas</th>
+              <th style="width: 12%;">Fecha</th>
+              <th style="width: 22%;">Proveedor</th>
+              <th style="width: 13%;">Factura / Folio</th>
+              <th style="width: 10%;">Total</th>
+              <th style="width: 10%;">Pagado</th>
+              <th style="width: 10%;">Saldo</th>
+              <th style="width: 13%;">Estatus</th>
               <th style="width: 10%;">Acciones</th>
             </tr>
           </thead>
@@ -170,18 +148,13 @@
                 </td>
 
                 <td>
-                  <a href="{% url 'warehouse:purchase_detail' p.pk %}">
-                    {{ p.supplier_name|default:"—" }}
-                  </a>
+                  {{ p.supplier.nombre|default:"—" }}
                   {% if p.notes %}
-                    <br>
-                    <small class="text-muted">{{ p.notes|truncatechars:60 }}</small>
+                    <br><small class="text-muted">{{ p.notes|truncatechars:60 }}</small>
                   {% endif %}
                 </td>
 
-                <td>
-                  {{ p.invoice_number|default:"—" }}
-                </td>
+                <td>{{ p.invoice_number|default:"—" }}</td>
 
                 <td>
                   {% if p.total %}
@@ -192,30 +165,69 @@
                 </td>
 
                 <td>
-                  {{ p.items.count }} partida{{ p.items.count|pluralize:"s" }}
+                  {% if p.amount_paid and p.amount_paid > 0 %}
+                    ${{ p.amount_paid|money_mx }}
+                  {% else %}
+                    <span class="text-muted">$0.00</span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if p.balance is not None and p.balance <= 0 %}
+                    <span class="badge badge-info">
+                      <i class="fas fa-check-circle"></i> Pagada
+                    </span>
+                  {% else %}
+                    <span class="badge badge-light">
+                      {% if p.balance %}${{ p.balance|money_mx }}{% else %}$0.00{% endif %}
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% with s=p.status %}
+                    {% if s == "APPROVED" %}
+                      <span class="badge badge-success">Aprobada</span>
+                    {% elif s == "SUBMITTED" %}
+                      <span class="badge badge-warning">Pendiente</span>
+                    {% elif s == "REJECTED" %}
+                      <span class="badge badge-danger">Rechazada</span>
+                    {% elif s == "DRAFT" %}
+                      <span class="badge badge-secondary">Borrador</span>
+                    {% elif s == "CANCELLED" %}
+                      <span class="badge badge-dark">Cancelada</span>
+                    {% elif s == "CLOSED" %}
+                      <span class="badge badge-primary">Cerrada</span>
+                    {% else %}
+                      <span class="badge badge-light">{{ s }}</span>
+                    {% endif %}
+                  {% endwith %}
                 </td>
 
                 <td class="text-right">
                   <a href="{% url 'warehouse:purchase_detail' p.pk %}"
-                     class="btn btn-sm btn-outline-secondary"
-                     title="Ver detalle">
+                     class="btn btn-sm btn-outline-secondary" title="Ver detalle">
                     <i class="fas fa-eye"></i>
                   </a>
-                  <a href="#"
-                     class="btn btn-sm btn-outline-secondary"
-                     title="Editar">
-                    <i class="fas fa-edit"></i>
-                  </a>
-                  <a href="#"
-                     class="btn btn-sm btn-outline-danger"
-                     title="Eliminar">
-                    <i class="fas fa-trash"></i>
-                  </a>
+
+                  {% if p.status == "SUBMITTED" %}
+                    <a href="{% url 'warehouse:purchase_edit' p.pk %}"
+                       class="btn btn-sm btn-outline-warning" title="Aprobar / Rechazar">
+                      <i class="fas fa-check"></i>
+                    </a>
+                  {% endif %}
+
+                  {% if p.status == "APPROVED" and p.balance and p.balance > 0 %}
+                    <a href="{% url 'warehouse:payment_create' %}?supplier={{ p.supplier_id }}"
+                       class="btn btn-sm btn-outline-success" title="Registrar pago">
+                      <i class="fas fa-money-bill-wave"></i>
+                    </a>
+                  {% endif %}
                 </td>
               </tr>
             {% empty %}
               <tr>
-                <td colspan="6" class="text-center text-muted py-4">
+                <td colspan="8" class="text-center text-muted py-4">
                   No hay compras registradas.
                 </td>
               </tr>
@@ -225,6 +237,82 @@
       </div>
     </div>
   </div>
+
+  <!-- ===== PAGOS ===== -->
+  <div class="tab-pane fade" id="pane-payments" role="tabpanel">
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th style="width: 12%;">Fecha</th>
+              <th style="width: 28%;">Proveedor</th>
+              <th style="width: 14%;">Método</th>
+              <th style="width: 26%;">Referencia</th>
+              <th style="width: 10%;">Monto</th>
+              <th style="width: 10%;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pay in payments %}
+              <tr>
+                <td>
+                  {% if pay.date %}
+                    {{ pay.date|date:"d/m/Y" }}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td>{{ pay.supplier.nombre|default:"—" }}</td>
+
+                <td>
+                  {% if pay.method %}
+                    {{ pay.get_method_display|default:pay.method }}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if pay.reference %}
+                    <span class="font-monospace">{{ pay.reference }}</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                  {% if pay.notes %}
+                    <br><small class="text-muted">{{ pay.notes|truncatechars:60 }}</small>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if pay.amount %}
+                    ${{ pay.amount|money_mx }}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+
+                <td class="text-right">
+                  <a href="{% url 'warehouse:payment_detail' pay.pk %}"
+                     class="btn btn-sm btn-outline-secondary" title="Ver detalle">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                  No hay pagos registrados.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 {% endblock %}

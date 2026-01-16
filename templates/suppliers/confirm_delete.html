@@ -1,0 +1,59 @@
+{# templates/suppliers/confirm_delete.html #}
+{% extends "base.html" %}
+{% block title %}Eliminar Proveedor · BASS{% endblock %}
+{% block content %}
+
+<div class="card border-danger shadow-sm">
+  <div class="card-header bg-danger text-white">
+    <strong>Confirmar eliminación</strong>
+  </div>
+  <div class="card-body">
+    <p>
+      ¿Seguro que deseas eliminar al proveedor
+      <strong>{{ object.nombre }}</strong>?
+    </p>
+
+    <dl class="row small mb-3">
+      <dt class="col-sm-3">Razón social</dt>
+      <dd class="col-sm-9">{{ object.razon_social|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Contacto</dt>
+      <dd class="col-sm-9">{{ object.contacto|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Teléfono</dt>
+      <dd class="col-sm-9">{{ object.telefono|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Email</dt>
+      <dd class="col-sm-9">{{ object.email|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Cuenta / Referencia</dt>
+      <dd class="col-sm-9">{{ object.cuenta|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Status</dt>
+      <dd class="col-sm-9">
+        {% if object.status == "ALTA" %}
+          <span class="badge badge-success">Alta</span>
+        {% else %}
+          <span class="badge badge-secondary">Baja</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+    <form method="post" class="mt-3">
+      {% csrf_token %}
+      <a href="{% url 'suppliers:list' %}" class="btn btn-outline-secondary">
+        Cancelar
+      </a>
+      <button type="submit" class="btn btn-danger">
+        <i class="fas fa-trash"></i> Eliminar
+      </button>
+    </form>
+
+    <p class="text-muted mt-3 mb-0 small">
+      <i class="fas fa-info-circle"></i>
+      Esta acción <strong> borra</strong> el proveedor. Si solo deseas desactivarlo, considera cambiar su status a <strong>Baja</strong>.
+    </p>
+  </div>
+</div>
+
+{% endblock %}

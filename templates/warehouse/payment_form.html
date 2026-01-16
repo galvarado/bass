@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% load form_extras %}
+{% load currency_extras %}
+
+{% block title %}Registrar pago a proveedor · BASS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Registrar pago a proveedor</h1>
+  <a href="{% url 'warehouse:sparepart_list' %}" class="btn btn-light btn-sm">
+    <i class="fas fa-arrow-left"></i> Volver
+  </a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact js-payment-form">
+  {% csrf_token %}
+  <div class="card-body">
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-money-check-alt mr-1"></i> Datos del pago
+    </h6>
+
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>Proveedor</label>
+        {{ form.supplier|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label>Fecha</label>
+        {{ form.date|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-3">
+        <label>Método</label>
+        {{ form.method|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-12">
+        <label>Referencia</label>
+        {{ form.reference|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Notas</label>
+      {{ form.notes|add_class:"form-control" }}
+    </div>
+
+    <hr>
+
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-file-invoice-dollar mr-1"></i> Aplicar a compras
+    </h6>
+
+    {{ alloc_formset.management_form }}
+
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered mb-0">
+        <thead class="thead-light">
+          <tr class="small text-center">
+            <th style="width: 70%;">Compra</th>
+            <th style="width: 30%;">Monto aplicado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in alloc_formset.forms %}
+            <tr class="small">
+              <td>{{ f.purchase|add_class:"form-control form-control-sm" }}</td>
+              <td>
+                {{ f.amount_applied|add_class:"form-control form-control-sm js-amount-applied" }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if alloc_formset.non_form_errors %}
+      <div class="alert alert-danger mt-2">
+        {% for e in alloc_formset.non_form_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="small text-muted mt-2">
+      Tip: Puedes aplicar un pago a varias compras o hacer pagos parciales.
+    </div>
+
+    <hr>
+
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-coins mr-1"></i> Monto del pago
+    </h6>
+
+    <div class="form-row align-items-end">
+      <div class="form-group col-md-4 mb-0">
+        <label>Monto</label>
+        {{ form.amount|add_class:"form-control js-payment-amount" }}
+        <small class="text-muted">Calculado automáticamente (suma de montos aplicados).</small>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      <i class="fas fa-save"></i> Guardar pago
+    </button>
+  </div>
+</form>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Reload al cambiar proveedor (solo si NO está bloqueado)
+    const supplierSel = document.getElementById("{{ form.supplier.id_for_label }}");
+    if (supplierSel && !supplierSel.disabled) {
+      supplierSel.addEventListener("change", function () {
+        if (this.value) window.location = "?supplier=" + this.value;
+      });
+    }
+
+    const formEl = document.querySelector(".js-payment-form");
+    const paymentAmount = document.querySelector(".js-payment-amount");
+
+    if (!formEl || !paymentAmount) return;
+
+    // Readonly visual y funcional
+    paymentAmount.readOnly = true;
+    paymentAmount.classList.add("bg-light");
+
+    function parseNumber(v) {
+      if (!v) return 0;
+      const cleaned = String(v).replace(/,/g, "").trim();
+      const n = Number(cleaned);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function format2(n) {
+      return (Math.round(n * 100) / 100).toFixed(2);
+    }
+
+    function updateAmount() {
+      const inputs = formEl.querySelectorAll(".js-amount-applied");
+      let total = 0;
+
+      inputs.forEach((el) => {
+        total += parseNumber(el.value);
+      });
+
+      paymentAmount.value = format2(total);
+    }
+
+    // ✅ Delegación por clase (lo más fiable)
+    formEl.addEventListener("input", function (e) {
+      if (e.target && e.target.classList.contains("js-amount-applied")) {
+        updateAmount();
+      }
+    });
+
+    formEl.addEventListener("change", function (e) {
+      if (e.target && e.target.classList.contains("js-amount-applied")) {
+        updateAmount();
+      }
+    });
+
+    updateAmount();
+  });
+</script>
+
+{% endblock %}

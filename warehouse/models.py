@@ -2,6 +2,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
+from suppliers.models import Supplier
 
 
 # === Soft delete reutilizable (igual patrón que en workshop) ===
@@ -107,10 +108,31 @@ class SparePartPurchase(models.Model):
     Los movimientos de inventario se registran en SparePartMovement
     (tipo = PURCHASE), uno por cada item.
     """
-    supplier_name = models.CharField("Proveedor", max_length=255)
+
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", "Borrador"
+        SUBMITTED = "SUBMITTED", "Enviada a aprobación"
+        APPROVED = "APPROVED", "Aprobada"
+        REJECTED = "REJECTED", "Rechazada"
+        
+    supplier = models.ForeignKey(
+        Supplier,
+        verbose_name="Proveedor",
+        related_name="spare_part_purchases",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        help_text="Proveedor registrado en el catálogo."
+    )
     invoice_number = models.CharField("Factura / Folio", max_length=100, blank=True)
     date = models.DateField("Fecha de compra")
-
+    status = models.CharField(
+        "Estatus",
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        db_index=True,
+    )
     notes = models.TextField("Notas", blank=True)
 
     created_at = models.DateTimeField("Creado en", auto_now_add=True)
@@ -126,11 +148,28 @@ class SparePartPurchase(models.Model):
         ordering = ["-date", "-created_at"]
 
     def __str__(self):
-        return f"Compra #{self.id} - {self.supplier_name} ({self.date})"
+        prov = (self.supplier.razon_social or self.supplier.nombre) if self.supplier else "—"
+        return f"Compra #{self.id} - {prov} ({self.date})"
 
     @property
     def total(self):
         return sum((item.subtotal for item in self.items.all()), 0)
+
+    @property
+    def amount_paid(self):
+        return self.payment_allocations.filter(deleted=False).aggregate(
+            total=Sum("amount_applied")
+        )["total"] or 0
+
+    @property
+    def balance(self):
+        return (self.total or 0) - (self.amount_paid or 0)
+
+    def amount_paid_excluding_allocation(self, allocation_pk=None):
+        qs = self.payment_allocations.filter(deleted=False)
+        if allocation_pk:
+            qs = qs.exclude(pk=allocation_pk)
+        return qs.aggregate(total=Sum("amount_applied"))["total"] or 0
 
 
 class SparePartPurchaseItem(models.Model):
@@ -302,6 +341,155 @@ class SparePartMovement(models.Model):
             raise ValidationError(
                 "Para entradas (inicial, compra o ajuste de entrada) la cantidad debe ser positiva."
             )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+from django.conf import settings
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.db.models import Sum
+from suppliers.models import Supplier
+
+
+class SupplierPayment(models.Model):
+    class Method(models.TextChoices):
+        TRANSFER = "TRANSFER", "Transferencia"
+        CASH = "CASH", "Efectivo"
+        CHECK = "CHECK", "Cheque"
+        CARD = "CARD", "Tarjeta"
+        OTHER = "OTHER", "Otro"
+
+    class Status(models.TextChoices):
+        POSTED = "POSTED", "Aplicado"
+        VOID = "VOID", "Anulado"
+
+    supplier = models.ForeignKey(
+        Supplier,
+        verbose_name="Proveedor",
+        related_name="payments",
+        on_delete=models.PROTECT,
+        null=False,
+        blank=False,
+    )
+
+    date = models.DateField("Fecha de pago")
+    method = models.CharField("Método", max_length=20, choices=Method.choices, default=Method.TRANSFER)
+    reference = models.CharField("Referencia", max_length=120, blank=True)
+    amount = models.DecimalField("Monto", max_digits=12, decimal_places=2)
+
+    status = models.CharField("Estatus", max_length=20, choices=Status.choices, default=Status.POSTED, db_index=True)
+    notes = models.TextField("Notas", blank=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Creado por",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="supplier_payments_created",
+    )
+
+    created_at = models.DateTimeField("Creado en", auto_now_add=True)
+    updated_at = models.DateTimeField("Actualizado en", auto_now=True)
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    objects = SoftDeleteManager()
+    all_objects = SoftDeleteQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "Pago a proveedor"
+        verbose_name_plural = "Pagos a proveedores"
+        ordering = ["-date", "-id"]
+
+    def __str__(self):
+        prov = (self.supplier.razon_social or self.supplier.nombre) if self.supplier else "—"
+        return f"Pago #{self.id} - {prov} ({self.date})"
+
+    @property
+    def applied_amount(self):
+        return self.allocations.filter(deleted=False).aggregate(
+            total=Sum("amount_applied")
+        )["total"] or 0
+
+    @property
+    def unapplied_amount(self):
+        return (self.amount or 0) - (self.applied_amount or 0)
+
+    def clean(self):
+        super().clean()
+        if not self.amount or self.amount <= 0:
+            raise ValidationError("El monto del pago debe ser mayor a cero.")
+
+
+class SupplierPaymentAllocation(models.Model):
+    """
+    Aplicación de un pago a una compra específica.
+    Permite pagos parciales y pagos a múltiples compras.
+    """
+    payment = models.ForeignKey(
+        SupplierPayment,
+        verbose_name="Pago",
+        related_name="allocations",
+        on_delete=models.PROTECT,
+    )
+    purchase = models.ForeignKey(
+        "warehouse.SparePartPurchase",
+        verbose_name="Compra",
+        related_name="payment_allocations",
+        on_delete=models.PROTECT,
+    )
+
+    amount_applied = models.DecimalField("Monto aplicado", max_digits=12, decimal_places=2)
+
+    created_at = models.DateTimeField("Creado en", auto_now_add=True)
+    updated_at = models.DateTimeField("Actualizado en", auto_now=True)
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    objects = SoftDeleteManager()
+    all_objects = SoftDeleteQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "Aplicación de pago"
+        verbose_name_plural = "Aplicaciones de pagos"
+        ordering = ["-id"]
+
+    def __str__(self):
+        return f"{self.payment} -> Compra #{self.purchase_id}: {self.amount_applied}"
+
+    def clean(self):
+        super().clean()
+
+        amt = self.amount_applied or Decimal("0.00")
+        if amt <= 0:
+            return
+
+        # ✅ 1) Validar saldo de la compra (ejemplo)
+        if self.purchase_id:
+            if amt > (self.purchase.balance or Decimal("0.00")):
+                raise ValidationError({"amount_applied": "El monto aplicado excede el saldo de la compra."})
+
+        # ✅ 2) Evitar duplicar compra en el MISMO pago
+        # (esto es lo que te está tronando)
+        if not self.purchase_id:
+            return
+
+        payment_id = self.payment_id  # ← usa el _id (no la instancia)
+        if not payment_id:
+            # Aún no existe el pago (inline formset en Create) => NO puedes consultar por payment
+            return
+
+        qs = SupplierPaymentAllocation.all_objects.filter(
+            deleted=False,
+            payment_id=payment_id,      # ✅ no payment=self.payment
+            purchase_id=self.purchase_id,
+        )
+        if self.pk:
+            qs = qs.exclude(pk=self.pk)
+
+        if qs.exists():
+            raise ValidationError({"purchase": "Ya existe una aplicación a esta compra dentro de este pago."})
 
     def save(self, *args, **kwargs):
         self.full_clean()

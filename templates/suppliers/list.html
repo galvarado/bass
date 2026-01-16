@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}Proveedores · BASS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Proveedores</h1>
+  <a class="btn btn-primary" href="{% url 'suppliers:create' %}">
+    <i class="fas fa-plus"></i> Nuevo proveedor
+  </a>
+</div>
+
+<form method="get" class="card mb-3">
+  <div class="card-body py-3">
+    <div class="form-row align-items-center form-compact">
+      <!-- Buscador -->
+      <div class="col-md-6 mb-2">
+        <div class="input-group input-group-sm">
+          {{ search_form.q }}
+          <div class="input-group-append">
+            <button class="btn btn-outline-primary" type="submit">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtro de estado -->
+      <div class="col-md-3 mb-2">
+        {{ search_form.status }}
+      </div>
+
+      <!-- Toggles show_deleted / show_all -->
+
+    </div>
+  </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if is_paginated and paginator.count %}
+      Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ paginator.count }}
+      · Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% elif paginator and paginator.count == 0 %}
+      0 resultados
+    {% else %}
+      {{ suppliers|length }} proveedor{{ suppliers|length|pluralize:"es" }}
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="thead-light">
+        <tr>
+          <th>Proveedor</th>
+          <th>Contacto</th>
+          <th>Dirección</th>
+          <th>Cuenta</th>
+          <th>Status</th>
+          <th style="width: 120px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in suppliers %}
+          <tr class="{% if s.deleted %}text-muted{% endif %}">
+            <td>
+              <a href="{% url 'suppliers:detail' s.pk %}">
+                {{ s.nombre }}
+              </a>
+              {% if s.razon_social %}
+                <br><small class="text-muted">{{ s.razon_social }}</small>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if s.contacto %}
+                <div>{{ s.contacto }}</div>
+              {% endif %}
+              {% if s.telefono %}
+                <small class="text-muted"><i class="fas fa-phone"></i> {{ s.telefono }}</small><br>
+              {% endif %}
+              {% if s.email %}
+                <small class="text-muted"><i class="fas fa-envelope"></i> {{ s.email }}</small>
+              {% endif %}
+              {% if not s.contacto and not s.telefono and not s.email %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if s.calle or s.colonia or s.municipio or s.estado or s.cp %}
+                <small>
+                  {{ s.calle|default:"" }}
+                  {% if s.no_ext %} {{ s.no_ext }}{% endif %}
+                  {% if s.colonia %}<br>{{ s.colonia }}{% endif %}
+                  <br>
+                  {{ s.municipio|default:"" }}{% if s.municipio and s.estado %}, {% endif %}{{ s.estado|default:"" }}
+                  {% if s.cp %}<br><span class="text-muted">CP:</span> {{ s.cp }}{% endif %}
+                </small>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if s.cuenta %}
+                {{ s.cuenta }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if s.status == "ALTA" %}
+                <span class="badge badge-success">Alta</span>
+              {% else %}
+                <span class="badge badge-secondary">Baja</span>
+              {% endif %}
+              {% if s.deleted %}
+                <br><small class="badge badge-light border">Eliminado</small>
+              {% endif %}
+            </td>
+
+            <td class="text-right">
+              <a href="{% url 'suppliers:update' s.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                <i class="fas fa-edit"></i>
+              </a>
+              {% if not s.deleted %}
+                <a href="{% url 'suppliers:delete' s.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                  <i class="fas fa-trash"></i>
+                </a>
+              {% else %}
+                {# Si luego agregas restore view, aquí pondrías el botón #}
+                <span class="text-muted" title="Eliminado"><i class="fas fa-trash"></i></span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">Sin resultados.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+  <div class="card-footer py-2">
+    <nav aria-label="Paginación">
+      <ul class="pagination pagination-sm mb-0">
+
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?page=1&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}&show_all={{ request.GET.show_all|urlencode }}">
+              « Primero
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}&show_all={{ request.GET.show_all|urlencode }}">
+              ‹ Anterior
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
+        {% endif %}
+
+        {% for i in paginator.page_range %}
+          {% if i == 1 or i == paginator.num_pages or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+            {% if page_obj.number == i %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+              <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ i }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}&show_all={{ request.GET.show_all|urlencode }}">
+                  {{ i }}
+                </a>
+              </li>
+            {% endif %}
+          {% elif i == 2 and page_obj.number > 4 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% elif i == paginator.num_pages|add:'-1' and page_obj.number < paginator.num_pages|add:'-3' %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}&show_all={{ request.GET.show_all|urlencode }}">
+              Siguiente ›
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ paginator.num_pages }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}&show_all={{ request.GET.show_all|urlencode }}">
+              Última »
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
+          <li class="page-item disabled"><span class="page-link">Última »</span></li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

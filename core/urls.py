@@ -32,6 +32,7 @@ urlpatterns = [
     path("customers/", include("customers.urls", namespace="customers")),
     path("locations/", include("locations.urls", namespace="locations")),
     path("trucks/", include("trucks.urls", namespace="trucks")),
+    path("suppliers/", include("suppliers.urls", namespace="suppliers")),
     path("trips/", include("trips.urls", namespace="trips")),
     path("audit/", include("audit.urls")),
     path("workshop/", include("workshop.urls")),

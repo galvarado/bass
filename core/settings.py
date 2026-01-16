@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "trucks",
     "warehouse",
     "workshop",
+    "suppliers",
     "common",
     "audit.apps.AuditConfig",
 ]

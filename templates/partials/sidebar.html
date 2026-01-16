@@ -97,6 +97,9 @@
       <a class="collapse-item {% if '/trucks' in request.path %}active{% endif %}" href="{% url 'trucks:list' %}">
         <i class="fas fa-truck mr-2 text-muted"></i> Vehículos
       </a>
+          <a class="collapse-item {% if '/suppliers' in request.path %}active{% endif %}" href="{% url 'suppliers:list' %}">
+        <i class="fas fa-id-card mr-2 text-muted"></i> Proveedores
+      </a>
     </div>
   </div>
 </li>

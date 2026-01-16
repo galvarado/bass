@@ -11,4 +11,10 @@ urlpatterns = [
     path("<int:pk>/eliminar/", SparePartSoftDeleteView.as_view(), name="sparepart_delete"),
     path("compras/nueva/", SparePartPurchaseCreateView.as_view(), name="purchase_create"),
     path("compras/<int:pk>/", SparePartPurchaseDetailView.as_view(), name="purchase_detail"),
+    path("compras/<int:pk>/editar/", SparePartPurchaseUpdateStatusView.as_view(), name="purchase_edit"),
+    path("pagos/nuevo/", SupplierPaymentCreateView.as_view(), name="payment_create"),
+    path("pagos/<int:pk>/", SupplierPaymentDetailView.as_view(), name="payment_detail"),
+
+    
+
 ]
