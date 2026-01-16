@@ -2,26 +2,33 @@
 from django.contrib import messages
 from django.db.models import Q
 from django.urls import reverse_lazy
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
+from django.views.decorators.http import require_GET
 
-from .models import Location
-from .forms import LocationForm, LocationSearchForm
+from .models import Location, Route
+from .forms import LocationForm, LocationSearchForm, RouteForm
 
 
 class LocationListView(ListView):
+    """
+    UNA sola pantalla con tabs:
+      - tab=routes (default)
+      - tab=locations
+    """
     model = Location
     template_name = "locations/list.html"
     context_object_name = "locations"
     paginate_by = 10
 
+    def get_active_tab(self):
+        tab = (self.request.GET.get("tab") or "").strip()
+        return tab if tab in ("routes", "locations") else "routes"
+
     def get_queryset(self):
         """
-        - Por defecto muestra solo no eliminados (deleted=False).
-        - Si ?show_deleted=1, muestra solo eliminados.
-        - Si ?show_all=1, muestra todos (incluidos eliminados).
-        - Filtro 'status' compatible con ("1"=Activas / deleted=False, "0"=Eliminadas / deleted=True).
-        - Búsqueda: nombre de ubicación (y nombre de cliente para conveniencia).
+        Este queryset SOLO aplica a `locations` (porque el ListView está basado en Location).
+        El tab de routes se construye en context_data.
         """
         show_deleted = self.request.GET.get("show_deleted") == "1"
         show_all = self.request.GET.get("show_all") == "1"
@@ -37,26 +44,69 @@ class LocationListView(ListView):
         status = (self.request.GET.get("status") or "").strip()
 
         if q:
-            # Solo por nombre de ubicación; añadimos cliente como ayuda
             for token in q.split():
                 qs = qs.filter(
                     Q(nombre__icontains=token) |
                     Q(client__nombre__icontains=token)
                 )
 
-        if status == "1":      # Activas
+        if status == "1":
             qs = qs.filter(deleted=False)
-        elif status == "0":    # Eliminadas
+        elif status == "0":
             qs = qs.filter(deleted=True)
 
         return qs.select_related("client").order_by("client__nombre", "nombre")
 
+    def get_routes_queryset(self):
+        """
+        Queryset de routes para el tab de rutas.
+        Usa los mismos parámetros q/status/show_deleted/show_all.
+        """
+        show_deleted = self.request.GET.get("show_deleted") == "1"
+        show_all = self.request.GET.get("show_all") == "1"
+
+        if show_all:
+            qs = Route.objects.all()
+        elif show_deleted:
+            qs = Route.objects.filter(deleted=True)
+        else:
+            qs = Route.objects.filter(deleted=False)
+
+        q = (self.request.GET.get("q") or "").strip()
+        status = (self.request.GET.get("status") or "").strip()
+
+        if q:
+            for token in q.split():
+                qs = qs.filter(
+                    Q(nombre__icontains=token) |
+                    Q(client__nombre__icontains=token) |
+                    Q(origen__nombre__icontains=token) |
+                    Q(destino__nombre__icontains=token)
+                )
+
+        if status == "1":
+            qs = qs.filter(deleted=False)
+        elif status == "0":
+            qs = qs.filter(deleted=True)
+
+        return qs.select_related("client", "origen", "destino").order_by(
+            "client__nombre", "origen__nombre", "destino__nombre"
+        )
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+
+        active_tab = self.get_active_tab()
+        ctx["active_tab"] = active_tab
         ctx["search_form"] = LocationSearchForm(self.request.GET or None)
+
+        # routes siempre disponibles para el template (tab rutas es el default)
+        ctx["routes"] = self.get_routes_queryset()
+
         return ctx
 
     def get_paginate_by(self, queryset):
+        # paginación SOLO para locations (tu template ya lo maneja así)
         try:
             return int(self.request.GET.get("page_size", self.paginate_by))
         except (TypeError, ValueError):
@@ -69,6 +119,9 @@ class LocationCreateView(CreateView):
     template_name = "locations/form.html"
     success_url = reverse_lazy("locations:list")
 
+    def get_success_url(self):
+        return str(reverse_lazy("locations:list")) + "?tab=locations"
+
     def form_valid(self, form):
         resp = super().form_valid(form)
         messages.success(self.request, "Ubicación creada correctamente.")
@@ -79,11 +132,12 @@ class LocationUpdateView(UpdateView):
     model = Location
     form_class = LocationForm
     template_name = "locations/form.html"
-    success_url = reverse_lazy("locations:list")
 
     def get_queryset(self):
-        # Permite editar cualquier registro (incluyendo eliminados, si quieres bloquear, cambia a filter(deleted=False))
         return Location.objects.all()
+
+    def get_success_url(self):
+        return str(reverse_lazy("locations:list")) + "?tab=locations"
 
     def form_valid(self, form):
         resp = super().form_valid(form)
@@ -97,23 +151,21 @@ class LocationDetailView(DetailView):
     context_object_name = "location"
 
     def get_queryset(self):
-        # Permite ver detalle tanto activas como eliminadas
         return Location.objects.all()
 
 
 class LocationSoftDeleteView(DeleteView):
     model = Location
     template_name = "locations/confirm_delete.html"
-    success_url = reverse_lazy("locations:list")
 
     def get_queryset(self):
-        # Solo permite eliminar las que no están eliminadas
         return Location.objects.filter(deleted=False)
 
+    def get_success_url(self):
+        return str(reverse_lazy("locations:list")) + "?tab=locations"
+
     def delete(self, request, *args, **kwargs):
-        """Soft delete en lugar de borrado físico."""
         self.object = self.get_object()
-        # Si tu modelo tiene método soft_delete(), podrías llamar self.object.soft_delete()
         self.object.deleted = True
         self.object.save(update_fields=["deleted"])
         messages.success(request, f"Ubicación «{self.object.nombre}» eliminada correctamente.")
@@ -121,3 +173,96 @@ class LocationSoftDeleteView(DeleteView):
 
     def post(self, request, *args, **kwargs):
         return self.delete(request, *args, **kwargs)
+
+
+# =========================
+# ROUTES
+# =========================
+
+class RouteCreateView(CreateView):
+    model = Route
+    form_class = RouteForm
+    template_name = "locations/routes_form.html"
+
+    def get_success_url(self):
+        return str(reverse_lazy("locations:list")) + "?tab=routes"
+
+    def form_valid(self, form):
+        resp = super().form_valid(form)
+        messages.success(self.request, "Ruta creada correctamente.")
+        return resp
+
+
+class RouteUpdateView(UpdateView):
+    """
+    Usa el MISMO template routes/form.html,
+    pero en backend SOLO permite actualizar tarifas.
+    """
+    model = Route
+    form_class = RouteForm
+    template_name = "locations/routes_form.html"
+
+    def get_queryset(self):
+        # si quieres permitir editar tarifas aunque esté eliminada, cambia a Route.objects.all()
+        return Route.objects.filter(deleted=False).select_related("client", "origen", "destino")
+
+    def get_success_url(self):
+        return str(reverse_lazy("locations:list")) + "?tab=routes"
+
+    def form_valid(self, form):
+        # SOLO tarifas
+        self.object = form.save(commit=False)
+        self.object.tarifa_cliente = form.cleaned_data.get("tarifa_cliente")
+        self.object.pago_operador = form.cleaned_data.get("pago_operador")
+        self.object.save(update_fields=["tarifa_cliente", "pago_operador"])
+        messages.success(self.request, "Tarifas actualizadas correctamente.")
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class RouteDetailView(DetailView):
+    model = Route
+    template_name = "locations/routes_detail.html"
+    context_object_name = "route"
+
+    def get_queryset(self):
+        return Route.objects.all().select_related("client", "origen", "destino")
+
+
+class RouteSoftDeleteView(DeleteView):
+    model = Route
+    template_name = "locations/routes_confirm_delete.html"
+
+    def get_queryset(self):
+        return Route.objects.filter(deleted=False)
+
+    def get_success_url(self):
+        return str(reverse_lazy("locations:list")) + "?tab=routes"
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.deleted = True
+        self.object.save(update_fields=["deleted"])
+        messages.success(request, f"Ruta «{self.object}» eliminada correctamente.")
+        return HttpResponseRedirect(self.get_success_url())
+
+    def post(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
+
+
+@require_GET
+def ajax_locations_by_client(request):
+    """
+    Devuelve ubicaciones activas de un cliente (para selects origen/destino en creación).
+    """
+    client_id = request.GET.get("client")
+    if not client_id:
+        return JsonResponse({"ok": False, "error": "client requerido"}, status=400)
+
+    qs = (
+        Location.objects
+        .filter(client_id=client_id, deleted=False)
+        .order_by("nombre")
+        .values("id", "nombre")
+    )
+
+    return JsonResponse({"ok": True, "locations": list(qs)})

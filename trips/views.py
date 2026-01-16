@@ -104,9 +104,20 @@ class TripCreateView(CreateView):
     success_url = reverse_lazy("trips:list")
 
     def form_valid(self, form):
-        resp = super().form_valid(form)
+        # NO guardes aún
+        self.object = form.save(commit=False)
+
+        # Copia los valores de la ruta al viaje (snapshot)
+        self.object.apply_route_pricing_snapshot(force=False)
+
+        # Guarda el viaje
+        self.object.save()
+
+        # Guarda relaciones M2M si existen
+        form.save_m2m()
+
         messages.success(self.request, "Viaje creado correctamente.")
-        return resp
+        return super().form_valid(form)
 
 
 class TripUpdateView(UpdateView):

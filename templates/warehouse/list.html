@@ -1,20 +1,18 @@
+{# templates/locations/list.html #}
 {% extends "base.html" %}
 {% load currency_extras %}
 
-{% block title %}Refacciones y Compras · BASS{% endblock %}
+{% block title %}Ubicaciones · BASS{% endblock %}
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h4 mb-0">Refacciones y Compras</h1>
+  <h1 class="h4 mb-0">Ubicaciones y Rutas</h1>
   <div class="btn-group">
-    <a class="btn btn-primary" href="{% url 'warehouse:sparepart_create' %}">
-      <i class="fas fa-plus"></i> Nueva refacción
+    <a class="btn btn-primary" href="{% url 'locations:create' %}">
+      <i class="fas fa-plus"></i> Nueva ubicación
     </a>&nbsp;&nbsp;
-    <a class="btn btn-primary" href="{% url 'warehouse:purchase_create' %}">
-      <i class="fas fa-file-invoice-dollar"></i> Registrar compra
-    </a>&nbsp;&nbsp;
-    <a class="btn btn-primary" href="{% url 'warehouse:payment_create' %}">
-      <i class="fas fa-money-bill-wave"></i> Registrar pago
+    <a class="btn btn-primary" href="{% url 'routes:create' %}">
+      <i class="fas fa-route"></i> Nueva ruta
     </a>
   </div>
 </div>
@@ -32,85 +30,105 @@
           </div>
         </div>
       </div>
+
       <div class="col-md-4 mb-2 text-right d-none d-md-block text-muted small">
-        Mostrando {{ spareparts|length }} refacción{{ spareparts|length|pluralize:"es" }}
-        · {{ purchases|length }} compra{{ purchases|length|pluralize:"s" }}
-        · {{ payments|length }} pago{{ payments|length|pluralize:"s" }}
+        Mostrando {{ locations|length }} ubicación{{ locations|length|pluralize:"es" }}
+        · {{ routes|length }} ruta{{ routes|length|pluralize:"s" }}
       </div>
     </div>
+
+    {# Si tienes filtro de status, lo ponemos abajo como en otros módulos #}
+    {% if search_form.status %}
+    <div class="form-row align-items-center form-compact mt-2">
+      <div class="col-md-3 mb-2">
+        {{ search_form.status }}
+      </div>
+      <div class="col-md-9 mb-2 d-none d-md-block"></div>
+    </div>
+    {% endif %}
   </div>
 </form>
 
-<ul class="nav nav-tabs mb-3" id="warehouseTabs" role="tablist">
+<ul class="nav nav-tabs mb-3" id="locationsTabs" role="tablist">
   <li class="nav-item">
-    <a class="nav-link active" id="tab-spareparts" data-toggle="tab" href="#pane-spareparts" role="tab">
-      <i class="fas fa-cogs"></i> Refacciones
+    <a class="nav-link active" id="tab-locations" data-toggle="tab" href="#pane-locations" role="tab">
+      <i class="fas fa-map-marker-alt"></i> Ubicaciones
     </a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="tab-purchases" data-toggle="tab" href="#pane-purchases" role="tab">
-      <i class="fas fa-file-invoice-dollar"></i> Compras
-    </a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" id="tab-payments" data-toggle="tab" href="#pane-payments" role="tab">
-      <i class="fas fa-money-bill-wave"></i> Pagos
+    <a class="nav-link" id="tab-routes" data-toggle="tab" href="#pane-routes" role="tab">
+      <i class="fas fa-route"></i> Rutas
     </a>
   </li>
 </ul>
 
-<div class="tab-content" id="warehouseTabsContent">
+<div class="tab-content" id="locationsTabsContent">
 
-  <!-- ===== REFACCIONES ===== -->
-  <div class="tab-pane fade show active" id="pane-spareparts" role="tabpanel">
+  <!-- ===== UBICACIONES ===== -->
+  <div class="tab-pane fade show active" id="pane-locations" role="tabpanel">
     <div class="card">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
           <thead class="thead-light">
             <tr>
-              <th style="width: 28%;">Refacción</th>
-              <th style="width: 14%;">Código</th>
-              <th style="width: 18%;">Stock</th>
-              <th style="width: 14%;">Unidad</th>
-              <th style="width: 10%;">Acciones</th>
+              <th>Ubicación / Cliente</th>
+              <th>Dirección</th>
+              <th>Contacto</th>
+              <th>Status</th>
+              <th style="width: 120px;">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {% for part in spareparts %}
+            {% for l in locations %}
               <tr>
                 <td>
-                  <a href="{% url 'warehouse:sparepart_detail' part.pk %}">{{ part.name }}</a>
-                  {% if part.description %}
-                    <br><small class="text-muted">{{ part.description|truncatechars:80 }}</small>
+                  <a href="{% url 'locations:detail' l.pk %}">
+                    {{ l.nombre }}
+                  </a>
+                  <br><small class="text-muted">{{ l.client.nombre }}</small>
+                </td>
+
+                <td>
+                  {% if l.full_address %}
+                    {{ l.full_address }}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                  {% if l.poblacion %}
+                    <br><small class="text-muted">Población: {{ l.poblacion }}</small>
                   {% endif %}
                 </td>
-                <td><span class="font-monospace">{{ part.code }}</span></td>
+
                 <td>
-                  {% with stock=part.stock_actual %}
-                    {% if stock <= part.min_stock %}
-                      <span class="badge badge-danger">{{ stock }} {{ part.unit }}</span>
-                    {% else %}
-                      <span class="badge badge-success">{{ stock }} {{ part.unit }}</span>
-                    {% endif %}
-                  {% endwith %}
+                  {% if l.contacto or l.telefono or l.email %}
+                    {% if l.contacto %}{{ l.contacto }}{% endif %}
+                    {% if l.telefono %}<br><small class="text-muted"><i class="fas fa-phone"></i> {{ l.telefono }}</small>{% endif %}
+                    {% if l.email %}<br><small class="text-muted"><i class="fas fa-envelope"></i> {{ l.email }}</small>{% endif %}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
                 </td>
-                <td>{{ part.unit|default:"pieza" }}</td>
+
+                <td>
+                  {% if l.deleted %}
+                    <span class="badge badge-danger">Eliminada</span>
+                  {% else %}
+                    <span class="badge badge-success">Activa</span>
+                  {% endif %}
+                </td>
+
                 <td class="text-right">
-                  <a href="{% url 'warehouse:sparepart_update' part.pk %}"
-                     class="btn btn-sm btn-outline-secondary" title="Editar">
+                  <a href="{% url 'locations:edit' l.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
                     <i class="fas fa-edit"></i>
                   </a>
-                  <a href="{% url 'warehouse:sparepart_delete' part.pk %}"
-                     class="btn btn-sm btn-outline-danger" title="Eliminar">
+                  <a href="{% url 'locations:delete' l.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
                     <i class="fas fa-trash"></i>
                   </a>
                 </td>
               </tr>
             {% empty %}
               <tr>
-                <td colspan="5" class="text-center text-muted py-4">
-                  No hay refacciones registradas.
-                </td>
+                <td colspan="5" class="text-center text-muted py-4">Sin resultados.</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -119,192 +137,79 @@
     </div>
   </div>
 
-  <!-- ===== COMPRAS ===== -->
-  <div class="tab-pane fade" id="pane-purchases" role="tabpanel">
+  <!-- ===== RUTAS ===== -->
+  <div class="tab-pane fade" id="pane-routes" role="tabpanel">
     <div class="card">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
           <thead class="thead-light">
             <tr>
-              <th style="width: 12%;">Fecha</th>
-              <th style="width: 22%;">Proveedor</th>
-              <th style="width: 13%;">Factura / Folio</th>
-              <th style="width: 10%;">Total</th>
-              <th style="width: 10%;">Pagado</th>
-              <th style="width: 10%;">Saldo</th>
-              <th style="width: 13%;">Estatus</th>
-              <th style="width: 10%;">Acciones</th>
+              <th style="width: 22%;">Ruta / Cliente</th>
+              <th style="width: 18%;">Origen</th>
+              <th style="width: 18%;">Destino</th>
+              <th style="width: 18%;">Cobro</th>
+              <th style="width: 18%;">Pago operador</th>
+              <th style="width: 8%;">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {% for p in purchases %}
+            {% for r in routes %}
               <tr>
                 <td>
-                  {% if p.date %}
-                    {{ p.date|date:"d/m/Y" }}
-                  {% else %}
-                    <span class="text-muted">—</span>
+                  <a href="{% url 'routes:detail' r.pk %}">
+                    {{ r.display_name|default:r.nombre }}
+                  </a>
+                  <br><small class="text-muted">{{ r.client.nombre }}</small>
+                </td>
+
+                <td>
+                  {{ r.origen.nombre }}
+                  {% if r.origen.poblacion %}
+                    <br><small class="text-muted">{{ r.origen.poblacion }}</small>
                   {% endif %}
                 </td>
 
                 <td>
-                  {{ p.supplier.nombre|default:"—" }}
-                  {% if p.notes %}
-                    <br><small class="text-muted">{{ p.notes|truncatechars:60 }}</small>
-                  {% endif %}
-                </td>
-
-                <td>{{ p.invoice_number|default:"—" }}</td>
-
-                <td>
-                  {% if p.total %}
-                    ${{ p.total|money_mx }}
-                  {% else %}
-                    <span class="text-muted">—</span>
+                  {{ r.destino.nombre }}
+                  {% if r.destino.poblacion %}
+                    <br><small class="text-muted">{{ r.destino.poblacion }}</small>
                   {% endif %}
                 </td>
 
                 <td>
-                  {% if p.amount_paid and p.amount_paid > 0 %}
-                    ${{ p.amount_paid|money_mx }}
-                  {% else %}
-                    <span class="text-muted">$0.00</span>
-                  {% endif %}
-                </td>
-
-                <td>
-                  {% if p.balance is not None and p.balance <= 0 %}
-                    <span class="badge badge-info">
-                      <i class="fas fa-check-circle"></i> Pagada
-                    </span>
-                  {% else %}
-                    <span class="badge badge-light">
-                      {% if p.balance %}${{ p.balance|money_mx }}{% else %}$0.00{% endif %}
-                    </span>
-                  {% endif %}
-                </td>
-
-                <td>
-                  {% with s=p.status %}
-                    {% if s == "APPROVED" %}
-                      <span class="badge badge-success">Aprobada</span>
-                    {% elif s == "SUBMITTED" %}
-                      <span class="badge badge-warning">Pendiente</span>
-                    {% elif s == "REJECTED" %}
-                      <span class="badge badge-danger">Rechazada</span>
-                    {% elif s == "DRAFT" %}
-                      <span class="badge badge-secondary">Borrador</span>
-                    {% elif s == "CANCELLED" %}
-                      <span class="badge badge-dark">Cancelada</span>
-                    {% elif s == "CLOSED" %}
-                      <span class="badge badge-primary">Cerrada</span>
-                    {% else %}
-                      <span class="badge badge-light">{{ s }}</span>
+                  {% if r.tarifa_cliente %}
+                    ${{ r.tarifa_cliente|money_mx }}
+                    {% if r.casetas_estimadas %}
+                      <br><small class="text-muted">Casetas: ${{ r.casetas_estimadas|money_mx }}</small>
                     {% endif %}
-                  {% endwith %}
-                </td>
-
-                <td class="text-right">
-                  <a href="{% url 'warehouse:purchase_detail' p.pk %}"
-                     class="btn btn-sm btn-outline-secondary" title="Ver detalle">
-                    <i class="fas fa-eye"></i>
-                  </a>
-
-                  {% if p.status == "SUBMITTED" %}
-                    <a href="{% url 'warehouse:purchase_edit' p.pk %}"
-                       class="btn btn-sm btn-outline-warning" title="Aprobar / Rechazar">
-                      <i class="fas fa-check"></i>
-                    </a>
-                  {% endif %}
-
-                  {% if p.status == "APPROVED" and p.balance and p.balance > 0 %}
-                    <a href="{% url 'warehouse:payment_create' %}?supplier={{ p.supplier_id }}"
-                       class="btn btn-sm btn-outline-success" title="Registrar pago">
-                      <i class="fas fa-money-bill-wave"></i>
-                    </a>
-                  {% endif %}
-                </td>
-              </tr>
-            {% empty %}
-              <tr>
-                <td colspan="8" class="text-center text-muted py-4">
-                  No hay compras registradas.
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== PAGOS ===== -->
-  <div class="tab-pane fade" id="pane-payments" role="tabpanel">
-    <div class="card">
-      <div class="table-responsive">
-        <table class="table table-hover mb-0">
-          <thead class="thead-light">
-            <tr>
-              <th style="width: 12%;">Fecha</th>
-              <th style="width: 28%;">Proveedor</th>
-              <th style="width: 14%;">Método</th>
-              <th style="width: 26%;">Referencia</th>
-              <th style="width: 10%;">Monto</th>
-              <th style="width: 10%;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for pay in payments %}
-              <tr>
-                <td>
-                  {% if pay.date %}
-                    {{ pay.date|date:"d/m/Y" }}
-                  {% else %}
-                    <span class="text-muted">—</span>
-                  {% endif %}
-                </td>
-
-                <td>{{ pay.supplier.nombre|default:"—" }}</td>
-
-                <td>
-                  {% if pay.method %}
-                    {{ pay.get_method_display|default:pay.method }}
                   {% else %}
                     <span class="text-muted">—</span>
                   {% endif %}
                 </td>
 
                 <td>
-                  {% if pay.reference %}
-                    <span class="font-monospace">{{ pay.reference }}</span>
-                  {% else %}
-                    <span class="text-muted">—</span>
-                  {% endif %}
-                  {% if pay.notes %}
-                    <br><small class="text-muted">{{ pay.notes|truncatechars:60 }}</small>
-                  {% endif %}
-                </td>
-
-                <td>
-                  {% if pay.amount %}
-                    ${{ pay.amount|money_mx }}
+                  {% if r.pago_operador %}
+                    ${{ r.pago_operador|money_mx }}
+                    {% if r.bono_operador %}
+                      <br><small class="text-muted">Bono: ${{ r.bono_operador|money_mx }}</small>
+                    {% endif %}
                   {% else %}
                     <span class="text-muted">—</span>
                   {% endif %}
                 </td>
 
                 <td class="text-right">
-                  <a href="{% url 'warehouse:payment_detail' pay.pk %}"
-                     class="btn btn-sm btn-outline-secondary" title="Ver detalle">
-                    <i class="fas fa-eye"></i>
+                  <a href="{% url 'routes:edit' r.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a href="{% url 'routes:delete' r.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                    <i class="fas fa-trash"></i>
                   </a>
                 </td>
               </tr>
             {% empty %}
               <tr>
-                <td colspan="6" class="text-center text-muted py-4">
-                  No hay pagos registrados.
-                </td>
+                <td colspan="6" class="text-center text-muted py-4">No hay rutas registradas.</td>
               </tr>
             {% endfor %}
           </tbody>

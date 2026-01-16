@@ -1,6 +1,6 @@
 # locations/forms.py
 from django import forms
-from .models import Location
+from .models import Location, Route
 
 from django_postalcodes_mexico.models import PostalCode as PC  # mismo helper
 import re
@@ -42,6 +42,11 @@ class LocationForm(forms.ModelForm):
                 field.widget.attrs.update({"class": "form-check-input"})
             else:
                 field.widget.attrs.update({"class": cls})
+
+        # ✅ Cliente: mostrar nombre (no razón social)
+        if "client" in self.fields:
+            self.fields["client"].label_from_instance = (lambda obj: obj.nombre)
+            self.fields["client"].queryset = self.fields["client"].queryset.order_by("nombre")
 
         # Pre-cargar colonias si hay CP al editar
         cp = (self.instance.cp or "").strip() if getattr(self.instance, "pk", None) else ""
@@ -141,3 +146,89 @@ class LocationSearchForm(forms.Form):
     )
     show_deleted = forms.BooleanField(required=False, widget=forms.HiddenInput)
     show_all = forms.BooleanField(required=False, widget=forms.HiddenInput)
+
+
+# =========================
+# FORM PARA CREAR RUTA
+# =========================
+class RouteForm(forms.ModelForm):
+    class Meta:
+        model = Route
+        fields = [
+            "client",
+            "nombre",
+            "origen",
+            "destino",
+            "tarifa_cliente",
+            "pago_operador",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Estilo
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                "class": "form-control form-control-sm"
+            })
+
+        # 👇 AQUÍ ESTÁ LA CLAVE
+        self.fields["client"].label_from_instance = (
+            lambda obj: obj.nombre
+        )
+
+        # Ordenar por nombre visible
+        self.fields["client"].queryset = self.fields["client"].queryset.order_by("nombre")
+
+        # Origen / destino (como ya lo tenías)
+        self.fields["origen"].queryset = Location.objects.none()
+        self.fields["destino"].queryset = Location.objects.none()
+
+        client_id = None
+        if self.is_bound:
+            client_id = self.data.get("client")
+        elif self.instance.pk:
+            client_id = self.instance.client_id
+
+        if client_id:
+            qs = Location.objects.filter(client_id=client_id, deleted=False).order_by("nombre")
+            self.fields["origen"].queryset = qs
+            self.fields["destino"].queryset = qs
+    
+    def clean(self):
+        cleaned = super().clean()
+
+        client = cleaned.get("client")
+        origen = cleaned.get("origen")
+        destino = cleaned.get("destino")
+
+        # No repetir misma ubicación
+        if origen and destino and origen == destino:
+            self.add_error("destino", "El destino no puede ser igual al origen.")
+
+        # Coherencia cliente ↔ ubicaciones (por si postean manual)
+        if client and origen and origen.client_id != client.id:
+            self.add_error("origen", "El origen no pertenece al cliente seleccionado.")
+        if client and destino and destino.client_id != client.id:
+            self.add_error("destino", "El destino no pertenece al cliente seleccionado.")
+
+        return cleaned
+
+# =========================
+# FORM PARA EDITAR SOLO TARIFAS
+# =========================
+class RouteTariffsForm(forms.ModelForm):
+    class Meta:
+        model = Route
+        fields = [
+            "tarifa_cliente",
+            "pago_operador",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for name, field in self.fields.items():
+            field.widget.attrs.update({
+                "class": "form-control form-control-sm"
+            })

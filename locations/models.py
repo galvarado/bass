@@ -1,7 +1,9 @@
 from django.db import models
 from django.utils import timezone
 from customers.models import Client
-
+from decimal import Decimal
+from django.core.exceptions import ValidationError
+from customers.models import Client
 
 class LocationQuerySet(models.QuerySet):
     def alive(self):
@@ -84,3 +86,92 @@ class Location(models.Model):
             self.pais,
         ]
         return ", ".join([p for p in parts if p])
+
+
+class RouteQuerySet(models.QuerySet):
+    def alive(self):
+        return self.filter(deleted=False)
+
+    def deleted_only(self):
+        return self.filter(deleted=True)
+
+
+class RouteManager(models.Manager):
+    def get_queryset(self):
+        return RouteQuerySet(self.model, using=self._db).alive()
+
+    def deleted_only(self):
+        return self.get_queryset().deleted_only()
+
+    def all_objects(self):
+        return RouteQuerySet(self.model, using=self._db)
+
+
+class Route(models.Model):
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name="routes", verbose_name="Cliente"
+    )
+
+    origen = models.ForeignKey(
+        Location, on_delete=models.PROTECT, related_name="routes_as_origin", verbose_name="Origen"
+    )
+    destino = models.ForeignKey(
+        Location, on_delete=models.PROTECT, related_name="routes_as_destination", verbose_name="Destino"
+    )
+
+    nombre = models.CharField(
+        max_length=150,
+        blank=True,
+        help_text="Opcional: nombre comercial (ej. GDL → CDMX). Si se deja vacío, se genera en display."
+    )
+
+    
+
+    # Commercial terms (what you charge)
+    tarifa_cliente = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00"),
+        help_text="Monto que se cobra al cliente por esta ruta (base)."
+    )
+   
+    # Operator pay (what you pay the operator)
+    pago_operador = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00"),
+        help_text="Monto que se paga al operador por esta ruta (base)."
+    )
+  
+
+    notas = models.TextField(blank=True)
+
+    deleted = models.BooleanField(default=False)
+
+    objects = RouteManager()
+    all_objects = RouteQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "Ruta"
+        verbose_name_plural = "Rutas"
+        ordering = ["client__nombre", "origen__nombre", "destino__nombre"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["client", "origen", "destino"],
+                name="uniq_route_per_client_origin_dest"
+            ),
+        ]
+
+    def clean(self):
+        # Prevent cross-client mismatch
+        if self.origen_id and self.client_id and self.origen.client_id != self.client_id:
+            raise ValidationError({"origen": "El origen no pertenece a este cliente."})
+        if self.destino_id and self.client_id and self.destino.client_id != self.client_id:
+            raise ValidationError({"destino": "El destino no pertenece a este cliente."})
+        if self.origen_id and self.destino_id and self.origen_id == self.destino_id:
+            raise ValidationError("Origen y destino no pueden ser la misma ubicación.")
+
+    def __str__(self):
+        return f"{self.display_name} · {self.client.nombre}"
+
+    @property
+    def display_name(self):
+        if self.nombre:
+            return self.nombre
+        return f"{self.origen.nombre} → {self.destino.nombre}"

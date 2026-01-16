@@ -1,0 +1,147 @@
+{# templates/routes/detail.html #}
+{% extends "base.html" %}
+{% load currency_extras %}
+{% block title %}Detalle de Ruta · BASS{% endblock %}
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Detalle de Ruta</strong>
+    <div>
+      <a href="{% url 'locations:routes_edit' route.pk %}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-edit"></i> Editar tarifas
+      </a>
+
+      {% if not route.deleted %}
+        <a href="{% url 'locations:routes_delete' route.pk %}" class="btn btn-sm btn-outline-danger"
+           onclick="return confirm('¿Eliminar esta ruta?');">
+          <i class="fas fa-trash"></i> Eliminar
+        </a>
+      {% else %}
+        {# Si luego agregas restore para rutas, lo conectas aquí #}
+        <span class="badge badge-secondary ml-2">Eliminada</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card-body">
+
+    <!-- ===== DATOS DE LA RUTA ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-route mr-1"></i> Datos de la ruta</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Nombre</dt>
+      <dd class="col-sm-9">
+        {{ route.nombre|default:route.display_name }}
+      </dd>
+
+      <dt class="col-sm-3">Cliente</dt>
+      <dd class="col-sm-9">{{ route.client.nombre }}</dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== ORIGEN ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-map-marker-alt mr-1"></i> Origen</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Ubicación</dt>
+      <dd class="col-sm-9">
+        <a href="{% url 'locations:detail' route.origen.pk %}">
+          {{ route.origen.nombre }}
+        </a>
+      </dd>
+
+      <dt class="col-sm-3">Dirección</dt>
+      <dd class="col-sm-9">{{ route.origen.full_address|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Contacto</dt>
+      <dd class="col-sm-9">
+        {% if route.origen.contacto %}
+          {{ route.origen.contacto }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+        {% if route.origen.telefono %}
+          <br><small class="text-muted"><i class="fas fa-phone"></i> {{ route.origen.telefono }}</small>
+        {% endif %}
+        {% if route.origen.email %}
+          <br><small class="text-muted"><i class="fas fa-envelope"></i> {{ route.origen.email }}</small>
+        {% endif %}
+      </dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== DESTINO ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-flag-checkered mr-1"></i> Destino</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Ubicación</dt>
+      <dd class="col-sm-9">
+        <a href="{% url 'locations:detail' route.destino.pk %}">
+          {{ route.destino.nombre }}
+        </a>
+      </dd>
+
+      <dt class="col-sm-3">Dirección</dt>
+      <dd class="col-sm-9">{{ route.destino.full_address|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Contacto</dt>
+      <dd class="col-sm-9">
+        {% if route.destino.contacto %}
+          {{ route.destino.contacto }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+        {% if route.destino.telefono %}
+          <br><small class="text-muted"><i class="fas fa-phone"></i> {{ route.destino.telefono }}</small>
+        {% endif %}
+        {% if route.destino.email %}
+          <br><small class="text-muted"><i class="fas fa-envelope"></i> {{ route.destino.email }}</small>
+        {% endif %}
+      </dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== TARIFAS ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-dollar-sign mr-1"></i> Tarifas</h6>
+    <dl class="row small">
+      <dt class="col-sm-3">Tarifa cliente</dt>
+      <dd class="col-sm-9">
+        {% if route.tarifa_cliente is not None %}
+          ${{ route.tarifa_cliente|money_mx }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Pago operador</dt>
+      <dd class="col-sm-9">
+        {% if route.pago_operador is not None %}
+          ${{ route.pago_operador|money_mx }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+     
+    </dl>
+
+    <hr>
+
+    <!-- ===== ESTADO ===== -->
+    <h6 class="text-primary mb-3"><i class="fas fa-info-circle mr-1"></i> Estado</h6>
+    <dl class="row small mb-0">
+      <dt class="col-sm-3">Estatus</dt>
+      <dd class="col-sm-9">
+        {% if route.deleted %}
+          <span class="badge badge-danger">Eliminada</span>
+        {% else %}
+          <span class="badge badge-success">Activa</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+  </div>
+</div>
+
+{% endblock %}

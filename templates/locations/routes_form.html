@@ -1,0 +1,297 @@
+{# templates/routes/form.html #}
+{% extends "base.html" %}
+{% load form_extras %}
+{% block title %}{% if object %}Editar Ruta{% else %}Nueva Ruta{% endif %} · BASS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">{% if object %}Editar Ruta{% else %}Nueva Ruta{% endif %}</h1>
+  <a href="{% url 'locations:list' %}?tab=routes" class="btn btn-light btn-sm">
+    <i class="fas fa-arrow-left"></i> Volver
+  </a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact">
+  {% csrf_token %}
+  <div class="card-body">
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- ===== DATOS DE LA RUTA ===== -->
+    <h6 class="text-primary mb-2"><i class="fas fa-route mr-1"></i> Datos de la ruta</h6>
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.client.id_for_label }}">Cliente</label>
+
+        {% if object %}
+          {# En edición: mostrar readonly (disabled no se envía), enviamos hidden para preservar valor #}
+          <select class="form-control form-control-sm" disabled>
+            {% if object.client %}
+              <option selected value="{{ object.client_id }}">{{ object.client.nombre }}</option>
+            {% else %}
+              <option selected value="">—</option>
+            {% endif %}
+          </select>
+          <input type="hidden" name="client" value="{{ object.client_id }}">
+        {% else %}
+          {{ form.client|add_class:"form-control" }}
+        {% endif %}
+
+        {% if form.client.errors %}
+          <small class="text-danger">{{ form.client.errors|striptags }}</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-8">
+        <label for="{{ form.nombre.id_for_label }}">Nombre (opcional)</label>
+
+        {% if object %}
+          <input type="text" class="form-control form-control-sm"
+                 value="{{ object.nombre|default:object.display_name }}" readonly>
+          <input type="hidden" name="nombre" value="{{ object.nombre|default_if_none:'' }}">
+          <small class="text-muted">En edición, el nombre y la ruta quedan fijos. Si necesitas cambiar origen/destino, crea una ruta nueva.</small>
+        {% else %}
+          {{ form.nombre|add_class:"form-control" }}
+          <small class="text-muted">Ej: GDL → CDMX, o deja vacío para usar “Origen → Destino”.</small>
+        {% endif %}
+
+        {% if form.nombre.errors %}
+          <small class="text-danger">{{ form.nombre.errors|striptags }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label for="{{ form.origen.id_for_label }}">Origen</label>
+
+        {% if object %}
+          <select class="form-control form-control-sm" disabled>
+            {% if object.origen %}
+              <option selected value="{{ object.origen_id }}">{{ object.origen.nombre }}</option>
+            {% else %}
+              <option selected value="">—</option>
+            {% endif %}
+          </select>
+          <input type="hidden" name="origen" value="{{ object.origen_id }}">
+        {% else %}
+          {{ form.origen|add_class:"form-control" }}
+          <small class="text-muted">Solo se muestran ubicaciones activas del cliente seleccionado.</small>
+        {% endif %}
+
+        {% if form.origen.errors %}
+          <small class="text-danger">{{ form.origen.errors|striptags }}</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="{{ form.destino.id_for_label }}">Destino</label>
+
+        {% if object %}
+          <select class="form-control form-control-sm" disabled>
+            {% if object.destino %}
+              <option selected value="{{ object.destino_id }}">{{ object.destino.nombre }}</option>
+            {% else %}
+              <option selected value="">—</option>
+            {% endif %}
+          </select>
+          <input type="hidden" name="destino" value="{{ object.destino_id }}">
+        {% else %}
+          {{ form.destino|add_class:"form-control" }}
+        {% endif %}
+
+        {% if form.destino.errors %}
+          <small class="text-danger">{{ form.destino.errors|striptags }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ===== TARIFAS ===== -->
+    <hr>
+    <h6 class="text-primary mb-2"><i class="fas fa-dollar-sign mr-1"></i> Tarifas</h6>
+
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.tarifa_cliente.id_for_label }}">Tarifa cliente</label>
+        {{ form.tarifa_cliente|add_class:"form-control" }}
+        {% if form.tarifa_cliente.errors %}
+          <small class="text-danger">{{ form.tarifa_cliente.errors|striptags }}</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-3">
+        <label for="{{ form.pago_operador.id_for_label }}">Pago operador</label>
+        {{ form.pago_operador|add_class:"form-control" }}
+        {% if form.pago_operador.errors %}
+          <small class="text-danger">{{ form.pago_operador.errors|striptags }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      {% if object %}
+        <i class="fas fa-save"></i> Guardar cambios
+      {% else %}
+        <i class="fas fa-save"></i> Crear ruta
+      {% endif %}
+    </button>
+  </div>
+</form>
+
+<!-- Modal de Notificación -->
+<div class="modal fade" id="notifModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0" style="border-radius: 12px;">
+      <div class="modal-header bg-danger text-white py-2" id="notifModalHeader">
+        <h6 class="modal-title mb-0" id="notifModalTitle">Error</h6>
+        <button type="button" class="close text-white" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body py-3" id="notifModalBody">
+        Texto del mensaje
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-sm btn-primary" data-dismiss="modal">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+
+  /* =========================
+   * MODAL DE NOTIFICACIÓN
+   * ========================= */
+  function showNotif(message, type="error") {
+    const modalTitle  = document.getElementById("notifModalTitle");
+    const modalBody   = document.getElementById("notifModalBody");
+    const modalHeader = document.getElementById("notifModalHeader");
+
+    modalBody.textContent = message;
+
+    if (type === "error") {
+      modalTitle.textContent = "Error";
+      modalHeader.className = "modal-header bg-danger text-white py-2";
+    } else if (type === "warning") {
+      modalTitle.textContent = "Advertencia";
+      modalHeader.className = "modal-header bg-warning text-dark py-2";
+    } else {
+      modalTitle.textContent = "Información";
+      modalHeader.className = "modal-header bg-primary text-white py-2";
+    }
+
+    $('#notifModal').modal('show');
+  }
+
+  /* =========================
+   * ELEMENTOS
+   * ========================= */
+  const $client  = document.getElementById('id_client');
+  const $origen  = document.getElementById('id_origen');
+  const $destino = document.getElementById('id_destino');
+
+  const isEdit = {{ object.pk|yesno:"true,false" }};
+
+  /* =========================
+   * REGLA: ORIGEN ≠ DESTINO (solo en create)
+   * ========================= */
+  function enforceSameLocationRule() {
+    if ($origen.value && $destino.value && $origen.value === $destino.value) {
+      $destino.value = "";
+      showNotif(
+        "El destino no puede ser igual al origen. Selecciona una ubicación diferente.",
+        "warning"
+      );
+      $destino.focus();
+    }
+  }
+
+  /* =========================
+   * HELPERS SELECTS
+   * ========================= */
+  function setDisabled(state) {
+    if ($origen)  $origen.disabled  = state;
+    if ($destino) $destino.disabled = state;
+  }
+
+  function resetSelect($el) {
+    if (!$el) return;
+    $el.innerHTML = '<option value="">Seleccione una ubicación</option>';
+  }
+
+  /* =========================
+   * FETCH UBICACIONES POR CLIENTE (solo create)
+   * ========================= */
+  async function fetchLocations(clientId) {
+    const url = "{% url 'locations:ajax_locations_by_client' %}?client=" + encodeURIComponent(clientId);
+
+    try {
+      setDisabled(true);
+
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const data = await res.json();
+
+      resetSelect($origen);
+      resetSelect($destino);
+
+      if (!res.ok || !data.ok) return;
+
+      const opts = (data.locations || [])
+        .map(l => `<option value="${l.id}">${l.nombre}</option>`)
+        .join('');
+
+      $origen.insertAdjacentHTML('beforeend', opts);
+      $destino.insertAdjacentHTML('beforeend', opts);
+
+    } catch (e) {
+      console.error(e);
+      resetSelect($origen);
+      resetSelect($destino);
+    } finally {
+      setDisabled(false);
+    }
+  }
+
+  /* =========================
+   * INIT
+   * ========================= */
+  if (!isEdit) {
+    // Solo en creación aplica:
+    // - cargar ubicaciones por cliente
+    // - regla origen != destino
+    if ($origen && $destino) {
+      $origen.addEventListener("change", enforceSameLocationRule);
+      $destino.addEventListener("change", enforceSameLocationRule);
+    }
+
+    if ($client) {
+      $client.addEventListener('change', () => {
+        const clientId = ($client.value || '').trim();
+
+        if (!clientId) {
+          resetSelect($origen);
+          resetSelect($destino);
+          return;
+        }
+
+        fetchLocations(clientId);
+      });
+    }
+  }
+
+})();
+</script>
+
+{% endblock %}

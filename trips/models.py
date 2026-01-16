@@ -1,9 +1,10 @@
 # trips/models.py
 from django.db import models
-
+from customers.models import Client
 from trucks.models import Truck, ReeferBox
 from operators.models import Operator
-from locations.models import Location
+from locations.models import Location, Route
+from decimal import Decimal
 
 
 class TransferType(models.TextChoices):
@@ -93,6 +94,26 @@ class Trip(models.Model):
         null=True, blank=True,
         verbose_name="Hora de llegada al destino",
     )
+    client = models.ForeignKey(
+    Client,
+        on_delete=models.PROTECT,
+        related_name="trips",
+        null=True,
+        blank=True,
+    )
+    route = models.ForeignKey(
+        "locations.Route",
+        on_delete=models.PROTECT,
+        related_name="trips",
+        null=True,
+        blank=True,
+    )
+
+    # Snapshots (copied from route at creation time)
+    tarifa_cliente_snapshot = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    casetas_snapshot = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    pago_operador_snapshot = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    bono_operador_snapshot = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
 
         # --- Soft delete ---
     deleted = models.BooleanField(default=False, db_index=True)
@@ -105,6 +126,33 @@ class Trip(models.Model):
         verbose_name = "Viaje"
         verbose_name_plural = "Viajes"
         ordering = ["-id"]
+
+    def apply_route_pricing_snapshot(self, force=False):
+        """
+        Copies current Route pricing into the trip.
+        - force=False: only fills if snapshots are still zero/unset (good on create)
+        - force=True: overwrites (use carefully)
+        """
+        r = self.route
+        if not r:
+            return
+
+        if force or self.tarifa_cliente_snapshot == Decimal("0.00"):
+            self.tarifa_cliente_snapshot = r.tarifa_cliente or Decimal("0.00")
+        if force or self.casetas_snapshot == Decimal("0.00"):
+            self.casetas_snapshot = r.casetas_estimadas or Decimal("0.00")
+        if force or self.pago_operador_snapshot == Decimal("0.00"):
+            self.pago_operador_snapshot = r.pago_operador or Decimal("0.00")
+        if force or self.bono_operador_snapshot == Decimal("0.00"):
+            self.bono_operador_snapshot = r.bono_operador or Decimal("0.00")
+
+    @property
+    def total_cobro_cliente(self):
+        return (self.tarifa_cliente_snapshot or 0) + (self.casetas_snapshot or 0)
+
+    @property
+    def total_pago_operador(self):
+        return (self.pago_operador_snapshot or 0) + (self.bono_operador_snapshot or 0)
 
     def __str__(self):
         return f"{self.origin} → {self.destination} | {self.operator} | {self.truck} + {self.reefer_box}"

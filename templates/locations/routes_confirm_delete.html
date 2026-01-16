@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load currency_extras %}
+{% block title %}Eliminar Ruta · BASS{% endblock %}
+{% block content %}
+
+<div class="card border-danger shadow-sm">
+  <div class="card-header bg-danger text-white">
+    <strong>Confirmar eliminación</strong>
+  </div>
+
+  <div class="card-body">
+    <p>
+      ¿Seguro que deseas eliminar la ruta
+      <strong>{{ object.display_name|default:object.nombre }}</strong>
+      del cliente <strong>{{ object.client.nombre }}</strong>?
+    </p>
+
+    <dl class="row small mb-3">
+
+      <dt class="col-sm-3">Cliente</dt>
+      <dd class="col-sm-9">{{ object.client.nombre }}</dd>
+
+      <dt class="col-sm-3">Origen</dt>
+      <dd class="col-sm-9">
+        {{ object.origen.nombre }}
+        {% if object.origen.full_address %}
+          <br><small class="text-muted">{{ object.origen.full_address }}</small>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Destino</dt>
+      <dd class="col-sm-9">
+        {{ object.destino.nombre }}
+        {% if object.destino.full_address %}
+          <br><small class="text-muted">{{ object.destino.full_address }}</small>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Tarifa cliente</dt>
+      <dd class="col-sm-9">
+        {% if object.tarifa_cliente is not None %}
+          ${{ object.tarifa_cliente|money_mx }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Pago operador</dt>
+      <dd class="col-sm-9">
+        {% if object.pago_operador is not None %}
+          ${{ object.pago_operador|money_mx }}
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Estado</dt>
+      <dd class="col-sm-9">
+        {% if object.deleted %}
+          <span class="badge badge-danger">Eliminada</span>
+        {% else %}
+          <span class="badge badge-success">Activa</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+    <form method="post" class="mt-3">
+      {% csrf_token %}
+      <a href="{% url 'locations:list' %}?tab=routes" class="btn btn-outline-secondary">
+        Cancelar
+      </a>
+      <button type="submit" class="btn btn-danger">
+        <i class="fas fa-trash"></i> Eliminar ruta
+      </button>
+    </form>
+
+    <p class="text-muted mt-3 mb-0 small">
+      <i class="fas fa-info-circle"></i>
+      Esta acción <strong>da de baja la ruta</strong> (borrado lógico).
+      No se perderán los datos históricos de viajes.
+    </p>
+  </div>
+</div>
+
+{% endblock %}
