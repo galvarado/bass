@@ -1,0 +1,83 @@
+services:
+
+  traefik:
+    image: "traefik:v3.1"
+    container_name: "traefik"
+    command:
+      # - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+
+      # HTTPS only (como tu ejemplo)
+      - "--entryPoints.websecure.address=:443"
+
+      # Let's Encrypt (TLS challenge)
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      # - "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "443:443"
+      - "8080:8080"
+    networks:
+      - webnet
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: "django_web"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - webnet
+    volumes:
+      - static-data:/app/staticfiles
+      - media-data:/app/media
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:8000/healthz || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "traefik.enable=true"
+
+      # Router
+      - "traefik.http.routers.django.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.django.entrypoints=websecure"
+      - "traefik.http.routers.django.tls=true"
+      - "traefik.http.routers.django.tls.certresolver=myresolver"
+
+      # Service -> gunicorn
+      - "traefik.http.services.django.loadbalancer.server.port=8000"
+
+  db:
+    image: postgres:16-alpine
+    container_name: "postgres"
+    env_file:
+      - .env
+    networks:
+      - webnet
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+networks:
+  webnet:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  static-data:
+  media-data:

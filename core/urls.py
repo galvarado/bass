@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views as core_views
-from common.views import header_info, lookup_cp
+from common.views import header_info, lookup_cp, healthz
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -39,6 +39,7 @@ urlpatterns = [
     path("warehouse/", include("warehouse.urls")),
     path("api/utils/header-info/", header_info, name="header_info"),
     path("api/utils/lookup-cp/", lookup_cp, name="lookup_cp"),
+    path("healthz", healthz, name="healthz"),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

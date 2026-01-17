@@ -6,6 +6,7 @@ from common.models import ExchangeRate
 from datetime import date
 from django.conf import settings   
 import requests
+from django.http import HttpResponse
 
 from django.db.models.functions import Trim
 
@@ -141,3 +142,6 @@ def header_info(request):
         "usd_mxn": rate,
         "provider": provider,
     })
+
+def healthz(_):
+    return HttpResponse("ok")
