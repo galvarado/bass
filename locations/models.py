@@ -60,7 +60,7 @@ class Location(models.Model):
     deleted = models.BooleanField(default=False)
 
     # Managers
-    objects = LocationManager()
+    objects = models.Manager()                 # ← NO filtra
     all_objects = LocationQuerySet.as_manager()
 
     class Meta:
@@ -73,6 +73,11 @@ class Location(models.Model):
 
     def __str__(self):
         return f"{self.nombre} · {self.client.nombre}"
+
+    def soft_delete(self):
+        if not self.deleted:
+            self.deleted = True
+            self.save(update_fields=["deleted"])
 
     @property
     def full_address(self):
@@ -144,7 +149,7 @@ class Route(models.Model):
 
     deleted = models.BooleanField(default=False)
 
-    objects = RouteManager()
+    objects = models.Manager()                 # ← NO filtra
     all_objects = RouteQuerySet.as_manager()
 
     class Meta:
@@ -157,6 +162,11 @@ class Route(models.Model):
                 name="uniq_route_per_client_origin_dest"
             ),
         ]
+
+    def soft_delete(self):
+        if not self.deleted:
+            self.deleted = True
+            self.save(update_fields=["deleted"])
 
     def clean(self):
         # Prevent cross-client mismatch

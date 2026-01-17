@@ -153,7 +153,6 @@ class LocationDetailView(DetailView):
     def get_queryset(self):
         return Location.objects.all()
 
-
 class LocationSoftDeleteView(DeleteView):
     model = Location
     template_name = "locations/confirm_delete.html"
@@ -164,15 +163,11 @@ class LocationSoftDeleteView(DeleteView):
     def get_success_url(self):
         return str(reverse_lazy("locations:list")) + "?tab=locations"
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        self.object.deleted = True
-        self.object.save(update_fields=["deleted"])
+        self.object.soft_delete()
         messages.success(request, f"Ubicación «{self.object.nombre}» eliminada correctamente.")
         return HttpResponseRedirect(self.get_success_url())
-
-    def post(self, request, *args, **kwargs):
-        return self.delete(request, *args, **kwargs)
 
 
 # =========================
@@ -238,15 +233,11 @@ class RouteSoftDeleteView(DeleteView):
     def get_success_url(self):
         return str(reverse_lazy("locations:list")) + "?tab=routes"
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        self.object.deleted = True
-        self.object.save(update_fields=["deleted"])
+        self.object.soft_delete()
         messages.success(request, f"Ruta «{self.object}» eliminada correctamente.")
         return HttpResponseRedirect(self.get_success_url())
-
-    def post(self, request, *args, **kwargs):
-        return self.delete(request, *args, **kwargs)
 
 
 @require_GET
