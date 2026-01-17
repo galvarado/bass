@@ -7,6 +7,7 @@ from django.conf import settings
 from .middleware import get_current_request
 from .models import AuditLog
 from .utils import model_snapshot, diff
+import sys
 
 import datetime
 from django.db.models.fields.files import FieldFile, ImageFieldFile
