@@ -106,6 +106,9 @@ def audit_pre_save(sender, instance, **kwargs):
 
 @receiver(post_save, dispatch_uid="audit_post_save", weak=False)
 def audit_post_save(sender, instance, created, **kwargs):
+    # Do not audit while running migrations/management commands that touch core tables.
+    if any(cmd in sys.argv for cmd in ("migrate", "makemigrations", "collectstatic")):
+        return
     if sender is AuditLog:
         return
     if not _should_track(instance):
