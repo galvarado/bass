@@ -131,6 +131,9 @@ STATICFILES_DIRS = [BASE_DIR / "static"]      # para desarrollo
 STATIC_ROOT = BASE_DIR / "staticfiles"        # para collectstatic en prod
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
