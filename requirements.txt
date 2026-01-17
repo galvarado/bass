@@ -26,3 +26,4 @@ webencodings==0.5.1
 zopfli==0.2.3.post1
 psycopg2-binary>=2.9
 gunicorn>=22.0
+whitenoise>=6.7
