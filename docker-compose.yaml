@@ -57,7 +57,7 @@ services:
 
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.bass.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.bass.rule=Host(`bass.foxbase.mx`)"
       - "traefik.http.routers.bass.entrypoints=websecure"
       - "traefik.http.routers.bass.tls=true"
       - "traefik.http.routers.bass.tls.certresolver=myresolver"
