@@ -61,6 +61,7 @@ services:
       - "traefik.http.routers.bass.entrypoints=websecure"
       - "traefik.http.routers.bass.tls=true"
       - "traefik.http.routers.bass.tls.certresolver=myresolver"
+      - "traefik.http.routers.bass.priority=10"
       - "traefik.http.services.bass-svc.loadbalancer.server.port=8000"
 
       - "traefik.http.routers.bass.middlewares=bass-errors@docker"
@@ -95,6 +96,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.error-pages-svc.loadbalancer.server.port=80"
+
+      - "traefik.http.routers.bass-fallback.rule=Host(`bass.foxbase.com.mx`) && PathPrefix(`/`)"
+      - "traefik.http.routers.bass-fallback.entrypoints=websecure"
+      - "traefik.http.routers.bass-fallback.tls=true"
+      - "traefik.http.routers.bass-fallback.tls.certresolver=myresolver"
+      - "traefik.http.routers.bass-fallback.priority=1"
+      - "traefik.http.routers.bass-fallback.service=error-pages-svc"
 
 volumes:
   postgres-data:
