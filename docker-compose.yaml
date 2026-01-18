@@ -79,6 +79,18 @@ services:
       timeout: 5s
       retries: 10
 
+  error-pages:
+    image: nginx:alpine
+    container_name: error_pages
+    restart: unless-stopped
+    volumes:
+      - ./templates/errors:/usr/share/nginx/html:ro
+    networks:
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.error-pages-svc.loadbalancer.server.port=80"
+
 volumes:
   postgres-data:
   static-data:

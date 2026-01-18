@@ -1,0 +1,199 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Página no encontrada · BASS</title>
+
+  <!-- Bootstrap / SB Admin -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css">
+  <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #01143E 0%, #0b2a66 40%, #164a7f 100%);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: "Poppins", "Segoe UI", sans-serif;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .card-login {
+      max-width: 900px;
+      width: 100%;
+      border-radius: 1.2rem;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 10px 25px rgba(0,0,0,.3);
+      border: none;
+      margin-bottom: 2rem;
+    }
+
+    .login-image-container {
+      background: linear-gradient(135deg, #01143E 0%, #0b2a66 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    .login-image-container img {
+      width: 80%;
+      max-width: 280px;
+      margin-bottom: 1.5rem;
+      filter: drop-shadow(0 0 6px rgba(255,255,255,.2));
+    }
+
+    .login-image-container h2 {
+      font-weight: 600;
+      font-size: 1.2rem;
+      letter-spacing: .5px;
+      color: rgba(255,255,255,.9);
+      margin: 0;
+    }
+
+    .login-form-container {
+      background: #fff;
+      padding: 3rem 3rem 3.5rem 3rem !important;
+    }
+
+    .text-gray-900 { color: #01143E !important; }
+
+    .error-code {
+      font-size: 4.2rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      line-height: 1;
+      margin-bottom: .25rem;
+      color: #01143E;
+    }
+
+    .error-title {
+      font-sizefont-weight: 700;
+      font-size: 1.2rem;
+      margin-bottom: .75rem;
+      color: #0b2a66;
+    }
+
+    .error-hint {
+      color: #6c757d;
+      margin-bottom: 1.6rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(90deg, #01143E 0%, #0b2a66 100%);
+      border: none;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all .2s ease-in-out;
+      padding-top: 0.7rem !important;
+      padding-bottom: 0.7rem !important;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(90deg, #0b2a66 0%, #164a7f 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,.2);
+    }
+
+    .btn-outline-secondary {
+      border-radius: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      padding-top: 0.7rem !important;
+      padding-bottom: 0.7rem !important;
+    }
+
+    .input-icon { position: relative; }
+    .input-icon i {
+      position: absolute;
+      top: 50%;
+      left: 14px;
+      transform: translateY(-50%);
+      color: #999;
+    }
+
+    .form-control-user {
+      font-size: 1rem;
+      padding: 0.8rem 1rem 0.8rem 2.5rem;
+      height: calc(2.9rem + 2px);
+      border-radius: 0.75rem;
+      border: 1px solid #d1d3e2;
+      transition: border-color .2s ease;
+    }
+
+    .form-control-user:focus {
+      border-color: #01143E;
+      box-shadow: 0 0 0 0.1rem rgba(1,20,62,.25);
+    }
+
+    footer {
+      width: 100%;
+      text-align: center;
+      color: rgba(255,255,255,0.85);
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+      margin-top: 0.5rem;
+      position: relative;
+    }
+    footer a { color: #fff; font-weight: 600; }
+
+    @media (max-width: 768px) {
+      .login-image-container { display: none; }
+      .login-form-container { padding: 2rem 1.5rem !important; }
+      .card-login { max-width: 90%; }
+      .error-code { font-size: 3.4rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card card-login">
+    <div class="row no-gutters">
+
+      <!-- Izquierda -->
+      <div class="col-md-6 login-image-container">
+        <img src="{% static 'img/basslogowhite.png' %}" alt="BASS">
+        <h2>Sistema de Gestión Operativa</h2>
+      </div>
+
+      <!-- Derecha -->
+      <div class="col-md-6 login-form-container">
+        <div class="text-center mb-4">
+          <div class="error-code">Error 404</div>
+          <div class="error-title">Página no encontrada</div>
+          <p class="error-hint mb-0">
+            La ruta o página que intentaste abrir no existe. Revisa la URL o  <a href="{% url 'dashboard' %}">
+            vuelve al inicio. </a>
+          </a>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <small>Sistema de Gestión Operativa © {% now "Y" %} BASS Autotransportes</small><br>
+    <small>Desarrollado por <a href="https://foxbase.com.mx" target="_blank" rel="noopener">FoxBase</a>. Todos los derechos reservados.</small>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js"></script>
+</body>
+</html>

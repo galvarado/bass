@@ -21,6 +21,8 @@ from core import views as core_views
 from common.views import header_info, lookup_cp, healthz
 from django.conf import settings
 from django.conf.urls.static import static
+from django.conf.urls import handler404
+from django.shortcuts import render
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -43,3 +45,12 @@ urlpatterns = [
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+# =========================
+# Error handlers
+# =========================
+def error_404_view(request, exception):
+    return render(request, "errors/404.html", status=404)
+
+handler404 = error_404_view

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Servicio no disponible · BASS</title>
+
+  <!-- Bootstrap / SB Admin -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #01143E 0%, #0b2a66 40%, #164a7f 100%);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: "Poppins", "Segoe UI", sans-serif;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .card-login {
+      max-width: 900px;
+      width: 100%;
+      border-radius: 1.2rem;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 10px 25px rgba(0,0,0,.3);
+      border: none;
+      margin-bottom: 2rem;
+    }
+
+    .login-image-container {
+      background: linear-gradient(135deg, #01143E 0%, #0b2a66 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    .login-image-container img {
+      width: 80%;
+      max-width: 280px;
+      margin-bottom: 1.5rem;
+      filter: drop-shadow(0 0 6px rgba(255,255,255,.2));
+    }
+
+    .login-image-container h2 {
+      font-weight: 600;
+      font-size: 1.2rem;
+      letter-spacing: .5px;
+      color: rgba(255,255,255,.9);
+      margin: 0;
+    }
+
+    .login-form-container {
+      background: #fff;
+      padding: 3rem 3rem 3.5rem 3rem;
+    }
+
+    .error-code {
+      font-size: 3.8rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      line-height: 1;
+      margin-bottom: .5rem;
+      color: #01143E;
+    }
+
+    .error-title {
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin-bottom: .75rem;
+      color: #0b2a66;
+    }
+
+    .error-hint {
+      color: #6c757d;
+    }
+
+    footer {
+      width: 100%;
+      text-align: center;
+      color: rgba(255,255,255,0.85);
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+      margin-top: 0.5rem;
+    }
+
+    footer a {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .login-image-container { display: none; }
+      .login-form-container { padding: 2rem 1.5rem; }
+      .card-login { max-width: 90%; }
+      .error-code { font-size: 3rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card card-login">
+    <div class="row no-gutters">
+
+      <!-- Izquierda -->
+      <div class="col-md-6 login-image-container">
+        <!-- ⚠️ IMPORTANTE:
+             Coloca el logo dentro de la carpeta estática de errores:
+             templates/errors/static/assets/basslogowhite.png
+        -->
+        <img src="/assets/basslogowhite.png" alt="BASS">
+        <h2>Sistema de Gestión Operativa</h2>
+      </div>
+
+      <!-- Derecha -->
+      <div class="col-md-6 login-form-container">
+        <div class="text-center">
+          <div class="error-code">502</div>
+          <div class="error-title">El servicio no está disponible</div>
+          <p class="error-hint mt-3">
+            El sistema no puede responder en este momento.<br>
+            Intenta nuevamente en unos minutos.
+          </p>
+          <p class="error-hint">
+            Si el problema persiste, contacta a:<br>
+            <strong>soporte@foxbase.com.mx</strong>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <small>Sistema de Gestión Operativa © 2026 BASS Autotransportes</small><br>
+    <small>Desarrollado por <a href="https://foxbase.com.mx" target="_blank" rel="noopener">FoxBase</a>. Todos los derechos reservados.</small>
+  </footer>
+</body>
+</html>
