@@ -58,7 +58,7 @@
     <table class="table table-hover mb-0">
       <thead class="thead-light">
         <tr>
-          <th>Origen → Destino</th>
+          <th>Ruta</th>
           <th>Operador</th>
           <th>Unidad</th>
           <th>Transfer</th>
@@ -71,12 +71,9 @@
           <tr>
             <td>
               <a href="{% url 'trips:detail' t.pk %}">
-                {{ t.origin.nombre|default:t.origin }} → {{ t.destination.nombre|default:t.destination }}
+                {{ t.route }}
               </a>
               <br>
-              <small class="text-muted">
-                Origen: {{ t.origin.estado|default:"—" }} · Destino: {{ t.destination.estado|default:"—" }}
-              </small>
             </td>
 
             <td>

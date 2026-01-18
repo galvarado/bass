@@ -25,14 +25,17 @@
     <h6 class="text-primary mb-2">
       <i class="fas fa-route mr-1"></i> Datos del viaje
     </h6>
+
     <div class="form-row">
       <div class="form-group col-md-5">
-        <label for="{{ form.origin.id_for_label }}">Origen</label>
-        {{ form.origin|add_class:"form-control" }}
+        <label for="{{ form.client.id_for_label }}">Cliente</label>
+        {{ form.client|add_class:"form-control form-control-sm" }}
+        <small class="text-muted">Primero elige el cliente para cargar sus rutas.</small>
       </div>
-      <div class="form-group col-md-5">
-        <label for="{{ form.destination.id_for_label }}">Destino</label>
-        {{ form.destination|add_class:"form-control" }}
+
+      <div class="form-group col-md-7">
+        <label for="{{ form.route.id_for_label }}">Ruta</label>
+        {{ form.route|add_class:"form-control form-control-sm" }}
       </div>
     </div>
 
@@ -73,14 +76,80 @@
     </div>
 
   </div>
+
   <div class="card-footer text-right py-2">
     <button class="btn btn-primary btn-sm" type="submit">
-      {% if object %}
-        <i class="fas fa-save"></i> Guardar cambios
-      {% else %}
-        <i class="fas fa-save"></i> Crear viaje
-      {% endif %}
+      <i class="fas fa-save"></i>
+      {% if object %}Guardar cambios{% else %}Crear viaje{% endif %}
     </button>
   </div>
 </form>
+
+<script>
+(function() {
+  const clientSelect = document.getElementById("{{ form.client.auto_id }}");
+  const routeSelect  = document.getElementById("{{ form.route.auto_id }}");
+
+  const routesUrl = "{% url 'trips:ajax_routes_by_client' %}";
+
+  function setRouteOptions(items, keepValue) {
+    const current = keepValue ? routeSelect.value : "";
+
+    // limpia
+    routeSelect.innerHTML = "";
+
+    // opción default
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "Selecciona ruta…";
+    routeSelect.appendChild(opt0);
+
+    // agrega items
+    for (const it of items) {
+      const opt = document.createElement("option");
+      opt.value = String(it.id);
+      opt.textContent = it.label;
+      routeSelect.appendChild(opt);
+    }
+
+    // intenta restaurar selección
+    if (keepValue && current) {
+      routeSelect.value = current;
+    }
+  }
+
+  async function loadRoutesForClient(clientId, keepValue=false) {
+    if (!clientId) {
+      setRouteOptions([], false);
+      routeSelect.disabled = true;
+      return;
+    }
+
+    routeSelect.disabled = true;
+
+    const resp = await fetch(routesUrl + "?client_id=" + encodeURIComponent(clientId), {
+      headers: {"X-Requested-With": "XMLHttpRequest"}
+    });
+    const data = await resp.json();
+
+    setRouteOptions(data.results || [], keepValue);
+    routeSelect.disabled = false;
+  }
+
+  // evento: cambio cliente => recarga rutas
+  clientSelect.addEventListener("change", function() {
+    loadRoutesForClient(this.value, false);
+  });
+
+  // al cargar página:
+  // - si estás editando, normalmente ya hay client y route
+  // - recarga rutas y conserva el valor actual
+  const initialClient = clientSelect.value;
+  if (initialClient) {
+    loadRoutesForClient(initialClient, true);
+  } else {
+    routeSelect.disabled = true;
+  }
+})();
+</script>
 {% endblock %}

@@ -29,21 +29,6 @@ class Trip(models.Model):
     Un viaje con origen/destino, operador, camión y caja obligatoria.
     Permite registrar tiempos reales durante el monitoreo.
     """
-
-    # Datos base del viaje
-    origin = models.ForeignKey(
-        Location,
-        on_delete=models.PROTECT,
-        related_name="trips_as_origin",
-        verbose_name="Origen",
-    )
-    destination = models.ForeignKey(
-        Location,
-        on_delete=models.PROTECT,
-        related_name="trips_as_destination",
-        verbose_name="Destino",
-    )
-
     operator = models.ForeignKey(
         Operator,
         on_delete=models.PROTECT,
@@ -111,9 +96,7 @@ class Trip(models.Model):
 
     # Snapshots (copied from route at creation time)
     tarifa_cliente_snapshot = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
-    casetas_snapshot = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     pago_operador_snapshot = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
-    bono_operador_snapshot = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
 
         # --- Soft delete ---
     deleted = models.BooleanField(default=False, db_index=True)
@@ -139,12 +122,9 @@ class Trip(models.Model):
 
         if force or self.tarifa_cliente_snapshot == Decimal("0.00"):
             self.tarifa_cliente_snapshot = r.tarifa_cliente or Decimal("0.00")
-        if force or self.casetas_snapshot == Decimal("0.00"):
-            self.casetas_snapshot = r.casetas_estimadas or Decimal("0.00")
         if force or self.pago_operador_snapshot == Decimal("0.00"):
             self.pago_operador_snapshot = r.pago_operador or Decimal("0.00")
-        if force or self.bono_operador_snapshot == Decimal("0.00"):
-            self.bono_operador_snapshot = r.bono_operador or Decimal("0.00")
+
 
     @property
     def total_cobro_cliente(self):
@@ -155,7 +135,7 @@ class Trip(models.Model):
         return (self.pago_operador_snapshot or 0) + (self.bono_operador_snapshot or 0)
 
     def __str__(self):
-        return f"{self.origin} → {self.destination} | {self.operator} | {self.truck} + {self.reefer_box}"
+        return f"{self.route.origen} → {self.route.destino} | {self.operator} | {self.truck} + {self.reefer_box}"
 
 
 class CartaPorteCFDI(models.Model):

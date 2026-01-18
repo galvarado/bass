@@ -13,14 +13,20 @@ from .models import (
     CartaPorteTransportFigure,
 )
 
+# trips/forms.py
+from django import forms
+from django.db.models import Exists, OuterRef
+from django.urls import reverse
+from workshop.models import WorkshopOrder
+
+from .models import Trip, TransferType, TripStatus
 
 class TripForm(forms.ModelForm):
     class Meta:
         model = Trip
         fields = [
-            # Datos base del viaje
-            "client",        # 👈 si Trip lo tiene; si no, quítalo
-            "route",         # 👈 reemplaza origin/destination
+            "client",
+            "route",
             "operator",
             "truck",
             "reefer_box",
@@ -34,94 +40,102 @@ class TripForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Estilo compacto y consistente
+        # Estilo
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.update({"class": "form-check-input"})
             else:
                 field.widget.attrs.update({"class": "form-control form-control-sm"})
 
-        # --- Ordenar selects por nombre ---
+        if "client" in self.fields:
+            self.fields["client"].label_from_instance = (
+                lambda obj: obj.nombre
+            )
+            self.fields["client"].empty_label = "Selecciona cliente…"
+
+        # Orden operadores
         if "operator" in self.fields:
             self.fields["operator"].queryset = self.fields["operator"].queryset.order_by("nombre")
 
-        # --- Route: orden y filtro por cliente ---
+        # --- Route: vacío hasta elegir cliente ---
         if "route" in self.fields:
             qs = self.fields["route"].queryset.select_related("origen", "destino", "client")
 
             client_id = None
 
-            # 1) Si viene en POST (form bound)
             if self.is_bound:
                 client_id = self.data.get("client") or self.data.get("client_id")
 
-            # 2) Si estás editando
             if not client_id and getattr(self.instance, "client_id", None):
                 client_id = self.instance.client_id
 
-            # 3) Si hay initial
             if not client_id:
                 client_initial = self.initial.get("client")
                 client_id = getattr(client_initial, "id", None) or client_initial
 
             if client_id:
-                qs = qs.filter(client_id=client_id)
+                qs = qs.filter(client_id=client_id).order_by("origen__nombre", "destino__nombre")
+                self.fields["route"].queryset = qs
+            else:
+                # 👇 UX: no muestres rutas de todos si no hay cliente
+                self.fields["route"].queryset = qs.none()
 
-            self.fields["route"].queryset = qs.order_by("origen__nombre", "destino__nombre")
+            # placeholders útiles
+            self.fields["client"].empty_label = "Selecciona cliente…"
+            self.fields["route"].empty_label = "Selecciona ruta…"
 
         # === Filtro de unidades SOLO al crear viaje ===
         if not self.instance.pk:
             allowed_estados = ["TERMINADA", "CANCELADA"]
 
-            # ---- CAMIONES ----
             if "truck" in self.fields:
                 qs_trucks = self.fields["truck"].queryset
-
                 blocking_ot_truck = WorkshopOrder.objects.filter(
                     deleted=False,
                     truck=OuterRef("pk"),
                 ).exclude(estado__in=allowed_estados)
 
-                qs_trucks = (
+                self.fields["truck"].queryset = (
                     qs_trucks
                     .annotate(has_blocking_ot=Exists(blocking_ot_truck))
                     .filter(has_blocking_ot=False)
                     .order_by("numero_economico")
                 )
-                self.fields["truck"].queryset = qs_trucks
 
-            # ---- CAJAS REEFER ----
             if "reefer_box" in self.fields:
                 qs_boxes = self.fields["reefer_box"].queryset
-
                 blocking_ot_box = WorkshopOrder.objects.filter(
                     deleted=False,
                     reefer_box=OuterRef("pk"),
                 ).exclude(estado__in=allowed_estados)
 
-                qs_boxes = (
+                self.fields["reefer_box"].queryset = (
                     qs_boxes
                     .annotate(has_blocking_ot=Exists(blocking_ot_box))
                     .filter(has_blocking_ot=False)
                     .order_by("numero_economico")
                 )
-                self.fields["reefer_box"].queryset = qs_boxes
 
     def clean_observations(self):
-        v = self.cleaned_data.get("observations") or ""
-        return v.strip()
+        return (self.cleaned_data.get("observations") or "").strip()
 
     def clean(self):
         cleaned = super().clean()
-
-        # Validación route vs client (si existe client en el form/model)
         client = cleaned.get("client")
         route = cleaned.get("route")
 
-        if client and route and route.client_id != client.id:
+        # Si el usuario eligió ruta, asegura coherencia
+        if route and client and route.client_id != client.id:
             self.add_error("route", "La ruta no pertenece a este cliente.")
 
+        # Tip: si quieres que el client quede SIEMPRE derivado de la ruta:
+        # if route:
+        #     cleaned["client"] = route.client
+
         return cleaned
+
+
+
 class TripSearchForm(forms.Form):
     q = forms.CharField(
         required=False,

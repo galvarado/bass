@@ -13,7 +13,9 @@ from django.views.generic import ListView, CreateView, UpdateView, DetailView, D
 from django.views import View
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_GET
 
+from locations.models import Route
 from .models import Trip, TripStatus
 from .forms import TripForm, TripSearchForm
 
@@ -320,6 +322,29 @@ class TripChangeStatusView(View):
                     trip.arrival_destination_at.strftime("%d/%m %H:%M") if trip.arrival_destination_at else None,
             }
         })
+
+@require_GET
+def ajax_routes_by_client(request):
+    client_id = request.GET.get("client_id")
+
+    if not client_id:
+        return JsonResponse({"results": []})
+
+    routes = (
+        Route.objects
+        .filter(client_id=client_id)
+        .select_related("origen", "destino")
+        .order_by("origen__nombre", "destino__nombre")
+    )
+
+    results = [
+        {
+            "id": r.id,
+            "label": f"{r.origen.nombre} → {r.destino.nombre}",
+        }
+        for r in routes
+    ]
+    return JsonResponse({"results": results})
 
 from .models import Trip, CartaPorteCFDI
 from .forms import (
