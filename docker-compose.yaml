@@ -63,6 +63,11 @@ services:
       - "traefik.http.routers.bass.tls.certresolver=myresolver"
       - "traefik.http.services.bass-svc.loadbalancer.server.port=8000"
 
+      - "traefik.http.routers.bass.middlewares=bass-errors@docker"
+      - "traefik.http.middlewares.bass-errors.errors.status=500-599"
+      - "traefik.http.middlewares.bass-errors.errors.service=error-pages-svc"
+      - "traefik.http.middlewares.bass-errors.errors.query=/{status}.html"
+
   db:
     image: postgres:16-alpine
     container_name: postgres
