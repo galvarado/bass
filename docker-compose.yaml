@@ -67,7 +67,9 @@ services:
       - "traefik.http.routers.bass.middlewares=bass-errors@docker"
       - "traefik.http.middlewares.bass-errors.errors.status=500-599"
       - "traefik.http.middlewares.bass-errors.errors.service=error-pages-svc"
-      - "traefik.http.middlewares.bass-errors.errors.query=/{status}.html"
+      # ✅ reescribe todo a /503.html para evitar 403 por "/"
+      - "traefik.http.middlewares.bass-fallback-rewrite.replacepath.path=/503.html"
+      - "traefik.http.routers.bass-fallback.middlewares=bass-fallback-rewrite@docker"
 
   db:
     image: postgres:16-alpine
