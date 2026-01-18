@@ -9,6 +9,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      - name: Test TCP connectivity
+        run: |
+          echo "Testing port 22..."
+          nc -zv ${{ secrets.SSH_HOST }} 22
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
