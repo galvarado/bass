@@ -27,20 +27,27 @@ FIELDS_AUDIT = [
 ]
 
 
-def build_base_username(op: Operator) -> str:
-    base = (op.rfc or op.curp or op.nombre or "operador").strip()
-    base = slugify(base).replace("-", "")
-    return base or "operador"
+def build_base_username(op):
+    """
+    Convierte 'Juan Carlos Pérez López'
+    en 'juan.carlos.perez.lopez'
+    """
+    if not op.nombre:
+        return "operador"
+
+    # slugify: quita acentos y caracteres raros
+    clean = slugify(op.nombre)        # juan-carlos-perez-lopez
+    clean = clean.replace("-", ".")   # juan.carlos.perez.lopez
+    return clean
 
 
-def ensure_unique_username(base: str) -> str:
-    username = base[:150]
-    if not User.objects.filter(username=username).exists():
-        return username
+def ensure_unique_username(base):
+    if not User.objects.filter(username=base).exists():
+        return base
 
     i = 2
     while True:
-        candidate = f"{base[:140]}{i}"
+        candidate = f"{base}{i}"
         if not User.objects.filter(username=candidate).exists():
             return candidate
         i += 1
