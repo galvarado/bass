@@ -457,14 +457,13 @@ class MyTripListView(LoginRequiredMixin, ListView):
 
 class MyTripDetailView(LoginRequiredMixin, DetailView):
     model = Trip
-    template_name = "trips/detail.html"   # reutiliza el mismo detalle
+    template_name = "trips/my_detail.html"
     context_object_name = "trip"
 
     def get_queryset(self):
         qs = Trip.objects.all()
         u = self.request.user
 
-        # Operador: solo puede ver los suyos
         if u.groups.filter(name="operador").exists() and not (u.is_staff or u.is_superuser):
             qs = qs.filter(operator__user=u)
 

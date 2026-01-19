@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Detalle de mi viaje · BASS{% endblock %}
+
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Detalle del viaje #{{ trip.id }}</strong>
+    <div>
+      <a href="{% url 'trips:my_list' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body">
+
+    <!-- ===== DATOS DEL VIAJE ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-route mr-1"></i> Datos del viaje
+    </h6>
+
+    <dl class="row small">
+      <dt class="col-sm-3">ID del viaje</dt>
+      <dd class="col-sm-9">#{{ trip.id }}</dd>
+
+      <dt class="col-sm-3">Estatus</dt>
+      <dd class="col-sm-9">
+        {% if trip.status == "PROGRAMADO" %}
+          <span class="badge badge-warning text-uppercase">{{ trip.get_status_display }}</span>
+        {% elif trip.status == "EN_ORIGEN" %}
+          <span class="badge badge-info text-uppercase">{{ trip.get_status_display }}</span>
+        {% elif trip.status == "EN_CURSO" %}
+          <span class="badge badge-primary text-uppercase">{{ trip.get_status_display }}</span>
+        {% elif trip.status == "EN_DESTINO" %}
+          <span class="badge badge-success text-uppercase">{{ trip.get_status_display }}</span>
+        {% elif trip.status == "COMPLETADO" %}
+          <span class="badge badge-secondary text-uppercase">{{ trip.get_status_display }}</span>
+        {% elif trip.status == "CANCELADO" %}
+          <span class="badge badge-danger text-uppercase">{{ trip.get_status_display }}</span>
+        {% else %}
+          <span class="badge badge-light text-uppercase">{{ trip.get_status_display }}</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Observaciones</dt>
+      <dd class="col-sm-9">{{ trip.observations|default:"—" }}</dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== RUTA ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-map-marker-alt mr-1"></i> Ruta
+    </h6>
+
+    <dl class="row small">
+      <dt class="col-sm-3">Ruta</dt>
+      <dd class="col-sm-9">{{ trip.route|default:"—" }}</dd>
+
+      {# Si tu Route tiene origen/destino en __str__ ya queda bonito. #}
+    </dl>
+
+    <hr>
+
+    <!-- ===== UNIDAD / OPERADOR ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-truck mr-1"></i> Unidad
+    </h6>
+
+    <dl class="row small">
+      <dt class="col-sm-3">Operador</dt>
+      <dd class="col-sm-9">{{ trip.operator }}</dd>
+
+      <dt class="col-sm-3">Camión</dt>
+      <dd class="col-sm-9">
+        {% if trip.truck %}
+          {{ trip.truck.economico|default:trip.truck }}
+          {% if trip.truck.placas %}
+            <br><small class="text-muted">Placas: {{ trip.truck.placas }}</small>
+          {% endif %}
+        {% else %}
+          <span class="text-muted">Sin camión</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Caja</dt>
+      <dd class="col-sm-9">
+        {% if trip.reefer_box %}
+          {{ trip.reefer_box.economico|default:trip.reefer_box }}
+          {% if trip.reefer_box.numero %}
+            <br><small class="text-muted">Núm: {{ trip.reefer_box.numero }}</small>
+          {% endif %}
+        {% else %}
+          <span class="text-muted">Sin caja</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Transfer</dt>
+      <dd class="col-sm-9">
+        {% if trip.transfer_operator %}
+          <span class="badge badge-info">
+            {{ trip.transfer_operator.nombre|default:trip.transfer_operator }}
+          </span>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+    <hr>
+
+    <!-- ===== TARIFA (SOLO LO QUE LE CORRESPONDE AL OPERADOR) ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-money-bill-wave mr-1"></i> Tarifa
+    </h6>
+
+    <dl class="row small">
+      <dt class="col-sm-3">Pago operador</dt>
+      <dd class="col-sm-9">
+        <strong>${{ trip.pago_operador_snapshot|floatformat:2|intcomma }}</strong>
+      </dd>
+
+      {# 👇 Solo si el mismo operador es el transfer #}
+      {% if trip.transfer_operator and trip.transfer_operator == trip.operator %}
+        <dt class="col-sm-3">Pago transfer</dt>
+        <dd class="col-sm-9">
+          <strong>${{ trip.pago_transfer_propio_snapshot|floatformat:2|intcomma }}</strong>
+        </dd>
+      {% endif %}
+    </dl>
+
+    <hr>
+
+    <!-- ===== TIEMPOS ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-clock mr-1"></i> Tiempos de monitoreo
+    </h6>
+
+    <dl class="row small">
+      <dt class="col-sm-3">Llegada a origen</dt>
+      <dd class="col-sm-9">{{ trip.arrival_origin_at|date:"d/m/Y H:i"|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Salida de origen</dt>
+      <dd class="col-sm-9">{{ trip.departure_origin_at|date:"d/m/Y H:i"|default:"—" }}</dd>
+
+      <dt class="col-sm-3">Llegada a destino</dt>
+      <dd class="col-sm-9">{{ trip.arrival_destination_at|date:"d/m/Y H:i"|default:"—" }}</dd>
+    </dl>
+
+  </div>
+</div>
+
+{% endblock %}
