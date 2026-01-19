@@ -36,6 +36,14 @@
     <h6 class="text-primary mb-2"><i class="fas fa-map-marker-alt mr-1"></i> Dirección</h6>
 
     <div class="form-row">
+      <div class="form-group col-md-2">
+        <label for="{{ form.pais.id_for_label }}">País</label>
+        {{ form.pais|add_class:"form-control" }}
+      </div>
+      <div class="form-group col-md-2">
+        <label for="{{ form.cp.id_for_label }}">CP</label>
+        {{ form.cp|add_class:"form-control" }}
+      </div>
       <div class="form-group col-md-4">
         <label for="{{ form.calle.id_for_label }}">Calle</label>
         {{ form.calle|add_class:"form-control" }}
@@ -45,20 +53,16 @@
         {{ form.no_ext|add_class:"form-control" }}
       </div>
       <div class="form-group col-md-2">
-        <label for="{{ form.cp.id_for_label }}">CP</label>
-        {{ form.cp|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-2">
         <label for="{{ form.estado.id_for_label }}">Estado</label>
         {{ form.estado|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-2">
-        <label for="{{ form.municipio.id_for_label }}">Municipio</label>
-        {{ form.municipio|add_class:"form-control" }}
       </div>
     </div>
 
     <div class="form-row">
+       <div class="form-group col-md-2">
+        <label for="{{ form.municipio.id_for_label }}">Municipio</label>
+        {{ form.municipio|add_class:"form-control" }}
+      </div>
       <div class="form-group col-md-3">
         <label for="{{ form.poblacion.id_for_label }}">Ciudad / Población</label>
         {{ form.poblacion|add_class:"form-control" }}
@@ -70,10 +74,6 @@
       <div class="form-group col-md-2">
         <label for="{{ form.colonia_sat.id_for_label }}">Colonia SAT</label>
         {{ form.colonia_sat|add_class:"form-control" }}
-      </div>
-      <div class="form-group col-md-2">
-        <label for="{{ form.pais.id_for_label }}">País</label>
-        {{ form.pais|add_class:"form-control" }}
       </div>
     </div>
 
@@ -124,84 +124,203 @@
 </form>
 <script>
 (function() {
+  // OJO: agarra el form correcto (el primero dentro de la página)
+  const form = document.querySelector('form.card');
+  const $pais = document.getElementById('id_pais');
   const $cp = document.getElementById('id_cp');
   const $estado = document.getElementById('id_estado');
   const $municipio = document.getElementById('id_municipio');
   const $poblacion = document.getElementById('id_poblacion');
-  const $colonia = document.getElementById('id_colonia');
   const $coloniaSat = document.getElementById('id_colonia_sat');
 
-  function limpiarCampos() {
-    if ($estado) $estado.value = '';
-    if ($municipio) $municipio.value = '';
-    if ($poblacion) $poblacion.value = '';
-    if ($colonia) $colonia.innerHTML = '<option value="">Seleccione una colonia</option>';
-    // No limpiamos colonia_sat automáticamente para no borrar algo ya guardado.
+  function isMX() {
+    return ($pais?.value || 'MX') === 'MX';
   }
 
-  function syncColoniaSat() {
-    if ($colonia && $coloniaSat) {
-      // Siempre espeja, incluso si colonia_sat ya tenía valor.
-      $coloniaSat.value = $colonia.value || '';
+  function setReadonly(el, value) {
+    if (!el) return;
+    if (value) el.setAttribute('readonly', 'readonly');
+    else el.removeAttribute('readonly');
+  }
+
+  // ✅ Resetea SIEMPRE, aunque el elemento esté disabled/readonly
+  function hardResetField(el) {
+    if (!el) return;
+
+    const tag = el.tagName;
+    const type = (el.getAttribute('type') || '').toLowerCase();
+
+    if (type === 'checkbox' || type === 'radio') {
+      el.checked = false;
+      return;
+    }
+
+    if (tag === 'SELECT') {
+      // para selects normales
+      el.selectedIndex = 0;
+      // además, por si el browser mantiene value
+      el.value = '';
+      return;
+    }
+
+    // input/text/textarea/etc.
+    el.value = '';
+  }
+
+  // ✅ Limpia TODO (menos core)
+  function clearAllExceptCore() {
+    if (!form) return;
+
+    const keepIds = new Set(['id_client', 'id_nombre', 'id_pais', 'id_csrfmiddlewaretoken']);
+
+    // Limpia inputs/selects/textareas
+    const elements = form.querySelectorAll('input, select, textarea');
+    elements.forEach(el => {
+      if (keepIds.has(el.id)) return;
+      hardResetField(el);
+    });
+
+    // Caso especial: colonia puede ser SELECT o INPUT dependiendo del modo
+    const coloniaEl = document.getElementById('id_colonia');
+    if (coloniaEl && !keepIds.has(coloniaEl.id)) {
+      hardResetField(coloniaEl);
+
+      // Si es select, deja solo el placeholder (para que no se quede con colonias viejas)
+      if (coloniaEl.tagName === 'SELECT') {
+        coloniaEl.innerHTML = '<option value="">Seleccione una colonia</option>';
+      }
+    }
+  }
+
+  function ensureColoniaWidget(mode) {
+    const coloniaEl = document.getElementById('id_colonia');
+    if (!coloniaEl) return;
+
+    if (mode === 'MX' && coloniaEl.tagName !== 'SELECT') {
+      const sel = document.createElement('select');
+      sel.id = coloniaEl.id;
+      sel.name = coloniaEl.name;
+      sel.className = coloniaEl.className;
+      sel.innerHTML = '<option value="">Seleccione una colonia</option>';
+      coloniaEl.parentNode.replaceChild(sel, coloniaEl);
+      return;
+    }
+
+    if (mode === 'US' && coloniaEl.tagName !== 'INPUT') {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = coloniaEl.id;
+      inp.name = coloniaEl.name;
+      inp.className = coloniaEl.className;
+      inp.value = '';
+      coloniaEl.parentNode.replaceChild(inp, coloniaEl);
+      return;
     }
   }
 
   async function fetchCP(cp) {
+    if (!isMX()) return;
+
     try {
       const url = "{% url 'lookup_cp' %}?cp=" + encodeURIComponent(cp);
       const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
       const data = await res.json();
-      if (!res.ok || !data.ok || !data.found) { limpiarCampos(); return; }
+      if (!res.ok || !data.ok || !data.found) return;
 
       if ($estado)    $estado.value = data.estado || '';
       if ($municipio) $municipio.value = data.municipio || '';
       if ($poblacion) $poblacion.value = data.ciudad || '';
 
-      if ($colonia) {
-        const current = $colonia.value; // recuerda selección actual (edición)
+      const coloniaEl = document.getElementById('id_colonia');
+      if (coloniaEl && coloniaEl.tagName === 'SELECT') {
         const opts = ['<option value="">Seleccione una colonia</option>']
           .concat((data.colonias || []).map(c => `<option value="${c}">${c}</option>`));
-        $colonia.innerHTML = opts.join('');
-
-        // restaura selección si aún existe en el catálogo del CP
-        if (current && (data.colonias || []).includes(current)) {
-          $colonia.value = current;
-        }
-
-        // tras poblar o restaurar, sincroniza colonia_sat
-        syncColoniaSat();
+        coloniaEl.innerHTML = opts.join('');
       }
     } catch (e) {
       console.error(e);
-      limpiarCampos();
     }
   }
 
-  // espejo colonia -> colonia_sat SIEMPRE
-  if ($colonia && $coloniaSat) {
-    $colonia.addEventListener('change', syncColoniaSat);
-    // en edición: sincroniza una vez al cargar si ya hay valor seleccionado
-    if ($colonia.value) syncColoniaSat();
+  function applyCountryMode() {
+    const mode = isMX() ? 'MX' : 'US';
+
+    ensureColoniaWidget(mode);
+
+    // CP reglas por país
+    if ($cp) {
+      if (mode === 'MX') {
+        $cp.disabled = false;
+        $cp.setAttribute('maxlength', '5');
+        $cp.setAttribute('pattern', '\\d{5}');
+      } else {
+        // US: CP libre, sin lookup
+        $cp.disabled = false;
+        $cp.removeAttribute('pattern');
+        $cp.setAttribute('maxlength', '10');
+      }
+    }
+
+    // readonly / colonia_sat
+    if (mode === 'MX') {
+      setReadonly($estado, true);
+      setReadonly($municipio, true);
+      setReadonly($poblacion, true);
+
+      if ($coloniaSat) {
+        $coloniaSat.disabled = false;
+        setReadonly($coloniaSat, true);
+      }
+
+      // lookup si hay cp válido
+      const v = ($cp?.value || '').trim();
+      if (v.length === 5) fetchCP(v);
+
+    } else {
+      setReadonly($estado, false);
+      setReadonly($municipio, false);
+      setReadonly($poblacion, false);
+
+      if ($coloniaSat) {
+        $coloniaSat.value = '';
+        $coloniaSat.disabled = true;
+      }
+    }
   }
 
-  // CP con debounce
+  // ✅ Cuando cambia país: borrar SIEMPRE y luego aplicar el modo
+  if ($pais) {
+    $pais.addEventListener('change', () => {
+      clearAllExceptCore();
+      applyCountryMode();
+    });
+  }
+
+  // CP lookup solo en MX
   let debounceId = null;
   if ($cp) {
     $cp.addEventListener('input', () => {
+      if (!isMX()) return;
+
       const v = ($cp.value || '').replace(/\D/g, '').slice(0, 5);
       $cp.value = v;
+
       if (v.length === 5) {
         clearTimeout(debounceId);
         debounceId = setTimeout(() => fetchCP(v), 250);
-      } else {
-        limpiarCampos();
       }
     });
+
     $cp.addEventListener('blur', () => {
+      if (!isMX()) return;
       const v = ($cp.value || '').trim();
       if (v.length === 5) fetchCP(v);
     });
   }
+
+  // init
+  applyCountryMode();
 })();
 </script>
+
 {% endblock %}

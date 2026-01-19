@@ -6,60 +6,99 @@ from django_postalcodes_mexico.models import PostalCode as PC  # mismo helper
 import re
 
 
+
 class LocationForm(forms.ModelForm):
     class Meta:
         model = Location
         fields = [
             "client", "nombre",
-            # Dirección
             "calle", "no_ext", "colonia", "colonia_sat",
             "municipio", "estado", "pais", "cp", "poblacion",
-            # Contacto
             "contacto", "telefono", "email",
-            # Otros
             "referencias", "horario",
         ]
         widgets = {
-            # Dirección
-            "cp": forms.TextInput(attrs={"maxlength": 5, "pattern": r"\d{5}"}),
-            "estado": forms.TextInput(attrs={"readonly": "readonly"}),
-            "municipio": forms.TextInput(attrs={"readonly": "readonly"}),
-            "poblacion": forms.TextInput(attrs={"readonly": "readonly"}),
-            "colonia": forms.Select(),  # se llena dinámicamente por CP
-            "colonia_sat": forms.TextInput(attrs={"readonly": "readonly"}),
-            "pais": forms.TextInput(attrs={"readonly": "readonly"}),
-            # Otros
             "referencias": forms.Textarea(attrs={"rows": 3}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Estilo compacto y consistente
+        # bootstrap
         for name, field in self.fields.items():
-            cls = "form-control form-control-sm"
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.update({"class": "form-check-input"})
             else:
-                field.widget.attrs.update({"class": cls})
+                field.widget.attrs.update({"class": "form-control form-control-sm"})
 
-        # ✅ Cliente: mostrar nombre (no razón social)
+        # cliente label
         if "client" in self.fields:
             self.fields["client"].label_from_instance = (lambda obj: obj.nombre)
             self.fields["client"].queryset = self.fields["client"].queryset.order_by("nombre")
 
-        # Pre-cargar colonias si hay CP al editar
-        cp = (self.instance.cp or "").strip() if getattr(self.instance, "pk", None) else ""
-        if cp.isdigit() and len(cp) == 5:
-            colonias = list(
-                PC.objects.filter(d_codigo=cp)
-                .values_list("d_asenta", flat=True).distinct().order_by("d_asenta")
-            )
-            self.fields["colonia"].choices = [("", "Seleccione una colonia")] + [(c, c) for c in colonias]
-        else:
-            self.fields["colonia"].choices = [("", "Seleccione una colonia")]
+        # país default (en create)
+        if not getattr(self.instance, "pk", None) and not self.is_bound:
+            self.initial["pais"] = "MX"
 
-    # --- Normalización de texto ---
+        # determinar país actual (POST tiene prioridad)
+        pais = None
+        if self.is_bound:
+            pais = (self.data.get("pais") or "").strip()
+        else:
+            pais = (getattr(self.instance, "pais", None) or "MX").strip() or "MX"
+
+        # configurar widgets según país
+        self._apply_country_mode(pais)
+
+        # precargar colonias SOLO si MX y hay CP
+        cp = ""
+        if not self.is_bound and getattr(self.instance, "pk", None):
+            cp = (self.instance.cp or "").strip()
+
+        if pais == "MX":
+            # CP con patrón 5 dígitos
+            self.fields["cp"].widget = forms.TextInput(attrs={"maxlength": 5, "pattern": r"\d{5}"})
+            self.fields["cp"].widget.attrs.update({"class": "form-control form-control-sm"})
+
+            # colonia como select (se llena por CP)
+            self.fields["colonia"].widget = forms.Select()
+            self.fields["colonia"].widget.attrs.update({"class": "form-control form-control-sm"})
+
+            # readonly en campos derivados de CP
+            for f in ["estado", "municipio", "poblacion", "colonia_sat"]:
+                self.fields[f].widget.attrs.update({"readonly": "readonly"})
+
+            # choices de colonia al editar
+            if cp.isdigit() and len(cp) == 5:
+                colonias = list(
+                    PC.objects.filter(d_codigo=cp)
+                    .values_list("d_asenta", flat=True).distinct().order_by("d_asenta")
+                )
+                self.fields["colonia"].choices = [("", "Seleccione una colonia")] + [(c, c) for c in colonias]
+            else:
+                self.fields["colonia"].choices = [("", "Seleccione una colonia")]
+
+        else:
+            # US: colonia texto libre
+            self.fields["colonia"].widget = forms.TextInput()
+            self.fields["colonia"].widget.attrs.update({"class": "form-control form-control-sm"})
+
+            # US: estado/municipio/poblacion editables
+            for f in ["estado", "municipio", "poblacion"]:
+                self.fields[f].widget.attrs.pop("readonly", None)
+
+            # ✅ US: CP habilitado y SIN pattern numérico (ZIP puede tener guión)
+            self.fields["cp"].disabled = False
+            self.fields["cp"].widget = forms.TextInput(attrs={"maxlength": 10})
+            self.fields["cp"].widget.attrs.update({"class": "form-control form-control-sm"})
+
+            # US: colonia_sat no aplica (SAT)
+            self.fields["colonia_sat"].disabled = True
+
+    def _apply_country_mode(self, pais: str):
+        # nada aquí por ahora, pero te lo dejo por si quieres extender
+        pass
+
     def clean_nombre(self):
         return self.cleaned_data["nombre"].strip().title()
 
@@ -71,41 +110,41 @@ class LocationForm(forms.ModelForm):
         v = self.cleaned_data.get("email")
         return v.strip().lower() if v else v
 
-    # --- Coherencia CP/Colonia y autocompletar municipio/poblacion/colonia_sat ---
     def clean(self):
         cleaned = super().clean()
+        pais = (cleaned.get("pais") or "MX").strip()
+
+        # --- USA: NO validar CP / NO validar CP-colonia / NO autocompletar por catálogo ---
+        if pais == "US":
+            # como cp está disabled, puede no venir. Asegura que no quede basura.
+            cleaned["colonia_sat"] = ""
+            return cleaned
+
+        # --- MX: tu lógica actual (con pequeñas protecciones) ---
         cp = (cleaned.get("cp") or "").strip()
         colonia = (cleaned.get("colonia") or "").strip()
 
-        # Validación básica de CP (opcional, ya hay pattern en widget)
         if cp and not re.fullmatch(r"\d{5}", cp):
             self.add_error("cp", "El código postal debe tener 5 dígitos.")
 
-        # Validar relación CP-colonia
         if cp and colonia:
             if not PC.objects.filter(d_codigo=cp, d_asenta=colonia).exists():
                 self.add_error("colonia", "La colonia no corresponde al código postal ingresado.")
 
-        # Autorellenar con datos del catálogo si tenemos CP válido
         if cp.isdigit() and len(cp) == 5:
-            # municipio → d_mnpio (o ciudad si no hay municipio)
             if not cleaned.get("municipio"):
                 mun = (
                     PC.objects.filter(d_codigo=cp)
                     .exclude(d_mnpio__isnull=True).exclude(d_mnpio="")
                     .values_list("d_mnpio", flat=True).order_by("d_mnpio").first()
+                ) or (
+                    PC.objects.filter(d_codigo=cp)
+                    .exclude(d_ciudad__isnull=True).exclude(d_ciudad="")
+                    .values_list("d_ciudad", flat=True).order_by("d_ciudad").first()
                 )
-                if not mun:
-                    mun = (
-                        PC.objects.filter(d_codigo=cp)
-                        .exclude(d_ciudad__isnull=True).exclude(d_ciudad="")
-                        .values_list("d_ciudad", flat=True).order_by("d_ciudad").first()
-                    )
                 if mun:
                     cleaned["municipio"] = mun
-                    self.data = self.data.copy(); self.data["municipio"] = mun
 
-            # población → d_ciudad
             if not cleaned.get("poblacion"):
                 ciu = (
                     PC.objects.filter(d_codigo=cp)
@@ -114,9 +153,7 @@ class LocationForm(forms.ModelForm):
                 )
                 if ciu:
                     cleaned["poblacion"] = ciu
-                    self.data = self.data.copy(); self.data["poblacion"] = ciu
 
-            # colonia_sat → d_tipo_asenta (si hay colonia)
             if not cleaned.get("colonia_sat") and colonia:
                 tipo = (
                     PC.objects.filter(d_codigo=cp, d_asenta=colonia)
@@ -125,12 +162,6 @@ class LocationForm(forms.ModelForm):
                 )
                 if tipo:
                     cleaned["colonia_sat"] = tipo
-                    self.data = self.data.copy(); self.data["colonia_sat"] = tipo
-
-            # país por default (por consistencia visual)
-            if not cleaned.get("pais"):
-                cleaned["pais"] = "México"
-                self.data = self.data.copy(); self.data["pais"] = "México"
 
         return cleaned
 

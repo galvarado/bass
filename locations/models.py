@@ -25,59 +25,44 @@ class LocationManager(models.Manager):
 
 
 class Location(models.Model):
+    COUNTRY_CHOICES = [
+        ("MX", "México"),
+        ("US", "Estados Unidos"),
+    ]
+
     client = models.ForeignKey(
-        Client,
-        on_delete=models.CASCADE,
-        related_name="locations",
-        verbose_name="Cliente"
+        Client, on_delete=models.CASCADE, related_name="locations", verbose_name="Cliente"
     )
     nombre = models.CharField(max_length=150, verbose_name="Nombre de la ubicación")
 
-    # Dirección
     calle = models.CharField(max_length=150, blank=True)
     no_ext = models.CharField(max_length=30, blank=True)
+
     colonia = models.CharField(max_length=120, blank=True)
     colonia_sat = models.CharField(max_length=120, blank=True)
+
     municipio = models.CharField(max_length=120, blank=True)
     estado = models.CharField(max_length=120, blank=True)
-    pais = models.CharField(max_length=80, default="México", blank=True)
+
+    pais = models.CharField(max_length=2, choices=COUNTRY_CHOICES, default="MX")
     cp = models.CharField(max_length=10, blank=True)
     poblacion = models.CharField(max_length=120, blank=True)
 
-    # Contacto
     contacto = models.CharField(max_length=120, blank=True)
     telefono = models.CharField(max_length=40, blank=True)
     email = models.EmailField(blank=True)
 
-    # Geo
-    referencias = models.TextField(
-        blank=True,
-        help_text="Indicaciones de acceso, referencias de calle, etc."
-    )
+    referencias = models.TextField(blank=True, help_text="Indicaciones de acceso, referencias de calle, etc.")
     horario = models.CharField(max_length=140, blank=True)
 
-    # Estado / housekeeping
     deleted = models.BooleanField(default=False)
 
-    # Managers
-    objects = models.Manager()                 # ← NO filtra
+    objects = models.Manager()
     all_objects = LocationQuerySet.as_manager()
 
-    class Meta:
-        verbose_name = "Ubicación"
-        verbose_name_plural = "Ubicaciones"
-        ordering = ["client__nombre", "nombre"]
-        constraints = [
-            models.UniqueConstraint(fields=["client", "nombre"], name="uniq_location_name_per_client"),
-        ]
-
-    def __str__(self):
-        return f"{self.nombre} · {self.client.nombre}"
-
-    def soft_delete(self):
-        if not self.deleted:
-            self.deleted = True
-            self.save(update_fields=["deleted"])
+    @property
+    def country_display(self):
+        return dict(self.COUNTRY_CHOICES).get(self.pais, self.pais)
 
     @property
     def full_address(self):
@@ -88,9 +73,14 @@ class Location(models.Model):
             self.municipio,
             self.estado,
             self.cp,
-            self.pais,
+            self.country_display,
         ]
         return ", ".join([p for p in parts if p])
+
+    def soft_delete(self):
+        if not self.deleted:
+            self.deleted = True
+            self.save(update_fields=["deleted"])
 
 
 class RouteQuerySet(models.QuerySet):
