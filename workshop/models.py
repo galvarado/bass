@@ -167,3 +167,125 @@ class WorkshopOrder(models.Model):
         if not self.deleted:
             self.deleted = True
             self.save(update_fields=["deleted"])
+
+class MaintenanceRequest(models.Model):
+    ESTADO_CHOICES = [
+        ("ABIERTA", "Abierta"),
+        ("CONVERTIDA", "Convertida a orden de taller"),
+        ("CANCELADA", "Cancelada"),
+    ]
+
+    estado = models.CharField(
+        "Estado",
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default="ABIERTA",
+        db_index=True,
+    )
+
+    # ===== Unidad (camión o caja) =====
+    truck = models.ForeignKey(
+        "trucks.Truck",
+        verbose_name="Camión",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="solicitudes_mantenimiento",
+    )
+    reefer_box = models.ForeignKey(
+        "trucks.ReeferBox",
+        verbose_name="Caja",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="solicitudes_mantenimiento",
+    )
+
+    # ===== Quién la reporta =====
+    operador = models.ForeignKey(
+        "operators.Operator",
+        verbose_name="Operador",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="solicitudes_mantenimiento",
+        help_text="Operador que reporta la solicitud (si aplica)",
+    )
+
+    # ===== Información =====
+    descripcion = models.TextField("Descripción del problema")
+
+    # ===== Conversión a orden =====
+    orden_taller = models.OneToOneField(
+        "workshop.WorkshopOrder",
+        verbose_name="Orden de taller generada",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="solicitud_origen",
+    )
+
+    # ===== Meta =====
+    notas_internas = models.TextField("Notas internas", blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    # Soft delete
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    objects = models.Manager()
+    all_objects = SoftDeleteQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "Solicitud de mantenimiento"
+        verbose_name_plural = "Solicitudes de mantenimiento"
+        ordering = ["-creado_en"]
+
+    def __str__(self):
+        return f"SM {self.id} - {self.unidad_display}"
+
+    # ===== Unidad =====
+    @property
+    def unidad(self):
+        return self.truck or self.reefer_box
+
+    @property
+    def unidad_display(self):
+        u = self.unidad
+        if not u:
+            return "Sin unidad"
+        return f"{u.numero_economico} ({getattr(u, 'placas', 'sin placas') or 'sin placas'})"
+
+    # ===== Validaciones =====
+    def clean(self):
+        super().clean()
+
+        has_truck = self.truck is not None
+        has_box = self.reefer_box is not None
+
+        if has_truck and has_box:
+            raise ValidationError("Solo puedes asignar un camión O una caja.")
+
+        if not has_truck and not has_box:
+            raise ValidationError("Debes asignar un camión o una caja.")
+
+        if self.orden_taller and self.estado != "CONVERTIDA":
+            raise ValidationError(
+                "Si existe una orden de taller asociada, el estado debe ser CONVERTIDA."
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    # ===== Acciones de dominio =====
+    def convertir_a_orden(self, orden):
+        """
+        Vincula esta solicitud con una orden de taller existente.
+        """
+        if self.orden_taller:
+            raise ValidationError("Esta solicitud ya fue convertida.")
+
+        self.orden_taller = orden
+        self.estado = "CONVERTIDA"
+        self.save(update_fields=["orden_taller", "estado"])

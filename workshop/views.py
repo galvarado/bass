@@ -10,7 +10,7 @@ from django.views.generic import (
     ListView, CreateView, UpdateView, DetailView, DeleteView
 )
 
-from .models import WorkshopOrder
+from .models import WorkshopOrder, MaintenanceRequest
 from .forms import WorkshopOrderForm, WorkshopOrderSearchForm, SparePartUsageFormSet
 from warehouse.models import SparePartMovement
 
@@ -253,3 +253,117 @@ class WorkshopOrderSoftDeleteView(DeleteView):
 
     def post(self, request, *args, **kwargs):
         return self.delete(request, *args, **kwargs)
+
+
+class WorkshopOrderListView(ListView):
+    model = WorkshopOrder
+    template_name = "workshop/list.html"
+    context_object_name = "orders"  # estas serán las históricas
+    paginate_by = 10
+
+    def get_queryset(self):
+        """
+        Órdenes de taller (OT):
+        - Por defecto: solo no eliminadas (deleted=False).
+        - Si ?show_deleted=1 → solo eliminadas.
+        - Si ?show_all=1 → todas (incluidas eliminadas).
+        - Filtros:
+          * q: económico, placas, descripción.
+          * estado: estado de OT (si lo usas en tu form).
+          * tipo_unidad (virtual): TRUCK / BOX.
+        - Separación:
+          * active_orders (sin paginación)
+          * orders (histórico con paginación)
+        Además, en el contexto se agregan:
+          * maintenance_requests (solicitudes de mantenimiento)
+        """
+        show_deleted = self.request.GET.get("show_deleted") == "1"
+        show_all = self.request.GET.get("show_all") == "1"
+
+        if show_all:
+            qs = WorkshopOrder.objects.all()
+        elif show_deleted:
+            qs = WorkshopOrder.objects.filter(deleted=True)
+        else:
+            qs = WorkshopOrder.objects.filter(deleted=False)
+
+        q = (self.request.GET.get("q") or "").strip()
+        estado = (self.request.GET.get("estado") or "").strip()
+        tipo_unidad = (self.request.GET.get("tipo_unidad") or "").strip()
+
+        if q:
+            for token in q.split():
+                qs = qs.filter(
+                    Q(truck__numero_economico__icontains=token) |
+                    Q(truck__placas__icontains=token) |
+                    Q(reefer_box__numero_economico__icontains=token) |
+                    Q(reefer_box__placas__icontains=token) |
+                    Q(descripcion__icontains=token)
+                )
+
+        if estado:
+            qs = qs.filter(estado=estado)
+
+        if tipo_unidad == "TRUCK":
+            qs = qs.filter(truck__isnull=False)
+        elif tipo_unidad == "BOX":
+            qs = qs.filter(reefer_box__isnull=False)
+
+        activos = qs.exclude(estado__in=["TERMINADA", "CANCELADA"])
+        historicos = qs.filter(estado__in=["TERMINADA", "CANCELADA"])
+
+        self.active_orders = activos.order_by("-fecha_entrada")
+
+        # 👇 cargar también solicitudes (se guardan como atributo para el contexto)
+        self.maintenance_requests = self._get_maintenance_requests(q=q, tipo_unidad=tipo_unidad)
+
+        return historicos.order_by("-fecha_entrada")
+
+    def _get_maintenance_requests(self, q: str, tipo_unidad: str):
+        """
+        Solicitudes de mantenimiento (SM):
+        - No eliminadas (deleted=False)
+        - Por defecto mostramos ABIERTA/EVALUADA y también CONVERTIDA
+          (para que se vea el link a la OT).
+        - Reusa filtros q y tipo_unidad.
+        """
+        qs = MaintenanceRequest.objects.filter(deleted=False).select_related(
+            "truck", "reefer_box", "orden_taller", "operador"
+        )
+
+        # default: mostrar “vivas”
+        qs = qs.filter(estado__in=["ABIERTA", "EVALUADA", "CONVERTIDA"])
+
+        if q:
+            for token in q.split():
+                qs = qs.filter(
+                    Q(truck__numero_economico__icontains=token) |
+                    Q(truck__placas__icontains=token) |
+                    Q(reefer_box__numero_economico__icontains=token) |
+                    Q(reefer_box__placas__icontains=token) |
+                    Q(descripcion__icontains=token)
+                )
+
+        if tipo_unidad == "TRUCK":
+            qs = qs.filter(truck__isnull=False)
+        elif tipo_unidad == "BOX":
+            qs = qs.filter(reefer_box__isnull=False)
+
+        # orden: primero abiertas/evaluadas, luego convertidas, más recientes arriba
+        # (sin depender de annotation)
+        return qs.order_by("-creado_en", "-id")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["search_form"] = WorkshopOrderSearchForm(self.request.GET or None)
+        ctx["active_orders"] = getattr(self, "active_orders", WorkshopOrder.objects.none())
+        ctx["maintenance_requests"] = getattr(
+            self, "maintenance_requests", MaintenanceRequest.objects.none()
+        )
+        return ctx
+
+    def get_paginate_by(self, queryset):
+        try:
+            return int(self.request.GET.get("page_size", self.paginate_by))
+        except (TypeError, ValueError):
+            return self.paginate_by
