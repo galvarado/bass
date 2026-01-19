@@ -1,7 +1,7 @@
 # operators/forms.py
 from django import forms
 from django.utils import timezone
-from .models import Operator
+from .models import Operator, CrossBorderCapability
 
 
 from django_postalcodes_mexico.models import PostalCode as PC  # ajusta alias si hace falta
@@ -22,6 +22,7 @@ class OperatorForm(forms.ModelForm):
             "visa","visa_vencimiento","pasaporte","pasaporte_vencimiento",
             "examen_medico","examen_medico_vencimiento","rcontrol","rcontrol_vencimiento",
             "antidoping","antidoping_vencimiento",
+            "cross_border",         
             "status",
         ]
         widgets = {
@@ -41,6 +42,7 @@ class OperatorForm(forms.ModelForm):
             "poblacion": forms.TextInput(attrs={"readonly": "readonly"}),  # editable, lo llenamos con d_ciudad si existe
             "colonia": forms.Select(),
             "colonia_sat": forms.TextInput(attrs={"readonly": "readonly"}),  # ← ahora solo lectura
+            "cross_border": forms.Select(),
             "pais": forms.TextInput(attrs={"readonly": "readonly"}),
         }
 

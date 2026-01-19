@@ -46,12 +46,13 @@ class Trip(models.Model):
         on_delete=models.PROTECT,
         related_name="trips",
     )
-
-    transfer = models.CharField(
-        max_length=20,
-        choices=TransferType.choices,
-        default=TransferType.NINGUNO,
-        verbose_name="Tipo de transfer",
+    transfer_operator = models.ForeignKey(
+        Operator,
+        on_delete=models.PROTECT,
+        related_name="trips_as_transfer",
+        null=True,
+        blank=True,
+        verbose_name="Operador de cruce (transfer)",
     )
 
     observations = models.TextField(

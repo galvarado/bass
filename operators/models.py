@@ -29,6 +29,11 @@ class SoftDeleteManager(models.Manager):
     def deleted_only(self):
         return self.with_deleted().dead()
 
+class CrossBorderCapability(models.TextChoices):
+    NO_PUEDE = "NO_PUEDE", "No puede cruzar"
+    PUEDE = "PUEDE", "Puede cruzar"
+    SOLO_CRUCE = "SOLO_CRUCE", "Solo cruce (transfer)"
+
 
 class Operator(models.Model):
     STATUS_CHOICES = [
@@ -56,6 +61,12 @@ class Operator(models.Model):
     ]
 
     # --- Datos Generales ---
+    cross_border = models.CharField(
+        max_length=20,
+        choices=CrossBorderCapability.choices,
+        default=CrossBorderCapability.NO_PUEDE,
+        verbose_name="Cruce frontera (USA)",
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ALTA')
     nombre = models.CharField(max_length=120)
     calle = models.CharField(max_length=120, blank=True, null=True)

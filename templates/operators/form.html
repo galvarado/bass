@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load form_extras %}
+{% load currency_extras %}
 {% block title %}{% if object %}Editar Operador{% else %}Nuevo Operador{% endif %} · BASS{% endblock %}
 
 {% block content %}
@@ -53,6 +54,20 @@
         {{ form.fecha_ingreso|add_class:"form-control" }}
       </div>
     </div>
+    <div class="form-row">
+    <div class="form-group col-md-4">
+      <label for="{{ form.cross_border.id_for_label }}">Cruce frontera</label>
+      {{ form.cross_border|add_class:"form-control" }}
+      {% if form.cross_border.errors %}
+        <div class="invalid-feedback d-block">
+          {{ form.cross_border.errors|striptags }}
+        </div>
+      {% endif %}
+      <small class="text-muted">
+        “Solo cruce” = operador dedicado a cruzar (transfer). “Puede cruzar” = el mismo operador puede hacerlo.
+      </small>
+    </div>
+</div>
 
   <!-- Dirección -->
 <hr>

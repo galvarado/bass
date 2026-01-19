@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% load currency_extras %}
+
 {% block title %}Detalle de Operador · BASS{% endblock %}
 {% block content %}
 
@@ -43,23 +45,6 @@
       <dt class="col-sm-3">Teléfono</dt><dd class="col-sm-9">{{ op.telefono|default:"—" }}</dd>
     </dl>
 
-    <hr>
-
-    <h6 class="text-primary mb-3"><i class="fas fa-briefcase mr-1"></i> Contrato</h6>
-    <dl class="row small">
-      <dt class="col-sm-3">Puesto</dt><dd class="col-sm-9">{{ op.puesto|default:"—" }}</dd>
-      <dt class="col-sm-3">Tipo contrato</dt><dd class="col-sm-9">{{ op.tipo_contrato|default:"—" }}</dd>
-      <dt class="col-sm-3">Tipo régimen</dt><dd class="col-sm-9">{{ op.tipo_regimen|default:"—" }}</dd>
-      <dt class="col-sm-3">Tipo jornada</dt><dd class="col-sm-9">{{ op.tipo_jornada|default:"—" }}</dd>
-      <dt class="col-sm-3">Tipo liquidación</dt><dd class="col-sm-9">{{ op.tipo_liquidacion|default:"—" }}</dd>
-      <dt class="col-sm-3">Periodicidad</dt><dd class="col-sm-9">{{ op.periodicidad|default:"—" }}</dd>
-      <dt class="col-sm-3">Cuenta bancaria</dt><dd class="col-sm-9">{{ op.cuenta_bancaria|default:"—" }}</dd>
-      <dt class="col-sm-3">Cuenta</dt><dd class="col-sm-9">{{ op.cuenta|default:"—" }}</dd>
-      <dt class="col-sm-3">Salario diario</dt><dd class="col-sm-9">{{ op.salario_diario|money_mx|default:"—" }}</dd>
-      <dt class="col-sm-3">Sueldo fijo</dt><dd class="col-sm-9">{{ op.sueldo_fijo|money_mx|default:"—" }}</dd>
-      <dt class="col-sm-3">Comisión</dt><dd class="col-sm-9">{{ op.comision|default:"—" }} %</dd>
-      <dt class="col-sm-3">Tope</dt><dd class="col-sm-9">{{ op.tope|money_mx|default:"—" }}</dd>
-    </dl>
 
     <hr>
 

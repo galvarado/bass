@@ -3,7 +3,7 @@ from django import forms
 from django.db.models import Exists, OuterRef
 from django.forms import inlineformset_factory
 from django.apps import apps 
-
+from operators.models import Operator, CrossBorderCapability
 from .models import Trip, TransferType, TripStatus
 from workshop.models import WorkshopOrder
 from .models import (
@@ -30,7 +30,7 @@ class TripForm(forms.ModelForm):
             "operator",
             "truck",
             "reefer_box",
-            "transfer",
+            "transfer_operator",
             "observations",
         ]
         widgets = {
@@ -39,6 +39,18 @@ class TripForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        qs = Operator.objects.filter(
+            deleted=False,
+            status="ALTA",
+            cross_border__in=[
+                CrossBorderCapability.PUEDE,
+                CrossBorderCapability.SOLO_CRUCE,
+            ],
+        ).order_by("nombre")
+
+        self.fields["transfer_operator"].queryset = qs
+
 
         # Estilo
         for name, field in self.fields.items():
@@ -159,7 +171,7 @@ class TripSearchForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
     )
 
-    transfer = forms.ChoiceField(
+    transfer_operator = forms.ChoiceField(
         required=False,
         label="Transfer",
         choices=(
