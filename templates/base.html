@@ -41,19 +41,25 @@
         <!-- Espaciador -->
         <div class="ml-auto d-flex align-items-center">
 
-          <div class="d-none d-md-flex align-items-center topbar-info mr-3">
-            <div class="mr-3" id="time-mx">
-              <i class="far fa-clock mr-1"></i> 🇲🇽 CDMX —
+          {# ===================== HORA + USD (NO operador) ===================== #}
+          {% if not user|has_group:"operador" or user|has_group:"admin" or user|has_group:"superadmin" %}
+            <div class="d-none d-md-flex align-items-center topbar-info mr-3">
+              <div class="mr-3" id="time-mx">
+                <i class="far fa-clock mr-1"></i> 🇲🇽 CDMX —
+              </div>
+              <div class="mr-3" id="time-tx">
+                <i class="far fa-clock mr-1"></i> 🇺🇸 Texas —
+              </div>
+              <div id="usdMxn" class="badge badge-light text-primary">
+                <i class="fas fa-dollar-sign mr-1"></i>
+                <a href="https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=6&accion=consultarCuadro&idCuadro=CF102&locale=es">
+                  USD/MXN —
+                </a>
+              </div>
             </div>
-            <div class="mr-3" id="time-tx">
-              <i class="far fa-clock mr-1"></i> 🇺🇸 Texas —
-            </div>
-            <div id="usdMxn" class="badge badge-light text-primary">
-              <i class="fas fa-dollar-sign mr-1"></i> <a href="https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=6&accion=consultarCuadro&idCuadro=CF102&locale=es">USD/MXN —</a>
-            </div>
-          </div>
 
-          <div class="topbar-divider d-none d-sm-block"></div>
+            <div class="topbar-divider d-none d-sm-block"></div>
+          {% endif %}
 
           <!-- Menú usuario -->
           <ul class="navbar-nav align-items-center ml-2">
@@ -123,22 +129,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/js/sb-admin-2.min.js"></script>
-  <script>
-    function updateTimes() {
-      const now = new Date();
-      const mxOpts = { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' };
-      const txOpts = { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit' };
-      document.getElementById('time-mx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇲🇽 CDMX ${now.toLocaleTimeString('es-MX', mxOpts)}`;
-      document.getElementById('time-tx').innerHTML = `<i class="far fa-clock mr-1"></i> 🇺🇸 Texas ${now.toLocaleTimeString('es-MX', txOpts)}`;
-    }
-    updateTimes(); setInterval(updateTimes, 60000);
 
+  <script>
     (function () {
       const key = "sidebar.collapseCatalogs.open";
       const $collapse = $("#collapseCatalogs");
       const $toggle = $('a[data-target="#collapseCatalogs"]');
 
-      // Al cargar: restaura estado
+      if (!$collapse.length) return;
+
       const shouldBeOpen = localStorage.getItem(key) === "1";
       if (shouldBeOpen) {
         $collapse.addClass("show");
@@ -148,21 +147,36 @@
         $toggle.addClass("collapsed").attr("aria-expanded", "false");
       }
 
-      // Cuando se abre: guarda
       $collapse.on("shown.bs.collapse", function () {
         localStorage.setItem(key, "1");
         $toggle.removeClass("collapsed").attr("aria-expanded", "true");
       });
 
-      // Cuando se cierra: guarda
       $collapse.on("hidden.bs.collapse", function () {
         localStorage.setItem(key, "0");
         $toggle.addClass("collapsed").attr("aria-expanded", "false");
       });
     })();
+  </script>
+
+  {# ===================== JS HORA + USD (NO operador) ===================== #}
+  {% if not user|has_group:"operador" or user|has_group:"admin" or user|has_group:"superadmin" %}
+  <script>
+    function updateTimes() {
+      const now = new Date();
+      const mxOpts = { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' };
+      const txOpts = { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit' };
+
+      const mxEl = document.getElementById('time-mx');
+      const txEl = document.getElementById('time-tx');
+      if (mxEl) mxEl.innerHTML = `<i class="far fa-clock mr-1"></i> 🇲🇽 CDMX ${now.toLocaleTimeString('es-MX', mxOpts)}`;
+      if (txEl) txEl.innerHTML = `<i class="far fa-clock mr-1"></i> 🇺🇸 Texas ${now.toLocaleTimeString('es-MX', txOpts)}`;
+    }
+    updateTimes(); setInterval(updateTimes, 60000);
 
     async function fetchUsdMxn() {
       const el = document.getElementById('usdMxn');
+      if (!el) return;
       try {
         const res = await fetch('/api/utils/header-info/', { credentials: 'same-origin' });
         const data = await res.json();
@@ -173,5 +187,7 @@
     }
     fetchUsdMxn(); setInterval(fetchUsdMxn, 600000);
   </script>
+  {% endif %}
+
 </body>
 </html>
