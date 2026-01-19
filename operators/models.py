@@ -1,5 +1,7 @@
 # operators/models.py
 from django.db import models
+from django.conf import settings
+
 
 class SoftDeleteQuerySet(models.QuerySet):
     def delete(self):
@@ -112,6 +114,14 @@ class Operator(models.Model):
     rcontrol_vencimiento = models.DateField(blank=True, null=True)
     antidoping = models.CharField(max_length=50, blank=True, null=True)
     antidoping_vencimiento = models.DateField(blank=True, null=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="operator_profile",
+        verbose_name="Usuario del sistema",
+    )
 
     # --- Soft delete ---
     deleted = models.BooleanField(default=False, db_index=True)
