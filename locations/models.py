@@ -120,18 +120,25 @@ class Route(models.Model):
         help_text="Opcional: nombre comercial (ej. GDL → CDMX). Si se deja vacío, se genera en display."
     )
 
-    
-
-    # Commercial terms (what you charge)
     tarifa_cliente = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00"),
         help_text="Monto que se cobra al cliente por esta ruta (base)."
     )
    
-    # Operator pay (what you pay the operator)
     pago_operador = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00"),
         help_text="Monto que se paga al operador por esta ruta (base)."
+    )
+
+    pago_transfer_propio = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00"),
+        help_text="Pago de cruce cuando el mismo operador principal cruza (operador propio)."
+    )
+
+    # Pago si el cruce lo hace un operador dedicado (solo cruce / transfer)
+    pago_transfer_solo_cruce = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00"),
+        help_text="Pago de cruce cuando se asigna un operador dedicado de solo cruce."
     )
   
 

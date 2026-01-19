@@ -131,6 +131,20 @@
           <small class="text-danger">{{ form.pago_operador.errors|striptags }}</small>
         {% endif %}
       </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.pago_transfer_propio.id_for_label }}">Pago transfer propio</label>
+        {{ form.pago_transfer_propio|add_class:"form-control" }}
+        {% if form..errors %}
+          <small class="text-danger">{{ form.pago_transfer_propio.errors|striptags }}</small>
+        {% endif %}
+      </div>
+      <div class="form-group col-md-3">
+        <label for="{{ form.pago_transfer_solo_cruce.id_for_label }}">Pago transfer externo</label>
+        {{ form.pago_transfer_solo_cruce|add_class:"form-control" }}
+        {% if form..errors %}
+          <small class="text-danger">{{ form.pago_transfer_solo_cruce.errors|striptags }}</small>
+        {% endif %}
+      </div>
     </div>
 
   </div>

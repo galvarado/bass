@@ -192,6 +192,8 @@ class RouteForm(forms.ModelForm):
             "destino",
             "tarifa_cliente",
             "pago_operador",
+            "pago_transfer_propio",
+            "pago_transfer_solo_cruce",
         ]
 
     def __init__(self, *args, **kwargs):

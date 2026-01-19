@@ -98,6 +98,12 @@ class Trip(models.Model):
     # Snapshots (copied from route at creation time)
     tarifa_cliente_snapshot = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     pago_operador_snapshot = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    pago_transfer_propio_snapshot = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00")
+    )
+    pago_transfer_solo_cruce_snapshot = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00")
+    )
 
         # --- Soft delete ---
     deleted = models.BooleanField(default=False, db_index=True)
@@ -125,6 +131,11 @@ class Trip(models.Model):
             self.tarifa_cliente_snapshot = r.tarifa_cliente or Decimal("0.00")
         if force or self.pago_operador_snapshot == Decimal("0.00"):
             self.pago_operador_snapshot = r.pago_operador or Decimal("0.00")
+        if force or self.pago_transfer_propio_snapshot == Decimal("0.00"):
+            self.pago_transfer_propio_snapshot = r.pago_transfer_propio or Decimal("0.00")
+
+        if force or self.pago_transfer_solo_cruce_snapshot == Decimal("0.00"):
+            self.pago_transfer_solo_cruce_snapshot = r.pago_transfer_solo_cruce or Decimal("0.00")
 
 
     @property
