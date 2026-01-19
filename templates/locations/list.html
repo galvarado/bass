@@ -9,18 +9,15 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">
-    {% if active_tab == "routes" %}Rutas{% else %}Ubicaciones{% endif %}
+    {Rutas y Ubicaciones
   </h1>
 
-  {% if active_tab == "routes" %}
     <a class="btn btn-primary" href="{% url 'locations:routes_create' %}">
       <i class="fas fa-plus"></i> Nueva ruta
     </a>
-  {% else %}
     <a class="btn btn-primary" href="{% url 'locations:create' %}">
       <i class="fas fa-plus"></i> Nueva ubicación
     </a>
-  {% endif %}
 </div>
 
 <!-- ===== TABS ===== -->
