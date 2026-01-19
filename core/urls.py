@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from core import views
 from core import views as core_views
 from common.views import header_info, lookup_cp, healthz
 from django.conf import settings
@@ -27,6 +28,7 @@ from django.shortcuts import render
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
+    path("post-login/", views.post_login_redirect, name="post_login_redirect"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("dashboard/", core_views.dashboard, name="dashboard"),
     path("accounts/", include("accounts.urls")),

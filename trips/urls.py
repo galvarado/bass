@@ -13,5 +13,7 @@ urlpatterns = [
     path("monitoreo/cambiar-status/",views.TripChangeStatusView.as_view(), name="change_status",),
     path("viajes/<int:trip_id>/carta-porte/", views.CartaPorteCreateUpdateView.as_view(), name="carta_porte_form"),
     path("ajax/routes/", views.ajax_routes_by_client, name="ajax_routes_by_client"),
+    path("mis-viajes/", views.MyTripListView.as_view(), name="my_list"),
+    path("mis-viajes/<int:pk>/", views.MyTripDetailView.as_view(), name="my_detail"),
 
 ]

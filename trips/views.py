@@ -18,6 +18,9 @@ from django.views.decorators.http import require_GET
 from locations.models import Route
 from .models import Trip, TripStatus
 from .forms import TripForm, TripSearchForm
+from common.mixins import OperatorOnlyMixin, OnlyMyTripsMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 
 
 
@@ -409,3 +412,60 @@ class CartaPorteCreateUpdateView(View):
             "figures_formset": figures_formset,
         }
         return render(request, self.template_name, context)
+
+class MyTripListView(LoginRequiredMixin, ListView):
+    model = Trip
+    template_name = "trips/my_list.html"
+    context_object_name = "trips"
+    paginate_by = 10
+
+    def get_queryset(self):
+        qs = Trip.objects.all()
+
+        u = self.request.user
+        # Operador: solo sus viajes
+        if u.groups.filter(name="operador").exists() and not (u.is_staff or u.is_superuser):
+            qs = qs.filter(operator__user=u)
+
+        # Filtros (mismo patrón que tu lista)
+        q = (self.request.GET.get("q") or "").strip()
+        status = (self.request.GET.get("status") or "").strip().upper()
+        transfer = (self.request.GET.get("transfer") or "").strip().upper()
+
+        if q:
+            for token in q.split():
+                qs = qs.filter(
+                    Q(route__nombre__icontains=token) |
+                    Q(route__icontains=token) |
+                    Q(truck__economico__icontains=token) |
+                    Q(reefer_box__economico__icontains=token)
+                )
+
+        if status:
+            qs = qs.filter(status=status)
+
+        if transfer:
+            qs = qs.filter(transfer=transfer)
+
+        return qs.order_by("-id")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["search_form"] = TripSearchForm(self.request.GET or None)
+        return ctx
+
+
+class MyTripDetailView(LoginRequiredMixin, DetailView):
+    model = Trip
+    template_name = "trips/detail.html"   # reutiliza el mismo detalle
+    context_object_name = "trip"
+
+    def get_queryset(self):
+        qs = Trip.objects.all()
+        u = self.request.user
+
+        # Operador: solo puede ver los suyos
+        if u.groups.filter(name="operador").exists() and not (u.is_staff or u.is_superuser):
+            qs = qs.filter(operator__user=u)
+
+        return qs

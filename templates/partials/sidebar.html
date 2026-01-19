@@ -3,171 +3,197 @@
 
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
-  <!-- Brand -->
-  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'dashboard' %}">
+  {# ========================================================= #}
+  {#  BRAND: operador -> mis viajes, normal -> dashboard        #}
+  {# ========================================================= #}
+  <a class="sidebar-brand d-flex align-items-center justify-content-center"
+     href="{% if user|has_group:"operador" and not user|has_group:"admin" and not user|has_group:"superadmin" %}{% url 'trips:my_list' %}{% else %}{% url 'dashboard' %}{% endif %}">
     <div class="sidebar-brand-icon text-center" style="padding: 20px 10px;">
-      <img src="{% static 'img/basslogowhite.png' %}" 
-           alt="BASS" 
+      <img src="{% static 'img/basslogowhite.png' %}"
+           alt="BASS"
            style="max-height:130px; width:auto; display:block; margin:auto;">
     </div>
   </a>
 
   <hr class="sidebar-divider my-0">
 
-  <!-- Dashboard -->
-  <li class="nav-item">
-    <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">
-      <i class="fas fa-fw fa-tachometer-alt"></i> <span>Dashboard</span>
-    </a>
-  </li>
+  {# ========================================================= #}
+  {#  OPERADOR: SOLO MIS VIAJES                                 #}
+  {# ========================================================= #}
+  {% if user|has_group:"operador" and not user|has_group:"admin" and not user|has_group:"superadmin" %}
 
-  <hr class="sidebar-divider">
-
-  {# ======================= OPERACIÓN ======================= #}
-  {% with section="operacion" %}
-    {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
-      <div class="sidebar-heading text-uppercase">Operación</div>
-    {% endif %}
-  {% endwith %}
-
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'trips:list' %}">
-      <i class="fas fa-route"></i> <span>Viajes</span>
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'trips:board' %}">
-      <i class="fas fa-satellite-dish"></i> <span>Monitoreo</span>
-    </a>
-  </li>
-
-  <hr class="sidebar-divider">
-
-  {# ===================== FINANZAS ==================== #}
-  {% with section="finanzas" %}
-    {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
-      <div class="sidebar-heading text-uppercase">Finanzas</div>
-    {% endif %}
-  {% endwith %}
-
-  <li class="nav-item">
-    <a class="nav-link" href="">
-      <i class="fas fa-hand-holding-usd"></i> <span>Liquidación</span>
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a class="nav-link" href="">
-      <i class="fas fa-file-invoice-dollar"></i> <span>Cobranza</span>
-    </a>
-  </li>
-
-  <hr class="sidebar-divider">
-
-{# ======================= CATÁLOGOS ======================= #}
-{% with section="catalogos" %}
-  {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
-    <div class="sidebar-heading text-uppercase">Catálogos</div>
-  {% endif %}
-{% endwith %}
-
-<li class="nav-item">
-  <a class="nav-link collapsed"
-     href="#"
-     data-toggle="collapse"
-     data-target="#collapseCatalogs"
-     aria-expanded="false"
-     aria-controls="collapseCatalogs">
-    <i class="fas fa-list"></i>
-    <span>Catálogos</span>
-  </a>
-
-  <div id="collapseCatalogs" class="collapse" aria-labelledby="headingCatalogs">
-    <div class="bg-white py-2 collapse-inner rounded">
-      <a class="collapse-item {% if '/customers' in request.path %}active{% endif %}" href="{% url 'customers:list' %}">
-        <i class="fas fa-building mr-2 text-muted"></i> Clientes
-      </a>
-      <a class="collapse-item {% if '/locations' in request.path %}active{% endif %}" href="{% url 'locations:list' %}">
-        <i class="fas fa-location-dot mr-2 text-muted"></i> Rutas
-      </a>
-      <a class="collapse-item {% if '/operators' in request.path %}active{% endif %}" href="{% url 'operators:list' %}">
-        <i class="fas fa-user mr-2 text-muted"></i> Operadores
-      </a>
-      <a class="collapse-item {% if '/trucks' in request.path %}active{% endif %}" href="{% url 'trucks:list' %}">
-        <i class="fas fa-truck mr-2 text-muted"></i> Vehículos
-      </a>
-          <a class="collapse-item {% if '/suppliers' in request.path %}active{% endif %}" href="{% url 'suppliers:list' %}">
-        <i class="fas fa-id-card mr-2 text-muted"></i> Proveedores
-      </a>
-    </div>
-  </div>
-</li>
-  <hr class="sidebar-divider">
-
-  {# ===================== MANTENIMIENTO ===================== #}
-  {% with section="mantenimiento" %}
-    {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
-      <div class="sidebar-heading text-uppercase">Mantenimiento</div>
-    {% endif %}
-  {% endwith %}
-
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'workshop:list' %}">
-      <i class="fas fa-tools"></i> <span>Taller</span>
-    </a>
-  </li>
-
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'warehouse:sparepart_list' %}">
-      <i class="fas fa-warehouse"></i> <span>Almacén</span>
-    </a>
-  </li>
-
-  <hr class="sidebar-divider">
-
-  {# ====================== CUMPLIMIENTO ===================== #}
-  {% with section="cumplimiento" %}
-    {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
-      <div class="sidebar-heading text-uppercase">Cumplimiento</div>
-    {% endif %}
-  {% endwith %}
-
-  <li class="nav-item">
-    <a class="nav-link" href="">
-      <i class="fas fa-shield"></i> <span>CTPAT</span>
-    </a>
-  </li>
-
-  <hr class="sidebar-divider">
-
-
-  {# ========================= SISTEMA ======================= #}
-  {% with section="sistema" %}
-    {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
-      <div class="sidebar-heading text-uppercase">Sistema</div>
-    {% endif %}
-  {% endwith %}
-
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'accounts:list' %}">
-      <i class="fas fa-user-circle"></i> <span>Usuarios</span>
-    </a>
-  </li>
+    <div class="sidebar-heading text-uppercase">Operación</div>
 
     <li class="nav-item">
-    <a class="nav-link" href="{% url 'accounts:roles' %}">
-      <i class="fas fa-address-card"></i> <span>Roles</span>
-    </a>
-  </li>
+      <a class="nav-link {% if '/trips/mis-viajes' in request.path %}active{% endif %}"
+         href="{% url 'trips:my_list' %}">
+        <i class="fas fa-route"></i> <span>Mis viajes</span>
+      </a>
+    </li>
 
-  {% with section="bitacora" %}
-    {% if user|has_group:"superadmin" or user|has_group:section %}
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'audit:list' %}">
-      <i class="fas fa-book"></i> <span>Bitácora</span>
-    </a>
-  </li>
-    {% endif %}
-  {% endwith %}
+  {% else %}
+
+  {# ========================================================= #}
+  {#  NORMAL: DASHBOARD + TODO                                   #}
+  {# ========================================================= #}
+
+    <!-- Dashboard -->
+    <li class="nav-item">
+      <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">
+        <i class="fas fa-fw fa-tachometer-alt"></i> <span>Dashboard</span>
+      </a>
+    </li>
+
+    <hr class="sidebar-divider">
+
+    {# ======================= OPERACIÓN ======================= #}
+    {% with section="operacion" %}
+      {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
+        <div class="sidebar-heading text-uppercase">Operación</div>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'trips:list' %}">
+            <i class="fas fa-route"></i> <span>Viajes</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'trips:board' %}">
+            <i class="fas fa-satellite-dish"></i> <span>Monitoreo</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider">
+      {% endif %}
+    {% endwith %}
+
+    {# ===================== FINANZAS ==================== #}
+    {% with section="finanzas" %}
+      {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
+        <div class="sidebar-heading text-uppercase">Finanzas</div>
+
+        <li class="nav-item">
+          <a class="nav-link" href="">
+            <i class="fas fa-hand-holding-usd"></i> <span>Liquidación</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="">
+            <i class="fas fa-file-invoice-dollar"></i> <span>Cobranza</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider">
+      {% endif %}
+    {% endwith %}
+
+    {# ======================= CATÁLOGOS ======================= #}
+    {% with section="catalogos" %}
+      {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
+        <div class="sidebar-heading text-uppercase">Catálogos</div>
+
+        <li class="nav-item">
+          <a class="nav-link collapsed"
+             href="#"
+             data-toggle="collapse"
+             data-target="#collapseCatalogs"
+             aria-expanded="false"
+             aria-controls="collapseCatalogs">
+            <i class="fas fa-list"></i>
+            <span>Catálogos</span>
+          </a>
+
+          <div id="collapseCatalogs" class="collapse" aria-labelledby="headingCatalogs">
+            <div class="bg-white py-2 collapse-inner rounded">
+              <a class="collapse-item {% if '/customers' in request.path %}active{% endif %}" href="{% url 'customers:list' %}">
+                <i class="fas fa-building mr-2 text-muted"></i> Clientes
+              </a>
+              <a class="collapse-item {% if '/locations' in request.path %}active{% endif %}" href="{% url 'locations:list' %}">
+                <i class="fas fa-location-dot mr-2 text-muted"></i> Rutas
+              </a>
+              <a class="collapse-item {% if '/operators' in request.path %}active{% endif %}" href="{% url 'operators:list' %}">
+                <i class="fas fa-user mr-2 text-muted"></i> Operadores
+              </a>
+              <a class="collapse-item {% if '/trucks' in request.path %}active{% endif %}" href="{% url 'trucks:list' %}">
+                <i class="fas fa-truck mr-2 text-muted"></i> Vehículos
+              </a>
+              <a class="collapse-item {% if '/suppliers' in request.path %}active{% endif %}" href="{% url 'suppliers:list' %}">
+                <i class="fas fa-id-card mr-2 text-muted"></i> Proveedores
+              </a>
+            </div>
+          </div>
+        </li>
+
+        <hr class="sidebar-divider">
+      {% endif %}
+    {% endwith %}
+
+    {# ===================== MANTENIMIENTO ===================== #}
+    {% with section="mantenimiento" %}
+      {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
+        <div class="sidebar-heading text-uppercase">Mantenimiento</div>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'workshop:list' %}">
+            <i class="fas fa-tools"></i> <span>Taller</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'warehouse:sparepart_list' %}">
+            <i class="fas fa-warehouse"></i> <span>Almacén</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider">
+      {% endif %}
+    {% endwith %}
+
+    {# ====================== CUMPLIMIENTO ===================== #}
+    {% with section="cumplimiento" %}
+      {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
+        <div class="sidebar-heading text-uppercase">Cumplimiento</div>
+
+        <li class="nav-item">
+          <a class="nav-link" href="">
+            <i class="fas fa-shield"></i> <span>CTPAT</span>
+          </a>
+        </li>
+
+        <hr class="sidebar-divider">
+      {% endif %}
+    {% endwith %}
+
+    {# ========================= SISTEMA ======================= #}
+    {% with section="sistema" %}
+      {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
+        <div class="sidebar-heading text-uppercase">Sistema</div>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'accounts:list' %}">
+            <i class="fas fa-user-circle"></i> <span>Usuarios</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'accounts:roles' %}">
+            <i class="fas fa-address-card"></i> <span>Roles</span>
+          </a>
+        </li>
+
+        {% with section="bitacora" %}
+          {% if user|has_group:"superadmin" or user|has_group:section %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'audit:list' %}">
+                <i class="fas fa-book"></i> <span>Bitácora</span>
+              </a>
+            </li>
+          {% endif %}
+        {% endwith %}
+      {% endif %}
+    {% endwith %}
+
+  {% endif %}
+
 </ul>

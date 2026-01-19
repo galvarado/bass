@@ -152,7 +152,7 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@example.com")
 
 # Auth flow
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "dashboard"   # o "trip_list" si prefieres
+LOGIN_REDIRECT_URL = "post_login_redirect"   # o "trip_list" si prefieres
 LOGOUT_REDIRECT_URL = "login"
 OPENEXCHANGE_APP_ID = "c98896f4617b43779470c2d5170f285f"
 OPENEXCHANGE_BASE_URL = "https://openexchangerates.org/api/latest.json"
