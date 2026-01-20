@@ -114,10 +114,7 @@
                 <i class="fas fa-building mr-2 text-muted"></i> Clientes
               </a>
               <a class="collapse-item {% if '/locations' in request.path %}active{% endif %}" href="{% url 'locations:list' %}">
-                <i class="fas fa-location-dot mr-2 text-muted"></i> Ubicaciones
-              </a>
-              <a class="collapse-item {% if '/routes' in request.path %}active{% endif %}" href="{% url 'locations:list' %}">
-                <i class="fas fa-map-signs mr-2 text-muted"></i> Rutas
+                <i class="fas fa-location-dot mr-2 text-muted"></i> Rutas
               </a>
               <a class="collapse-item {% if '/operators' in request.path %}active{% endif %}" href="{% url 'operators:list' %}">
                 <i class="fas fa-user mr-2 text-muted"></i> Operadores
