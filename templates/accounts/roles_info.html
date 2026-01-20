@@ -12,22 +12,21 @@
 <div class="card shadow-sm mb-4">
   <div class="card-body">
     <p class="mb-3 text-muted">
-      En BASS, los usuarios se agrupan por <strong>roles</strong>, que
-      determinan las secciones a las que pueden acceder y las acciones que
-      pueden realizar.
+      En BASS, los usuarios se agrupan por <strong>roles</strong>, los cuales
+      determinan las secciones a las que pueden acceder y las acciones que pueden realizar
+      dentro del sistema.
     </p>
 
     <!-- SUPERADMIN -->
     <div class="mb-4">
-      <h5 class="text-danger" style="background-color:transparent !important"><i class="fas fa-crown"></i> Superadmin</h5>
+      <h5 class="text-danger" style="background-color:transparent !important">
+        <i class="fas fa-crown"></i> Superadmin
+      </h5>
       <ul class="small mb-2">
         <li>Acceso total al sistema.</li>
-        <li>Puede ver y administrar todas las secciones y usuarios.</li>
-        <li>Puede crear, editar o desactivar usuarios, asignar grupos y cambiar
-          contraseñas.</li>
-        <li>Acceso completo a la <strong>Bitácora</strong> y todos los módulos:
-          Operación, Mantenimiento, Cumplimiento, Finanzas, Sistema,
-          Catálogos.</li>
+        <li>Puede ver y administrar todas las secciones y módulos.</li>
+        <li>Gestión completa de usuarios: crear, editar, desactivar, asignar roles y cambiar contraseñas.</li>
+        <li>Acceso completo a la <strong>Bitácora</strong> y a todos los módulos operativos y administrativos.</li>
       </ul>
       <span class="badge badge-danger">Acceso completo</span>
     </div>
@@ -36,15 +35,14 @@
 
     <!-- ADMIN -->
     <div class="mb-4">
-      <h5 class="text-info"><i class="fas fa-user-shield"></i> Admin</h5>
+      <h5 class="text-info">
+        <i class="fas fa-user-shield"></i> Admin
+      </h5>
       <ul class="small mb-2">
-        <li>Acceso a todas las secciones, excepto la
-          <strong>Bitácora</strong>.</li>
-        <li>Puede administrar usuarios para crear, editar y cambiar contraseña
-          así como asignar grupos pero no desactivar usuarios.</li>
-        <li>Acceso a módulos: Operación, Mantenimiento, Cumplimiento, Finanzas,
-          Sistema, Catálogos</li>
-        <li>No puede dar de alta ni modificar usuarios de tipo Superadmin.</li>
+        <li>Acceso a todos los módulos operativos y administrativos.</li>
+        <li>Puede crear y editar usuarios, cambiar contraseñas y asignar roles.</li>
+        <li>No puede desactivar usuarios ni modificar cuentas de tipo <strong>Superadmin</strong>.</li>
+        <li>No tiene acceso a la <strong>Bitácora</strong>.</li>
       </ul>
       <span class="badge badge-info">Acceso extendido</span>
     </div>
@@ -53,21 +51,23 @@
 
     <!-- ROLES OPERATIVOS -->
     <div class="mb-4">
-      <h5 class="text-success" style="background-color:transparent !important"><i class="fas fa-people-carry"></i> Roles
-        operativos</h5>
-      <p class="small text-muted">Corresponden a grupos funcionales dentro del
-        sistema. Cada uno accede sólo a su sección específica:</p>
+      <h5 class="text-success" style="background-color:transparent !important">
+        <i class="fas fa-people-carry"></i> Roles operativos
+      </h5>
+      <p class="small text-muted">
+        Corresponden a grupos funcionales dentro del sistema. Cada rol tiene acceso
+        únicamente a su módulo correspondiente:
+      </p>
       <ul class="small mb-2">
-        <li><strong>Operación</strong>: acceso a viajes y monitoreo.</li>
-        <li><strong>Mantenimiento</strong>: acceso a taller y almacén.</li>
-        <li><strong>Cumplimiento</strong>: acceso al módulo CTPAT.</li>
-        <li><strong>Finanzas</strong>: acceso a liquidación y cobranza.</li>
-        <li><strong>Catálogos</strong>: acceso a gestión de operadores,
-          vehículos, clientes y ubicaciones.</li>
-        <li><strong>Sistema</strong>: Solo los usuarios superadmin y admin
-          tienen acceso a este módulo.</li>
+        <li><strong>Operación</strong>: gestión de viajes y monitoreo.</li>
+        <li><strong>Taller</strong>: órdenes de trabajo y mantenimiento de unidades.</li>
+        <li><strong>Almacén</strong>: inventario, refacciones y movimientos.</li>
+        <li><strong>Finanzas</strong>: liquidaciones, cobranza y control financiero.</li>
+        <li><strong>Cumplimiento</strong>: gestión del módulo CTPAT y evidencias.</li>
+        <li><strong>Catálogos</strong>: administración de operadores, vehículos, clientes y ubicaciones.</li>
+        <li><strong>Operador</strong>: acceso únicamente a sus propios viajes.</li>
       </ul>
-      <span class="badge badge-success">Acceso restringido a su módulo</span>
+      <span class="badge badge-success">Acceso restringido por módulo</span>
     </div>
   </div>
 </div>
