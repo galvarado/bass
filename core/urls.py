@@ -30,7 +30,7 @@ urlpatterns = [
     path("", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
     path("post-login/", views.post_login_redirect, name="post_login_redirect"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
-    path("dashboard/", core_views.dashboard, name="dashboard"),
+    path("dashboard/", core_views.DashboardView.as_view(), name="dashboard"),
     path("accounts/", include("accounts.urls")),
     path("operators/", include("operators.urls", namespace="operators")),
     path("customers/", include("customers.urls", namespace="customers")),

@@ -1,5 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.views.generic import TemplateView
+from common.mixins import AdminRequiredMixin
 
 @login_required
 def post_login_redirect(request):
@@ -12,12 +14,5 @@ def post_login_redirect(request):
     # Resto -> Dashboard
     return redirect("dashboard")
 
-
-@login_required
-def dashboard(request):
-    # Evitar que operador entre al dashboard por URL directa
-    u = request.user
-    if u.groups.filter(name="operador").exists() and not (u.is_staff or u.is_superuser):
-        return redirect("trips:my_list")
-
-    return render(request, "dashboard.html")
+class DashboardView(AdminRequiredMixin, TemplateView):
+    template_name = "dashboard.html"
