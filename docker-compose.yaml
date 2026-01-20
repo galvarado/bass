@@ -4,37 +4,31 @@ services:
   traefik:
     image: traefik:v3.6
     container_name: traefik
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
     command:
       - "--api.insecure=true"
       - "--log.level=DEBUG"
-
       - "--providers.docker=true"
       - "--providers.docker.endpoint=unix:///var/run/docker.sock"
       - "--providers.docker.exposedbydefault=false"
-
       - "--entrypoints.websecure.address=:443"
-
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
       - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-
-      # (opcional) si vas a enrutar a backends https con cert self-signed
       - "--serversTransport.insecureSkipVerify=true"
-
-    # FIX: si algo está forzando API vieja, lo neutralizamos
     environment:
       DOCKER_API_VERSION: ""
-
     ports:
       - "443:443"
       - "8080:8080"
-
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./letsencrypt:/letsencrypt
-
-    networks:
-      - default
 
   web:
     build:
@@ -47,32 +41,26 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
     volumes:
       - static-data:/app/staticfiles
       - media-data:/app/media
-
-    networks:
-      - default
-
     labels:
-    - "traefik.enable=true"
-
-    - "traefik.http.routers.bass.rule=Host(`bass.foxbase.com.mx`)"
-    - "traefik.http.routers.bass.entrypoints=websecure"
-    - "traefik.http.routers.bass.tls=true"
-    - "traefik.http.routers.bass.tls.certresolver=myresolver"
-    - "traefik.http.routers.bass.priority=10"
-
-    # service name = bass (same as router)
-    - "traefik.http.services.bass.loadbalancer.server.port=8000"
-
-    # optional: attach your error middleware (only for 500-599)
-    - "traefik.http.routers.bass.middlewares=bass-errors@docker"
-    - "traefik.http.middlewares.bass-errors.errors.status=500-599"
-    - "traefik.http.middlewares.bass-errors.errors.service=error-pages-svc"
-    # important: tell it what page to show
-    - "traefik.http.middlewares.bass-errors.errors.query=/503.html"
+      - "traefik.enable=true"
+      - "traefik.http.routers.bass.rule=Host(`bass.foxbase.com.mx`)"
+      - "traefik.http.routers.bass.entrypoints=websecure"
+      - "traefik.http.routers.bass.tls=true"
+      - "traefik.http.routers.bass.tls.certresolver=myresolver"
+      - "traefik.http.routers.bass.priority=10"
+      - "traefik.http.services.bass.loadbalancer.server.port=8000"
+      - "traefik.http.routers.bass.middlewares=bass-errors@docker"
+      - "traefik.http.middlewares.bass-errors.errors.status=500-599"
+      - "traefik.http.middlewares.bass-errors.errors.service=error-pages-svc"
+      - "traefik.http.middlewares.bass-errors.errors.query=/503.html"
 
   db:
     image: postgres:16-alpine
@@ -80,10 +68,13 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    networks:
-      - default
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -94,29 +85,26 @@ services:
     image: nginx:alpine
     container_name: error_pages
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
     volumes:
       - ./templates/errors:/usr/share/nginx/html:ro
-    networks:
-      - default
     labels:
-    - "traefik.enable=true"
-    - "traefik.http.services.error-pages-svc.loadbalancer.server.port=80"
-
-    - "traefik.http.routers.bass-fallback.rule=Host(`bass.foxbase.com.mx`) && PathPrefix(`/`)"
-    - "traefik.http.routers.bass-fallback.entrypoints=websecure"
-    - "traefik.http.routers.bass-fallback.tls=true"
-    - "traefik.http.routers.bass-fallback.tls.certresolver=myresolver"
-    - "traefik.http.routers.bass-fallback.priority=1"
-    - "traefik.http.routers.bass-fallback.service=error-pages-svc"
-
-    - "traefik.http.routers.bass-fallback.middlewares=bass-fallback-rewrite@docker"
-    - "traefik.http.middlewares.bass-fallback-rewrite.replacepath.path=/503.html"
+      - "traefik.enable=true"
+      - "traefik.http.services.error-pages-svc.loadbalancer.server.port=80"
+      - "traefik.http.routers.bass-fallback.rule=Host(`bass.foxbase.com.mx`) && PathPrefix(`/`)"
+      - "traefik.http.routers.bass-fallback.entrypoints=websecure"
+      - "traefik.http.routers.bass-fallback.tls=true"
+      - "traefik.http.routers.bass-fallback.tls.certresolver=myresolver"
+      - "traefik.http.routers.bass-fallback.priority=1"
+      - "traefik.http.routers.bass-fallback.service=error-pages-svc"
+      - "traefik.http.routers.bass-fallback.middlewares=bass-fallback-rewrite@docker"
+      - "traefik.http.middlewares.bass-fallback-rewrite.replacepath.path=/503.html"
 
 volumes:
   postgres-data:
   static-data:
   media-data:
-
-networks:
-  default:
-    driver: bridge
