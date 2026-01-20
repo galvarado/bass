@@ -56,20 +56,23 @@ services:
       - default
 
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.bass.rule=Host(`bass.foxbase.com.mx`)"
-      - "traefik.http.routers.bass.entrypoints=websecure"
-      - "traefik.http.routers.bass.tls=true"
-      - "traefik.http.routers.bass.tls.certresolver=myresolver"
-      - "traefik.http.routers.bass.priority=10"
-      - "traefik.http.services.bass-svc.loadbalancer.server.port=8000"
+    - "traefik.enable=true"
 
-      - "traefik.http.routers.bass.middlewares=bass-errors@docker"
-      - "traefik.http.middlewares.bass-errors.errors.status=500-599"
-      - "traefik.http.middlewares.bass-errors.errors.service=error-pages-svc"
-      # ✅ reescribe todo a /503.html para evitar 403 por "/"
-      - "traefik.http.middlewares.bass-fallback-rewrite.replacepath.path=/503.html"
-      - "traefik.http.routers.bass-fallback.middlewares=bass-fallback-rewrite@docker"
+    - "traefik.http.routers.bass.rule=Host(`bass.foxbase.com.mx`)"
+    - "traefik.http.routers.bass.entrypoints=websecure"
+    - "traefik.http.routers.bass.tls=true"
+    - "traefik.http.routers.bass.tls.certresolver=myresolver"
+    - "traefik.http.routers.bass.priority=10"
+
+    # service name = bass (same as router)
+    - "traefik.http.services.bass.loadbalancer.server.port=8000"
+
+    # optional: attach your error middleware (only for 500-599)
+    - "traefik.http.routers.bass.middlewares=bass-errors@docker"
+    - "traefik.http.middlewares.bass-errors.errors.status=500-599"
+    - "traefik.http.middlewares.bass-errors.errors.service=error-pages-svc"
+    # important: tell it what page to show
+    - "traefik.http.middlewares.bass-errors.errors.query=/503.html"
 
   db:
     image: postgres:16-alpine
@@ -96,15 +99,18 @@ services:
     networks:
       - default
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.services.error-pages-svc.loadbalancer.server.port=80"
+    - "traefik.enable=true"
+    - "traefik.http.services.error-pages-svc.loadbalancer.server.port=80"
 
-      - "traefik.http.routers.bass-fallback.rule=Host(`bass.foxbase.com.mx`) && PathPrefix(`/`)"
-      - "traefik.http.routers.bass-fallback.entrypoints=websecure"
-      - "traefik.http.routers.bass-fallback.tls=true"
-      - "traefik.http.routers.bass-fallback.tls.certresolver=myresolver"
-      - "traefik.http.routers.bass-fallback.priority=1"
-      - "traefik.http.routers.bass-fallback.service=error-pages-svc"
+    - "traefik.http.routers.bass-fallback.rule=Host(`bass.foxbase.com.mx`) && PathPrefix(`/`)"
+    - "traefik.http.routers.bass-fallback.entrypoints=websecure"
+    - "traefik.http.routers.bass-fallback.tls=true"
+    - "traefik.http.routers.bass-fallback.tls.certresolver=myresolver"
+    - "traefik.http.routers.bass-fallback.priority=1"
+    - "traefik.http.routers.bass-fallback.service=error-pages-svc"
+
+    - "traefik.http.routers.bass-fallback.middlewares=bass-fallback-rewrite@docker"
+    - "traefik.http.middlewares.bass-fallback-rewrite.replacepath.path=/503.html"
 
 volumes:
   postgres-data:
