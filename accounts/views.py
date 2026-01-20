@@ -2,6 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.views import PasswordChangeView
+from django.core.exceptions import PermissionDenied
+
 
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
@@ -229,7 +231,8 @@ class UserUpdateView(SuperadminOrAdminRequiredMixin, UpdateView):
         # Si el objetivo es superadmin y el usuario no lo es → prohibido
         if obj.groups.filter(name=SUPERADMIN_GROUP).exists() and not is_superadmin(request.user):
             from django.core.exceptions import PermissionDenied
-            raise PermissionDenied
+            raise PermissionDenied("No tienes permisos para acceder a esta sección.")
+
         return super().dispatch(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
@@ -256,7 +259,8 @@ class UserPasswordSetView(SuperadminOrAdminRequiredMixin, FormView):
         # Solo superadmin puede cambiar contraseña de superadmins
         if self.user_obj.groups.filter(name=SUPERADMIN_GROUP).exists() and not is_superadmin(request.user):
             from django.core.exceptions import PermissionDenied
-            raise PermissionDenied
+            raise PermissionDenied("No tienes permisos para acceder a esta sección.")
+
 
         return super().dispatch(request, *args, **kwargs)
 

@@ -25,6 +25,8 @@ from django.conf.urls.static import static
 from django.conf.urls import handler404
 from django.shortcuts import render
 
+handler403 = "common.views.permission_denied_view"
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),

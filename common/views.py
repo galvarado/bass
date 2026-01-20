@@ -145,3 +145,7 @@ def header_info(request):
 
 def healthz(_):
     return HttpResponse("ok")
+
+
+def permission_denied_view(request, exception=None):
+    return render(request, "errors/403.html", status=403)

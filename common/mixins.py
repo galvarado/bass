@@ -27,7 +27,8 @@ class SuperadminRequiredMixin(LoginRequiredMixin):
     """
     def dispatch(self, request, *args, **kwargs):
         if not is_superadmin(request.user) and not has_any_group(request.user, "superadmin"):
-            raise PermissionDenied  # 403
+            raise PermissionDenied("No tienes permisos para acceder a esta sección.")
+  # 403
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -40,7 +41,7 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def handle_no_permission(self):
         if self.request.user.is_authenticated:
-            raise PermissionDenied("Solo Admin/Superadmin.")
+            raise PermissionDenied("No tienes permisos para acceder a esta sección.")
         return super().handle_no_permission()
 
 
