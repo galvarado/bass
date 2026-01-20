@@ -2,7 +2,6 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-import os
 
 # ==== Paths & env ====
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -158,3 +157,60 @@ OPENEXCHANGE_APP_ID = "c98896f4617b43779470c2d5170f285f"
 OPENEXCHANGE_BASE_URL = "https://openexchangerates.org/api/latest.json"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+LOG_DIR = "/app/logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        "django_file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": f"{LOG_DIR}/django.log",
+            "maxBytes": 50 * 1024 * 1024,  # 50 MB
+            "backupCount": 10,
+            "formatter": "verbose",
+        },
+    },
+
+    "root": {
+        "handlers": ["console", "django_file"],
+        "level": "INFO",
+    },
+
+    "loggers": {
+        "django": {
+            "handlers": ["console", "django_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console", "django_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console", "django_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
