@@ -7,14 +7,20 @@ from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.utils.text import slugify
-from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
+from django.views.generic import (
+    ListView, CreateView, UpdateView, DetailView, DeleteView
+)
 
+from common.mixins import CatalogosRequiredMixin
 from .models import Operator
 from .forms import OperatorForm, OperatorSearchForm
 
 User = get_user_model()
 
-# Campos que auditarías con tu bitácora (ajústalos a lo que realmente registres)
+# ============================================================
+# Helpers
+# ============================================================
+
 FIELDS_AUDIT = [
     "nombre", "rfc", "curp", "telefono", "puesto", "status", "deleted",
     "licencia_federal", "licencia_federal_vencimiento",
@@ -35,10 +41,8 @@ def build_base_username(op):
     if not op.nombre:
         return "operador"
 
-    # slugify: quita acentos y caracteres raros
     clean = slugify(op.nombre)        # juan-carlos-perez-lopez
-    clean = clean.replace("-", ".")   # juan.carlos.perez.lopez
-    return clean
+    return clean.replace("-", ".")    # juan.carlos.perez.lopez
 
 
 def ensure_unique_username(base):
@@ -53,22 +57,28 @@ def ensure_unique_username(base):
         i += 1
 
 
-class OperatorListView(ListView):
+# ============================================================
+# Views (SOLO CATÁLOGOS / ADMIN / SUPERADMIN)
+# ============================================================
+
+class OperatorListView(CatalogosRequiredMixin, ListView):
     model = Operator
     template_name = "operators/list.html"
     context_object_name = "operators"
     paginate_by = 10
 
     def get_queryset(self):
-        """
-        - Por defecto muestra solo no eliminados (deleted=False).
-        - Si ?show_deleted=1, muestra solo eliminados.
-        - Si ?show_all=1, muestra todos (incluidos eliminados).
-        - Soporta status 'ALTA'/'BAJA' y compat con '1'/'0' (1=ALTA, 0=BAJA).
-        - Búsqueda en nombre, RFC, CURP, licencia.
-        """
         show_deleted = self.request.GET.get("show_deleted") == "1"
         show_all = self.request.GET.get("show_all") == "1"
+
+        # Solo admin/superadmin pueden ver eliminados
+        is_gov = self.request.user.groups.filter(
+            name__in=("superadmin", "admin")
+        ).exists()
+
+        if (show_deleted or show_all) and not is_gov:
+            show_deleted = False
+            show_all = False
 
         if show_all:
             qs = Operator.objects.all()
@@ -109,7 +119,7 @@ class OperatorListView(ListView):
             return self.paginate_by
 
 
-class OperatorCreateView(CreateView):
+class OperatorCreateView(CatalogosRequiredMixin, CreateView):
     model = Operator
     form_class = OperatorForm
     template_name = "operators/form.html"
@@ -117,16 +127,14 @@ class OperatorCreateView(CreateView):
 
     @transaction.atomic
     def form_valid(self, form):
-        # 1) crear operador
         resp = super().form_valid(form)
         op: Operator = self.object
 
-        # 2) si ya trae usuario, no duplicar
+        # Si ya tiene usuario, no duplicar
         if getattr(op, "user_id", None):
-            messages.success(self.request, "Operador creado correctamente (usuario ya asignado).")
+            messages.success(self.request, "Operador creado correctamente.")
             return resp
 
-        # 3) crear user
         username = ensure_unique_username(build_base_username(op))
 
         user = User.objects.create(
@@ -139,22 +147,20 @@ class OperatorCreateView(CreateView):
         user.set_unusable_password()
         user.save()
 
-        # 4) asignar grupo operador
         operador_group, _ = Group.objects.get_or_create(name="operador")
         user.groups.add(operador_group)
 
-        # 5) ligar operador -> user
         op.user = user
         op.save(update_fields=["user"])
 
         messages.success(
             self.request,
-            f"Operador creado correctamente. Usuario '{username}' creado y asignado al grupo OPERADOR."
+            f"Operador creado correctamente. Usuario '{username}' asignado al grupo OPERADOR."
         )
         return resp
 
 
-class OperatorUpdateView(UpdateView):
+class OperatorUpdateView(CatalogosRequiredMixin, UpdateView):
     model = Operator
     form_class = OperatorForm
     template_name = "operators/form.html"
@@ -167,25 +173,25 @@ class OperatorUpdateView(UpdateView):
         resp = super().form_valid(form)
         op: Operator = self.object
 
-        # Sync estado del operador -> user.is_active
-        # Regla: BAJA o deleted => user inactive
+        # Sincroniza estado operador -> usuario
         if getattr(op, "user", None):
             should_be_active = (op.status == "ALTA") and (not op.deleted)
             if op.user.is_active != should_be_active:
                 op.user.is_active = should_be_active
                 op.user.save(update_fields=["is_active"])
 
-                if should_be_active:
-                    messages.info(self.request, "El usuario del operador fue reactivado (ALTA).")
-                else:
-                    messages.info(self.request, "El usuario del operador fue desactivado (BAJA o eliminado).")
+                msg = (
+                    "El usuario del operador fue reactivado (ALTA)."
+                    if should_be_active
+                    else "El usuario del operador fue desactivado (BAJA o eliminado)."
+                )
+                messages.info(self.request, msg)
 
         messages.success(self.request, "Operador actualizado correctamente.")
         return resp
 
 
-
-class OperatorDetailView(DetailView):
+class OperatorDetailView(CatalogosRequiredMixin, DetailView):
     model = Operator
     template_name = "operators/detail.html"
     context_object_name = "op"
@@ -194,7 +200,7 @@ class OperatorDetailView(DetailView):
         return Operator.objects.all()
 
 
-class OperatorSoftDeleteView(DeleteView):
+class OperatorSoftDeleteView(CatalogosRequiredMixin, DeleteView):
     model = Operator
     template_name = "operators/confirm_delete.html"
     success_url = reverse_lazy("operators:list")
@@ -206,12 +212,14 @@ class OperatorSoftDeleteView(DeleteView):
         self.object = self.get_object()
         self.object.soft_delete()
 
-        if getattr(self.object, "user", None):
-            if self.object.user.is_active:
-                self.object.user.is_active = False
-                self.object.user.save(update_fields=["is_active"])
+        if getattr(self.object, "user", None) and self.object.user.is_active:
+            self.object.user.is_active = False
+            self.object.user.save(update_fields=["is_active"])
 
-        messages.success(request, f"Operador '{self.object.nombre}' eliminado correctamente.")
+        messages.success(
+            request,
+            f"Operador '{self.object.nombre}' eliminado correctamente."
+        )
         return HttpResponseRedirect(self.get_success_url())
 
     def post(self, request, *args, **kwargs):
