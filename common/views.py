@@ -143,8 +143,10 @@ def header_info(request):
         "provider": provider,
     })
 
-def healthz(_):
-    return HttpResponse("ok")
+def healthz(_request):
+    resp = HttpResponse("ok", content_type="text/plain")
+    resp["X-BASS-Health"] = "ok"
+    return resp
 
 
 def permission_denied_view(request, exception=None):

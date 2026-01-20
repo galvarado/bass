@@ -18,11 +18,7 @@ services:
       - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
 
-      # (opcional) si vas a enrutar a backends https con cert self-signed
       - "--serversTransport.insecureSkipVerify=true"
-
-    environment:
-      DOCKER_API_VERSION: ""
 
     ports:
       - "443:443"
@@ -49,6 +45,7 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+
     depends_on:
       db:
         condition: service_healthy
@@ -57,7 +54,6 @@ services:
       - static-data:/app/staticfiles
       - media-data:/app/media
       - ./logs:/app/logs
-
 
     networks:
       - default
@@ -71,21 +67,32 @@ services:
     labels:
       - "traefik.enable=true"
 
-      # Router principal
-      - "traefik.http.routers.bass.rule=Host(`bass.foxbase.com.mx`)"
+      # =========================
+      # Service (Django / Gunicorn)
+      # =========================
+      - "traefik.http.services.bass.loadbalancer.server.port=8000"
+
+      # =========================
+      # Router principal (usuarios)
+      # =========================
+      - "traefik.http.routers.bass.rule=Host(`bass.foxbase.com.mx`) && PathPrefix(`/`)"
       - "traefik.http.routers.bass.entrypoints=websecure"
       - "traefik.http.routers.bass.tls=true"
       - "traefik.http.routers.bass.tls.certresolver=myresolver"
       - "traefik.http.routers.bass.priority=10"
-      - "traefik.http.services.bass.loadbalancer.server.port=8000"
-
-      # Middleware de error pages SOLO para el router principal
+      - "traefik.http.routers.bass.service=bass"
       - "traefik.http.routers.bass.middlewares=bass-errors@docker"
+
+      # Middleware: 5xx → error-pages
       - "traefik.http.middlewares.bass-errors.errors.status=500-599"
       - "traefik.http.middlewares.bass-errors.errors.service=error-pages-svc"
       - "traefik.http.middlewares.bass-errors.errors.query=/503.html"
 
-      # ✅ Router de health (prioridad más alta, SIN middlewares)
+      # =========================
+      # ✅ Router HEALTH (monitoreo)
+      # - SIN middlewares
+      # - PRIORIDAD ALTA
+      # =========================
       - "traefik.http.routers.bass-health.rule=Host(`bass.foxbase.com.mx`) && Path(`/healthz`)"
       - "traefik.http.routers.bass-health.entrypoints=websecure"
       - "traefik.http.routers.bass-health.tls=true"
@@ -104,17 +111,17 @@ services:
     networks:
       - default
 
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "10"
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 10
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
 
   error-pages:
     image: nginx:alpine
@@ -135,13 +142,21 @@ services:
       - "traefik.enable=true"
       - "traefik.http.services.error-pages-svc.loadbalancer.server.port=80"
 
-      - "traefik.http.routers.bass-fallback.rule=Host(`bass.foxbase.com.mx`) && PathPrefix(`/`)"
+      # Assets del error page (logo, css)
+      - "traefik.http.routers.bass-error-assets.rule=Host(`bass.foxbase.com.mx`) && PathPrefix(`/assets/`)"
+      - "traefik.http.routers.bass-error-assets.entrypoints=websecure"
+      - "traefik.http.routers.bass-error-assets.tls=true"
+      - "traefik.http.routers.bass-error-assets.tls.certresolver=myresolver"
+      - "traefik.http.routers.bass-error-assets.priority=50"
+      - "traefik.http.routers.bass-error-assets.service=error-pages-svc"
+
+      # Fallback general (usuarios)
+      - "traefik.http.routers.bass-fallback.rule=Host(`bass.foxbase.com.mx`) && PathPrefix(`/`) && !PathPrefix(`/healthz`)"
       - "traefik.http.routers.bass-fallback.entrypoints=websecure"
       - "traefik.http.routers.bass-fallback.tls=true"
       - "traefik.http.routers.bass-fallback.tls.certresolver=myresolver"
       - "traefik.http.routers.bass-fallback.priority=1"
       - "traefik.http.routers.bass-fallback.service=error-pages-svc"
-
       - "traefik.http.routers.bass-fallback.middlewares=bass-fallback-rewrite@docker"
       - "traefik.http.middlewares.bass-fallback-rewrite.replacepath.path=/503.html"
 
