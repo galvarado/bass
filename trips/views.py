@@ -18,7 +18,7 @@ from django.views.decorators.http import require_GET
 from locations.models import Route
 from .models import Trip, TripStatus
 from .forms import TripForm, TripSearchForm
-from common.mixins import OperatorOnlyMixin, OnlyMyTripsMixin
+from common.mixins import  OnlyMyTripsMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 
