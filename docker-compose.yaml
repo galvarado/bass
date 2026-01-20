@@ -71,18 +71,27 @@ services:
     labels:
       - "traefik.enable=true"
 
+      # Router principal
       - "traefik.http.routers.bass.rule=Host(`bass.foxbase.com.mx`)"
       - "traefik.http.routers.bass.entrypoints=websecure"
       - "traefik.http.routers.bass.tls=true"
       - "traefik.http.routers.bass.tls.certresolver=myresolver"
       - "traefik.http.routers.bass.priority=10"
-
       - "traefik.http.services.bass.loadbalancer.server.port=8000"
 
+      # Middleware de error pages SOLO para el router principal
       - "traefik.http.routers.bass.middlewares=bass-errors@docker"
       - "traefik.http.middlewares.bass-errors.errors.status=500-599"
       - "traefik.http.middlewares.bass-errors.errors.service=error-pages-svc"
       - "traefik.http.middlewares.bass-errors.errors.query=/503.html"
+
+      # ✅ Router de health (prioridad más alta, SIN middlewares)
+      - "traefik.http.routers.bass-health.rule=Host(`bass.foxbase.com.mx`) && Path(`/healthz`)"
+      - "traefik.http.routers.bass-health.entrypoints=websecure"
+      - "traefik.http.routers.bass-health.tls=true"
+      - "traefik.http.routers.bass-health.tls.certresolver=myresolver"
+      - "traefik.http.routers.bass-health.priority=100"
+      - "traefik.http.routers.bass-health.service=bass"
 
   db:
     image: postgres:16-alpine

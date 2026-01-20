@@ -83,12 +83,12 @@ class SupplierForm(forms.ModelForm):
                 self.add_error("colonia", "La colonia no corresponde al código postal ingresado.")
 
         if cp.isdigit() and len(cp) == 5:
-            # municipio → d_mnpio (fallback a ciudad)
+            # municipio → D_mnpio (fallback a ciudad)
             if not cleaned.get("municipio"):
                 mun = (
                     PC.objects.filter(d_codigo=cp)
-                    .exclude(d_mnpio__isnull=True).exclude(d_mnpio="")
-                    .values_list("d_mnpio", flat=True).order_by("d_mnpio").first()
+                    .exclude(d_mnpio__isnull=True).exclude(D_mnpio="")
+                    .values_list("D_mnpio", flat=True).order_by("D_mnpio").first()
                 )
                 if not mun:
                     mun = (

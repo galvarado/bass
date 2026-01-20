@@ -101,12 +101,12 @@ class ClientForm(forms.ModelForm):
 
         # Autorellenar con datos del catálogo si tenemos CP válido
         if cp.isdigit() and len(cp) == 5:
-            # municipio → d_mnpio (o ciudad si no hay municipio)
+            # municipio → D_mnpio (o ciudad si no hay municipio)
             if not cleaned.get("municipio"):
                 mun = (
                     PC.objects.filter(d_codigo=cp)
-                    .exclude(d_mnpio__isnull=True).exclude(d_mnpio="")
-                    .values_list("d_mnpio", flat=True).order_by("d_mnpio").first()
+                    .exclude(d_mnpio__isnull=True).exclude(D_mnpio="")
+                    .values_list("D_mnpio", flat=True).order_by("D_mnpio").first()
                 )
                 if not mun:
                     mun = (

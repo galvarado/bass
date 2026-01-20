@@ -53,7 +53,7 @@ def lookup_cp(request):
         or ""
     )
     if not municipio and ciudad:
-        municipio = ciudad  # fallback si SEPOMEX trae d_mnpio vacío
+        municipio = ciudad  # fallback si SEPOMEX trae D_mnpio vacío
 
     colonias = list(
         qs.annotate(_col=Trim("d_asenta"))

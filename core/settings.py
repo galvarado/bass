@@ -158,7 +158,7 @@ OPENEXCHANGE_BASE_URL = "https://openexchangerates.org/api/latest.json"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
-LOG_DIR = "/app/logs"
+LOG_DIR = os.getenv("LOG_DIR", str(BASE_DIR / "logs"))
 os.makedirs(LOG_DIR, exist_ok=True)
 
 LOGGING = {
