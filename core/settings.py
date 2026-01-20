@@ -164,53 +164,38 @@ os.makedirs(LOG_DIR, exist_ok=True)
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-
     "formatters": {
         "verbose": {
             "format": "[{asctime}] {levelname} {name} {message}",
             "style": "{",
         },
-        "simple": {
-            "format": "{levelname} {message}",
-            "style": "{",
-        },
     },
-
     "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
-        },
-        "django_file": {
-            "level": "INFO",
+        "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
+        "file": {
             "class": "logging.handlers.RotatingFileHandler",
             "filename": f"{LOG_DIR}/django.log",
-            "maxBytes": 50 * 1024 * 1024,  # 50 MB
+            "maxBytes": 50 * 1024 * 1024,
             "backupCount": 10,
             "formatter": "verbose",
-        },
-    },
-
-    "root": {
-        "handlers": ["console", "django_file"],
-        "level": "INFO",
-    },
-
-    "loggers": {
-        "django": {
-            "handlers": ["console", "django_file"],
             "level": "INFO",
-            "propagate": False,
         },
+    },
+    "loggers": {
+        # 👇 Este es el que escribe los 500 (traceback incluido)
         "django.request": {
-            "handlers": ["console", "django_file"],
-            "level": "WARNING",
+            "handlers": ["console", "file"],
+            "level": "ERROR",
             "propagate": False,
         },
         "django.server": {
-            "handlers": ["console", "django_file"],
+            "handlers": ["console", "file"],
             "level": "INFO",
             "propagate": False,
         },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "INFO",
     },
 }
