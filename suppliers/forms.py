@@ -113,12 +113,12 @@ class SupplierForm(forms.ModelForm):
                     self.data = self.data.copy()
                     self.data["poblacion"] = ciu
 
-            # colonia_sat → d_tipo_asenta
+            # colonia_sat → c_tipo_asenta
             if not cleaned.get("colonia_sat") and colonia:
                 tipo = (
                     PC.objects.filter(d_codigo=cp, d_asenta=colonia)
-                    .exclude(d_tipo_asenta__isnull=True).exclude(d_tipo_asenta="")
-                    .values_list("d_tipo_asenta", flat=True).order_by("d_tipo_asenta").first()
+                    .exclude(c_tipo_asenta__isnull=True).exclude(c_tipo_asenta="")
+                    .values_list("c_tipo_asenta", flat=True).order_by("c_tipo_asenta").first()
                 )
                 if tipo:
                     cleaned["colonia_sat"] = tipo
