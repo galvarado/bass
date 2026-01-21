@@ -46,7 +46,7 @@ urlpatterns = [
     path("api/utils/header-info/", header_info, name="header_info"),
     path("api/utils/lookup-cp/", lookup_cp, name="lookup_cp"),
     path("healthz", healthz, name="healthz"),
-    path("trigger_error", healthz, name="trigger_error"),
+    path("trigger_error", trigger_error, name="trigger_error"),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
