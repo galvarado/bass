@@ -105,7 +105,7 @@ class ClientForm(forms.ModelForm):
             if not cleaned.get("municipio"):
                 mun = (
                     PC.objects.filter(d_codigo=cp)
-                    .exclude(d_mnpio__isnull=True).exclude(D_mnpio="")
+                    .exclude(D_mnpio__isnull=True).exclude(D_mnpio="")
                     .values_list("D_mnpio", flat=True).order_by("D_mnpio").first()
                 )
                 if not mun:

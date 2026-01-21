@@ -32,32 +32,90 @@ class Client(models.Model):
         ('BAJA', 'Baja'),
     ]
 
-    # Catálogos sencillos (puedes reemplazar por catálogos SAT completos cuando gustes)
+    # Catálogos https://www.cloudb.sat.gob.mx/datos_fiscales/regimen
     REGIMEN_FISCAL_CHOICES = [
-        ('601', '601 - General de Ley Personas Morales'),
+        ('601', '601 - Régimen General de Ley Personas Morales'),
+        ('602', '602 - Régimen Simplificado de Ley Personas Morales'),
         ('603', '603 - Personas Morales con Fines no Lucrativos'),
+        ('604', '604 - Régimen de Pequeños Contribuyentes'),
         ('605', '605 - Sueldos y Salarios e Ingresos Asimilados a Salarios'),
+        ('606', '606 - Régimen de Arrendamiento'),
+        ('607', '607 - Régimen de Enajenación o Adquisición de Bienes'),
+        ('608', '608 - Régimen de los Demás Ingresos'),
+        ('609', '609 - Régimen de Consolidación'),
+        ('610', '610 - Residentes en el Extranjero sin Establecimiento Permanente en México'),
+        ('611', '611 - Ingresos por Dividendos (Socios y Accionistas)'),
         ('612', '612 - Personas Físicas con Actividades Empresariales y Profesionales'),
-        ('616', '616 - Sin obligaciones fiscales'),
-        ('OTRO', 'Otro'),
+        ('613', '613 - Régimen Intermedio de las Personas Físicas con Actividades Empresariales'),
+        ('614', '614 - Ingresos por Intereses'),
+        ('615', '615 - Ingresos por Obtención de Premios'),
+        ('616', '616 - Sin Obligaciones Fiscales'),
+        ('617', '617 - PEMEX'),
+        ('618', '618 - Régimen Simplificado de Ley Personas Físicas'),
+        ('619', '619 - Ingresos por la Obtención de Préstamos'),
+        ('620', '620 - Sociedades Cooperativas de Producción que Optan por Diferir sus Ingresos'),
+        ('621', '621 - Régimen de Incorporación Fiscal'),
+        ('622', '622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras (PM)'),
+        ('623', '623 - Régimen Opcional para Grupos de Sociedades'),
+        ('624', '624 - Régimen de los Coordinados'),
+        ('625', '625 - Actividades Empresariales con Ingresos a través de Plataformas Tecnológicas'),
+        ('626', '626 - Régimen Simplificado de Confianza'),
     ]
 
     USO_CFDI_CHOICES = [
-        ('G01', 'Adquisición de mercancías'),
-        ('G03', 'Gastos en general'),
-        ('I01', 'Construcciones'),
-        ('P01', 'Por definir / N/A'),
-        ('OTRO', 'Otro'),
+        # ===== GASTOS =====
+        ('G01', 'G01 - Adquisición de mercancías'),
+        ('G02', 'G02 - Devoluciones, descuentos o bonificaciones'),
+        ('G03', 'G03 - Gastos en general'),
+
+        # ===== INVERSIONES =====
+        ('I01', 'I01 - Construcciones'),
+        ('I02', 'I02 - Mobiliario y equipo de oficina por inversiones'),
+        ('I03', 'I03 - Equipo de transporte'),
+        ('I04', 'I04 - Equipo de cómputo y accesorios'),
+        ('I05', 'I05 - Dados, troqueles, moldes, matrices y herramental'),
+        ('I06', 'I06 - Comunicaciones telefónicas'),
+        ('I07', 'I07 - Comunicaciones satelitales'),
+        ('I08', 'I08 - Otra maquinaria y equipo'),
+
+        # ===== DEDUCCIONES PERSONALES (PF) =====
+        ('D01', 'D01 - Honorarios médicos, dentales y hospitalarios'),
+        ('D02', 'D02 - Gastos médicos por incapacidad o discapacidad'),
+        ('D03', 'D03 - Gastos funerales'),
+        ('D04', 'D04 - Donativos'),
+        ('D05', 'D05 - Intereses reales pagados por créditos hipotecarios'),
+        ('D06', 'D06 - Aportaciones voluntarias al SAR'),
+        ('D07', 'D07 - Primas por seguros de gastos médicos'),
+        ('D08', 'D08 - Gastos de transportación escolar obligatoria'),
+        ('D09', 'D09 - Depósitos en cuentas para el ahorro / planes de pensiones'),
+        ('D10', 'D10 - Pagos por servicios educativos (colegiaturas)'),
+
+        # ===== OTROS =====
+        ('S01', 'S01 - Sin efectos fiscales'),
+        ('CP01', 'CP01 - Pagos'),
+        ('CN01', 'CN01 - Nómina'),
     ]
 
     FORMA_PAGO_CHOICES = [
-        ('EFECTIVO', 'Efectivo'),
-        ('TRANSFERENCIA', 'Transferencia'),
-        ('TARJETA', 'Tarjeta'),
-        ('CHEQUE', 'Cheque'),
-        ('PPD', 'PPD - Pago en parcialidades o diferido'),
-        ('PUE', 'PUE - Pago en una sola exhibición'),
-        ('OTRO', 'Otro'),
+        ('01', '01 - Efectivo'),
+        ('02', '02 - Cheque'),
+        ('03', '03 - Transferencia'),
+        ('04', '04 - Tarjetas de crédito'),
+        ('05', '05 - Monederos electrónicos'),
+        ('06', '06 - Dinero electrónico'),
+        ('07', '07 - Tarjetas digitales'),
+        ('08', '08 - Vales de despensa'),
+        ('09', '09 - Bienes'),
+        ('10', '10 - Servicio'),
+        ('11', '11 - Por cuenta de tercero'),
+        ('12', '12 - Dación en pago'),
+        ('13', '13 - Pago por subrogación'),
+        ('14', '14 - Pago por consignación'),
+        ('15', '15 - Condenación'),
+        ('16', '16 - Cancelación'),
+        ('17', '17 - Compensación'),
+        ('98', '98 - N/A'),
+        ('99', '99 - Otros'),
     ]
 
     # --- Datos Generales ---
