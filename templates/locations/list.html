@@ -4,33 +4,32 @@
 {% block title %}Rutas y Ubicaciones · BASS{% endblock %}
 {% block content %}
 
-{# ===== RUTAS ES EL TAB POR DEFECTO ===== #}
-{% with active_tab=request.GET.tab|default:"routes" %}
+{% with active_tab=active_tab|default:"routes" %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h4 mb-0">
-    Rutas y Ubicaciones
-  </h1>
+  <h1 class="h4 mb-0">Rutas y Ubicaciones</h1>
 
+  <div class="btn-group">
     <a class="btn btn-primary" href="{% url 'locations:routes_create' %}">
       <i class="fas fa-plus"></i> Nueva ruta
-    </a>
+    </a>&nbsp;&nbsp;
     <a class="btn btn-primary" href="{% url 'locations:create' %}">
       <i class="fas fa-plus"></i> Nueva ubicación
     </a>
+  </div>
 </div>
 
 <!-- ===== TABS ===== -->
 <ul class="nav nav-tabs mb-3">
   <li class="nav-item">
     <a class="nav-link {% if active_tab == 'routes' %}active{% endif %}"
-       href="?tab=routes&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">
+       href="?tab=routes&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">
       <i class="fas fa-route"></i> Rutas
     </a>
   </li>
   <li class="nav-item">
     <a class="nav-link {% if active_tab == 'locations' %}active{% endif %}"
-       href="?tab=locations&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">
+       href="?tab=locations&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">
       <i class="fas fa-map-marker-alt"></i> Ubicaciones
     </a>
   </li>
@@ -57,18 +56,44 @@
         {{ search_form.status }}
       </div>
 
-      <div class="col-md-3 mb-2 d-none d-md-block"></div>
+      <div class="col-md-3 mb-2 d-none d-md-block text-right text-muted small">
+        {% if active_tab == "routes" %}
+          {{ routes_count }} ruta{{ routes_count|pluralize:"s" }}
+        {% else %}
+          {{ locations_count }} ubicación{{ locations_count|pluralize:"es" }}
+        {% endif %}
+      </div>
     </div>
   </div>
 </form>
 
-{% if active_tab == "routes" %}
-
-<!-- ===== LISTA DE RUTAS ===== -->
-
+<!-- ===== RESUMEN PAGINACIÓN (tipo Operadores) ===== -->
 <div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
-  <div>{{ routes|length }} ruta{{ routes|length|pluralize:"s" }}</div>
+  <div>
+    {% if active_tab == "routes" %}
+      {% if routes_is_paginated and routes_paginator.count %}
+        Mostrando {{ routes_page_obj.start_index }}–{{ routes_page_obj.end_index }} de {{ routes_paginator.count }}
+        · Página {{ routes_page_obj.number }} de {{ routes_paginator.num_pages }}
+      {% elif routes_paginator and routes_paginator.count == 0 %}
+        0 resultados
+      {% else %}
+        {{ routes|length }} ruta{{ routes|length|pluralize:"s" }}
+      {% endif %}
+    {% else %}
+      {% if locations_is_paginated and locations_paginator.count %}
+        Mostrando {{ locations_page_obj.start_index }}–{{ locations_page_obj.end_index }} de {{ locations_paginator.count }}
+        · Página {{ locations_page_obj.number }} de {{ locations_paginator.num_pages }}
+      {% elif locations_paginator and locations_paginator.count == 0 %}
+        0 resultados
+      {% else %}
+        {{ locations|length }} ubicación{{ locations|length|pluralize:"es" }}
+      {% endif %}
+    {% endif %}
+  </div>
 </div>
+
+{% if active_tab == "routes" %}
+<!-- ===================== RUTAS ===================== -->
 
 <div class="card">
   <div class="table-responsive">
@@ -108,15 +133,8 @@
             {% endif %}
           </td>
 
-          <!-- ===== TARIFA CLIENTE ===== -->
-          <td>
-            ${{ r.tarifa_cliente|money_mx }}
-          </td>
-
-          <!-- ===== PAGO OPERADOR ===== -->
-          <td>
-            ${{ r.pago_operador|money_mx }}
-          </td>
+          <td>${{ r.tarifa_cliente|money_mx }}</td>
+          <td>${{ r.pago_operador|money_mx }}</td>
 
           <td>
             {% if r.deleted %}
@@ -128,7 +146,7 @@
 
           <td class="text-right">
             <a href="{% url 'locations:routes_detail' r.pk %}"
-              class="btn btn-sm btn-outline-secondary" title="Ver detalle">
+               class="btn btn-sm btn-outline-secondary" title="Ver detalle">
               <i class="fas fa-eye"></i>
             </a>
             <a href="{% url 'locations:routes_edit' r.pk %}"
@@ -143,23 +161,66 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="7" class="text-center text-muted py-4">
-            Sin resultados.
-          </td>
+          <td colspan="7" class="text-center text-muted py-4">Sin resultados.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  {% if routes_is_paginated %}
+  <div class="card-footer py-2">
+    <nav aria-label="Paginación rutas">
+      <ul class="pagination pagination-sm mb-0">
+
+        {% if routes_page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?tab=routes&rpage=1&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">« Primero</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?tab=routes&rpage={{ routes_page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">‹ Anterior</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
+        {% endif %}
+
+        {% for i in routes_paginator.page_range %}
+          {% if i == 1 or i == routes_paginator.num_pages or i >= routes_page_obj.number|add:'-2' and i <= routes_page_obj.number|add:'2' %}
+            {% if routes_page_obj.number == i %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+              <li class="page-item">
+                <a class="page-link" href="?tab=routes&rpage={{ i }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% elif i == 2 and routes_page_obj.number > 4 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% elif i == routes_paginator.num_pages|add:'-1' and routes_page_obj.number < routes_paginator.num_pages|add:'-3' %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if routes_page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?tab=routes&rpage={{ routes_page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">Siguiente ›</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?tab=routes&rpage={{ routes_paginator.num_pages }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">Última »</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
+          <li class="page-item disabled"><span class="page-link">Última »</span></li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
 </div>
 
 {% else %}
-
-<!-- ===== TABLA DE UBICACIONES ===== -->
-
-<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
-  <div>{{ locations|length }} ubicación{{ locations|length|pluralize:"es" }}</div>
-</div>
+<!-- ===================== UBICACIONES ===================== -->
 
 <div class="card">
   <div class="table-responsive">
@@ -181,13 +242,8 @@
             <br><small class="text-muted">{{ l.client.nombre }}</small>
           </td>
 
-          <td>
-            {{ l.full_address|default:"—" }}
-          </td>
-
-          <td>
-            {{ l.contacto|default:"—" }}
-          </td>
+          <td>{{ l.full_address|default:"—" }}</td>
+          <td>{{ l.contacto|default:"—" }}</td>
 
           <td>
             {% if l.deleted %}
@@ -199,27 +255,75 @@
 
           <td class="text-right">
             <a href="{% url 'locations:detail' l.pk %}"
-              class="btn btn-sm btn-outline-secondary" title="Ver detalle">
+               class="btn btn-sm btn-outline-secondary" title="Ver detalle">
               <i class="fas fa-eye"></i>
             </a>
-            <a href="{% url 'locations:edit' l.pk %}" class="btn btn-sm btn-outline-secondary">
+            <a href="{% url 'locations:edit' l.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
               <i class="fas fa-edit"></i>
             </a>
-            <a href="{% url 'locations:delete' l.pk %}" class="btn btn-sm btn-outline-danger">
+            <a href="{% url 'locations:delete' l.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
               <i class="fas fa-trash"></i>
             </a>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5" class="text-center text-muted py-4">
-            Sin resultados.
-          </td>
+          <td colspan="5" class="text-center text-muted py-4">Sin resultados.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  {% if locations_is_paginated %}
+  <div class="card-footer py-2">
+    <nav aria-label="Paginación ubicaciones">
+      <ul class="pagination pagination-sm mb-0">
+
+        {% if locations_page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?tab=locations&lpage=1&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">« Primero</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?tab=locations&lpage={{ locations_page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">‹ Anterior</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
+        {% endif %}
+
+        {% for i in locations_paginator.page_range %}
+          {% if i == 1 or i == locations_paginator.num_pages or i >= locations_page_obj.number|add:'-2' and i <= locations_page_obj.number|add:'2' %}
+            {% if locations_page_obj.number == i %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+              <li class="page-item">
+                <a class="page-link" href="?tab=locations&lpage={{ i }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% elif i == 2 and locations_page_obj.number > 4 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% elif i == locations_paginator.num_pages|add:'-1' and locations_page_obj.number < locations_paginator.num_pages|add:'-3' %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if locations_page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?tab=locations&lpage={{ locations_page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">Siguiente ›</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?tab=locations&lpage={{ locations_paginator.num_pages }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}&show_all={{ request.GET.show_all|urlencode }}&show_deleted={{ request.GET.show_deleted|urlencode }}">Última »</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
+          <li class="page-item disabled"><span class="page-link">Última »</span></li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
 </div>
 
 {% endif %}
