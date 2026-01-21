@@ -31,6 +31,7 @@ class Truck(models.Model):
     placas = models.CharField("Placas", max_length=15, unique=True)
     numero_economico = models.CharField("Número económico", max_length=20, unique=True)
     serie = models.CharField("Serie (VIN)", max_length=50, blank=True, null=True)
+    modelo = models.CharField("Modelo", max_length=50, blank=True, null=True)
     marca = models.CharField("Marca", max_length=50, blank=True, null=True)
 
     # ===== Especificaciones =====

@@ -115,7 +115,7 @@ class Client(models.Model):
         ('16', '16 - Cancelación'),
         ('17', '17 - Compensación'),
         ('98', '98 - N/A'),
-        ('99', '99 - Otros'),
+        ('99', '99 - Por definir'),
     ]
 
     # --- Datos Generales ---

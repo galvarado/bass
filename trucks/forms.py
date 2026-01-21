@@ -7,7 +7,7 @@ class TruckForm(forms.ModelForm):
     class Meta:
         model = Truck
         fields = [
-            "placas","numero_economico","serie","marca",
+            "placas","numero_economico", "modelo", "serie","marca",
             "motor","combustible","capacidad_combustible","peso_bruto",
             "categoria","rin",
             "ciclo_mtto",
