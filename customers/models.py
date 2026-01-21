@@ -118,6 +118,11 @@ class Client(models.Model):
         ('99', '99 - Por definir'),
     ]
 
+    PAIS_CHOICES = [
+        ("MX", "México"),
+        ("US", "Estados Unidos"),
+    ]
+
     # --- Datos Generales ---
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ALTA')
 
@@ -134,7 +139,7 @@ class Client(models.Model):
     colonia_sat = models.CharField(max_length=120, blank=True, null=True)
     municipio = models.CharField(max_length=120, blank=True, null=True)
     estado = models.CharField(max_length=120, blank=True, null=True)
-    pais = models.CharField(max_length=80, default='México')
+    pais = models.CharField(max_length=2, choices=PAIS_CHOICES, default="MX")
     cp = models.CharField(max_length=10, blank=True, null=True)
     telefono = models.CharField(max_length=50, blank=True, null=True)
     poblacion = models.CharField(max_length=100, blank=True, null=True)
