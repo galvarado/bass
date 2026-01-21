@@ -151,3 +151,6 @@ def healthz(_request):
 
 def permission_denied_view(request, exception=None):
     return render(request, "errors/403.html", status=403)
+
+def trigger_error(request):
+    division_by_zero = 1 / 0

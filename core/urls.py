@@ -19,7 +19,7 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from core import views
 from core import views as core_views
-from common.views import header_info, lookup_cp, healthz
+from common.views import header_info, lookup_cp, healthz, trigger_error
 from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls import handler404
@@ -46,6 +46,7 @@ urlpatterns = [
     path("api/utils/header-info/", header_info, name="header_info"),
     path("api/utils/lookup-cp/", lookup_cp, name="lookup_cp"),
     path("healthz", healthz, name="healthz"),
+    path("trigger_error", healthz, name="trigger_error"),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3,6 +3,25 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
+
+# ==== Sentry ====
+
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    integrations=[
+        DjangoIntegration(),
+        LoggingIntegration(
+            level="ERROR",
+            event_level="ERROR",
+        ),
+    ],
+    environment=os.getenv("ENVIRONMENT", "production"),
+    send_default_pii=True,    # incluye user.id, ip, etc
+)
+
 # ==== Paths & env ====
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
