@@ -26,30 +26,55 @@
             </button>
           </div>
         </div>
+        <input type="hidden" name="tab" value="{{ tab|default:'trucks' }}">
       </div>
+
       <div class="col-md-4 mb-2 text-right d-none d-md-block text-muted small">
-        Mostrando {{ trucks|length }} camión{{ trucks|length|pluralize:"es" }} · {{ boxes|length }} caja{{ boxes|length|pluralize:"s" }}
+        Mostrando {{ trucks_count }} camión{{ trucks_count|pluralize:"es" }}
+        · {{ boxes_count }} caja{{ boxes_count|pluralize:"s" }}
       </div>
     </div>
   </div>
 </form>
 
-<ul class="nav nav-tabs mb-3" id="truckTabs" role="tablist">
+<ul class="nav nav-tabs mb-3">
   <li class="nav-item">
-    <a class="nav-link active" id="tab-trucks" data-toggle="tab" href="#pane-trucks" role="tab">
+    <a class="nav-link {% if tab == 'trucks' %}active{% endif %}"
+       id="tab-trucks" data-toggle="tab" href="#pane-trucks">
       <i class="fas fa-truck"></i> Camiones
     </a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="tab-boxes" data-toggle="tab" href="#pane-boxes" role="tab">
+    <a class="nav-link {% if tab == 'boxes' %}active{% endif %}"
+       id="tab-boxes" data-toggle="tab" href="#pane-boxes">
       <i class="fas fa-snowflake"></i> Cajas refrigeradas
     </a>
   </li>
 </ul>
 
-<div class="tab-content" id="truckTabsContent">
-  <!-- ===== CAMIONES ===== -->
-  <div class="tab-pane fade show active" id="pane-trucks" role="tabpanel">
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if tab == "trucks" %}
+      {% if is_paginated %}
+        Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ paginator.count }}
+        · Página {{ page_obj.number }} de {{ paginator.num_pages }}
+      {% else %}
+        {{ trucks|length }} camión{{ trucks|length|pluralize:"es" }}
+      {% endif %}
+    {% else %}
+      {% if b_is_paginated %}
+        Mostrando {{ b_page_obj.start_index }}–{{ b_page_obj.end_index }} de {{ b_paginator.count }}
+        · Página {{ b_page_obj.number }} de {{ b_paginator.num_pages }}
+      {% else %}
+        {{ boxes|length }} caja{{ boxes|length|pluralize:"s" }}
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="tab-content">
+  <!-- ================= CAMIONES ================= -->
+  <div class="tab-pane fade {% if tab == 'trucks' %}show active{% endif %}" id="pane-trucks">
     <div class="card">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
@@ -66,37 +91,55 @@
           </thead>
           <tbody>
             {% for t in trucks %}
-              <tr>
-                <td>
-                  <a href="{% url 'trucks:detail' t.pk %}">
-                    {{ t.numero_economico|default:"—" }}
-                  </a>
-                </td>
-                <td>{{ t.placas|default:"—" }}</td>
-                <td>{{ t.marca|default:"—" }}</td>
-                <td>{{ t.motor|default:"—" }}</td>
-                <td>{{ t.combustible|default:"—" }}</td>
-                <td>{{ t.categoria|default:"—" }}</td>
-                <td class="text-right">
-                  <a href="{% url 'trucks:update' t.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
-                    <i class="fas fa-edit"></i>
-                  </a>
-                  <a href="{% url 'trucks:delete' t.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                    <i class="fas fa-trash"></i>
-                  </a>
-                </td>
-              </tr>
+            <tr>
+              <td><a href="{% url 'trucks:detail' t.pk %}">{{ t.numero_economico|default:"—" }}</a></td>
+              <td>{{ t.placas|default:"—" }}</td>
+              <td>{{ t.marca|default:"—" }}</td>
+              <td>{{ t.motor|default:"—" }}</td>
+              <td>{{ t.combustible|default:"—" }}</td>
+              <td>{{ t.categoria|default:"—" }}</td>
+              <td class="text-right">
+                <a href="{% url 'trucks:update' t.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></a>
+                <a href="{% url 'trucks:delete' t.pk %}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>
+              </td>
+            </tr>
             {% empty %}
-              <tr><td colspan="7" class="text-center text-muted py-4">No hay camiones registrados.</td></tr>
+            <tr><td colspan="7" class="text-center text-muted py-4">No hay camiones registrados.</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
+
+      {% if is_paginated %}
+      <div class="card-footer py-2">
+        <ul class="pagination pagination-sm mb-0">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?tab=trucks&tpage={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}">‹</a>
+            </li>
+          {% endif %}
+          {% for i in paginator.page_range %}
+            {% if i == page_obj.number %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% elif i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+              <li class="page-item">
+                <a class="page-link" href="?tab=trucks&tpage={{ i }}&q={{ request.GET.q|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?tab=trucks&tpage={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}">›</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
     </div>
   </div>
 
-  <!-- ===== CAJAS ===== -->
-  <div class="tab-pane fade" id="pane-boxes" role="tabpanel">
+  <!-- ================= CAJAS ================= -->
+  <div class="tab-pane fade {% if tab == 'boxes' %}show active{% endif %}" id="pane-boxes">
     <div class="card">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
@@ -113,40 +156,67 @@
           </thead>
           <tbody>
             {% for b in boxes %}
-              <tr>
-                <td>
-                  <a href="{% url 'trucks:reeferbox_detail' b.pk %}">
-                    {{ b.numero_economico|default:"—" }}
-                  </a>
-                </td>
-                <td>{{ b.placas|default:"—" }}</td>
-                <td>{{ b.marca|default:"—" }}</td>
-                <td>{{ b.modelo|default:"—" }}</td>
-                <td>{{ b.tipo_remolque|default:"—" }}</td>
-                <td>
-                  {% if b.capacidad_thermo %}
-                    {{ b.capacidad_thermo }}<small class="text-muted"> BTU</small>
-                  {% else %}
-                    <span class="text-muted">—</span>
-                  {% endif %}
-                </td>
-                <td class="text-right">
-                  <a href="{% url 'trucks:reeferbox_update' b.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
-                    <i class="fas fa-edit"></i>
-                  </a>
-                  <a href="{% url 'trucks:reeferbox_delete' b.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                    <i class="fas fa-trash"></i>
-                  </a>
-                </td>
-              </tr>
+            <tr>
+              <td><a href="{% url 'trucks:reeferbox_detail' b.pk %}">{{ b.numero_economico|default:"—" }}</a></td>
+              <td>{{ b.placas|default:"—" }}</td>
+              <td>{{ b.marca|default:"—" }}</td>
+              <td>{{ b.modelo|default:"—" }}</td>
+              <td>{{ b.tipo_remolque|default:"—" }}</td>
+              <td>{% if b.capacidad_thermo %}{{ b.capacidad_thermo }} BTU{% else %}—{% endif %}</td>
+              <td class="text-right">
+                <a href="{% url 'trucks:reeferbox_update' b.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></a>
+                <a href="{% url 'trucks:reeferbox_delete' b.pk %}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>
+              </td>
+            </tr>
             {% empty %}
-              <tr><td colspan="7" class="text-center text-muted py-4">No hay cajas registradas.</td></tr>
+            <tr><td colspan="7" class="text-center text-muted py-4">No hay cajas registradas.</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
+
+      {% if b_is_paginated %}
+      <div class="card-footer py-2">
+        <ul class="pagination pagination-sm mb-0">
+          {% if b_page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?tab=boxes&bpage={{ b_page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}">‹</a>
+            </li>
+          {% endif %}
+          {% for i in b_paginator.page_range %}
+            {% if i == b_page_obj.number %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% elif i >= b_page_obj.number|add:'-2' and i <= b_page_obj.number|add:'2' %}
+              <li class="page-item">
+                <a class="page-link" href="?tab=boxes&bpage={{ i }}&q={{ request.GET.q|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+          {% if b_page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?tab=boxes&bpage={{ b_page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}">›</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>
+
+<script>
+  document.getElementById("tab-trucks")?.addEventListener("click", () => {
+    const u = new URL(window.location);
+    u.searchParams.set("tab", "trucks");
+    u.searchParams.delete("bpage");
+    window.history.replaceState({}, "", u);
+  });
+  document.getElementById("tab-boxes")?.addEventListener("click", () => {
+    const u = new URL(window.location);
+    u.searchParams.set("tab", "boxes");
+    u.searchParams.delete("tpage");
+    window.history.replaceState({}, "", u);
+  });
+</script>
 
 {% endblock %}

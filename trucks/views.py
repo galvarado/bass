@@ -1,4 +1,4 @@
-# trucks/views.py (extracto relevante)
+# trucks/views.py
 from django.contrib import messages
 from django.db.models import Q
 from django.urls import reverse_lazy
@@ -17,11 +17,15 @@ class TruckReeferCombinedListView(ListView):
     - Busca por 'q' en ambos modelos (incluye 'nombre')
     - Paginación independiente: tpage / bpage (y tamaños tpage_size / bpage_size)
     - Flags show_all / show_deleted aplican a ambos (si los envías)
+    - Expone:
+        CAMIONES: paginator, page_obj, is_paginated, trucks
+        CAJAS:    b_paginator, b_page_obj, b_is_paginated, boxes
+        Extras:   tab, search_form, trucks_count, boxes_count
     """
     model = Truck
     template_name = "trucks/list.html"
-    context_object_name = "trucks"   # en el template seguimos usando 'trucks' y 'boxes'
-    paginate_by = None               # manejamos paginación manual por cada queryset
+    context_object_name = "trucks"
+    paginate_by = None  # paginación manual por queryset
 
     # ---------- Helpers ----------
     def _filter_trucks(self, base_qs):
@@ -61,21 +65,17 @@ class TruckReeferCombinedListView(ListView):
         show_deleted = self.request.GET.get("show_deleted") == "1"
         show_all = self.request.GET.get("show_all") == "1"
 
-        # Base queryset: si el modelo tiene all_objects, úsalo para ver todo;
-        # si no, usa objects.
+        # Si el modelo tiene all_objects, úsalo para poder ver todo (incluidos borrados)
         if hasattr(Model, "all_objects"):
             base_qs = Model.all_objects.all()
         else:
             base_qs = Model.objects.all()
 
         if show_all:
-            # Todos, sin filtrar por deleted
             return base_qs
         elif show_deleted:
-            # Solo los marcados como deleted=True
             return base_qs.filter(deleted=True)
         else:
-            # Por defecto, solo activos (deleted=False)
             return base_qs.filter(deleted=False)
 
     def _paginate(self, qs, page_param, page_size_param, default_size=10):
@@ -84,6 +84,7 @@ class TruckReeferCombinedListView(ListView):
             size = int(self.request.GET.get(page_size_param, default_size))
         except (TypeError, ValueError):
             size = default_size
+
         paginator = Paginator(qs, size)
         try:
             page_obj = paginator.page(page)
@@ -91,49 +92,69 @@ class TruckReeferCombinedListView(ListView):
             page_obj = paginator.page(1)
         except EmptyPage:
             page_obj = paginator.page(paginator.num_pages)
+
         return paginator, page_obj, page_obj.object_list
 
     # ---------- Queryset principal (camiones) ----------
     def get_queryset(self):
         trucks_qs = self._apply_deleted_flags(Truck)
         trucks_qs = self._filter_trucks(trucks_qs)
-        # Guardamos para usarlo en get_context_data (evitamos recalcular)
+
+        # Guardamos para reutilizar sin recalcular
         self._trucks_qs = trucks_qs
         return trucks_qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
-        # Paginación y conteos CAMIONES
-        t_paginator, t_page_obj, t_list = self._paginate(self._trucks_qs, page_param="tpage", page_size_param="tpage_size")
+        # Tab activo (para que el template pueda marcar el tab correcto)
+        ctx["tab"] = self.request.GET.get("tab") or "trucks"
+
+        # ---------------- CAMIONES ----------------
+        t_paginator, t_page_obj, t_list = self._paginate(
+            self._trucks_qs,
+            page_param="tpage",
+            page_size_param="tpage_size",
+            default_size=10,
+        )
+
+        # Alias “estándar” estilo ListView para que tu template copie-pega el de Operadores
         ctx["paginator"] = t_paginator
         ctx["page_obj"] = t_page_obj
+        ctx["is_paginated"] = t_paginator.num_pages > 1
         ctx["trucks"] = t_list
+        ctx["trucks_count"] = t_paginator.count  # total filtrado (no solo página)
 
-        # BOXES: flags, filtro, paginación
+        # ---------------- CAJAS ----------------
         boxes_qs = self._apply_deleted_flags(ReeferBox)
         boxes_qs = self._filter_boxes(boxes_qs)
-        b_paginator, b_page_obj, b_list = self._paginate(boxes_qs, page_param="bpage", page_size_param="bpage_size")
+
+        b_paginator, b_page_obj, b_list = self._paginate(
+            boxes_qs,
+            page_param="bpage",
+            page_size_param="bpage_size",
+            default_size=10,
+        )
+
         ctx["b_paginator"] = b_paginator
         ctx["b_page_obj"] = b_page_obj
+        ctx["b_is_paginated"] = b_paginator.num_pages > 1
         ctx["boxes"] = b_list
+        ctx["boxes_count"] = b_paginator.count  # total filtrado
 
-        # Form de búsqueda (puedes usar TruckSearchForm como barra única)
+        # Barra de búsqueda
         ctx["search_form"] = TruckSearchForm(self.request.GET or None)
 
-        # KPIs de totales visibles en la tabla actual (no los totales de la BD)
-        ctx["trucks_count"] = t_paginator.count
-        ctx["boxes_count"] = b_paginator.count
         return ctx
 
 
-# ====== El resto de vistas CRUD puede permanecer igual ======
+# ====== CRUD Camiones ======
 
 class TruckCreateView(CreateView):
     model = Truck
     form_class = TruckForm
     template_name = "trucks/trucks_form.html"
-    success_url = reverse_lazy("trucks:list")  # vuelve a la lista combinada
+    success_url = reverse_lazy("trucks:list")
 
     def form_valid(self, form):
         resp = super().form_valid(form)
@@ -164,7 +185,6 @@ class TruckDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         truck = self.object
-        # Solo órdenes NO eliminadas
         ctx["orders_workshop"] = truck.ordenes_taller.filter(deleted=False).order_by("-fecha_entrada")
         return ctx
 
@@ -187,11 +207,13 @@ class TruckSoftDeleteView(DeleteView):
         return self.delete(request, *args, **kwargs)
 
 
+# ====== CRUD Cajas ======
+
 class ReeferBoxCreateView(CreateView):
     model = ReeferBox
     form_class = ReeferBoxForm
     template_name = "trucks/reeferbox_form.html"
-    success_url = reverse_lazy("trucks:list")  # vuelve a la lista combinada
+    success_url = reverse_lazy("trucks:list")
 
     def form_valid(self, form):
         resp = super().form_valid(form)
@@ -222,7 +244,6 @@ class ReeferBoxDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         box = self.object
-        # Solo órdenes NO eliminadas
         ctx["orders_workshop"] = box.ordenes_taller.filter(deleted=False).order_by("-fecha_entrada")
         return ctx
 
