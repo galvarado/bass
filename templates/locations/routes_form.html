@@ -21,17 +21,17 @@
       </div>
     {% endif %}
 
-    <!-- ===== DATOS DE LA RUTA ===== -->
     <h6 class="text-primary mb-2"><i class="fas fa-route mr-1"></i> Datos de la ruta</h6>
 
+    <!-- ===================== RENGLÓN 1: ORIGEN ===================== -->
     <div class="form-row">
-      <div class="form-group col-md-4">
-        <label for="{{ form.client.id_for_label }}">Cliente</label>
+      <div class="form-group col-md-6">
+        <label for="{{ form.client.id_for_label }}">Cliente (facturación / origen)</label>
 
         {% if object %}
-          {# En edición: mostrar readonly (disabled no se envía), enviamos hidden para preservar valor #}
           <select class="form-control form-control-sm" disabled>
             {% if object.client %}
+              {# ✅ mostrar NOMBRE, no razón social #}
               <option selected value="{{ object.client_id }}">{{ object.client.nombre }}</option>
             {% else %}
               <option selected value="">—</option>
@@ -40,6 +40,7 @@
           <input type="hidden" name="client" value="{{ object.client_id }}">
         {% else %}
           {{ form.client|add_class:"form-control" }}
+          <small class="text-muted">Este cliente define las ubicaciones del ORIGEN.</small>
         {% endif %}
 
         {% if form.client.errors %}
@@ -47,26 +48,6 @@
         {% endif %}
       </div>
 
-      <div class="form-group col-md-8">
-        <label for="{{ form.nombre.id_for_label }}">Nombre (opcional)</label>
-
-        {% if object %}
-          <input type="text" class="form-control form-control-sm"
-                 value="{{ object.nombre|default:object.display_name }}" readonly>
-          <input type="hidden" name="nombre" value="{{ object.nombre|default_if_none:'' }}">
-          <small class="text-muted">En edición, el nombre y la ruta quedan fijos. Si necesitas cambiar origen/destino, crea una ruta nueva.</small>
-        {% else %}
-          {{ form.nombre|add_class:"form-control" }}
-          <small class="text-muted">Ej: GDL → CDMX, o deja vacío para usar “Origen → Destino”.</small>
-        {% endif %}
-
-        {% if form.nombre.errors %}
-          <small class="text-danger">{{ form.nombre.errors|striptags }}</small>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="form-row">
       <div class="form-group col-md-6">
         <label for="{{ form.origen.id_for_label }}">Origen</label>
 
@@ -81,11 +62,31 @@
           <input type="hidden" name="origen" value="{{ object.origen_id }}">
         {% else %}
           {{ form.origen|add_class:"form-control" }}
-          <small class="text-muted">Solo se muestran ubicaciones activas del cliente seleccionado.</small>
         {% endif %}
 
         {% if form.origen.errors %}
           <small class="text-danger">{{ form.origen.errors|striptags }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ===================== RENGLÓN 2: DESTINO ===================== -->
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label for="{{ form.destino_cliente.id_for_label }}">Cliente destino</label>
+
+        {% if object %}
+          <input type="text" class="form-control form-control-sm"
+                 {# ✅ mostrar NOMBRE, no razón social #}
+                 value="{{ object.destino.client.nombre }}" readonly>
+        {% else %}
+          {# ✅ Asegura clases y que el widget renderice con nombre (depende de label_from_instance en el form) #}
+          {{ form.destino_cliente|add_class:"form-control" }}
+          <small class="text-muted">Selecciona el cliente para cargar ubicaciones de DESTINO.</small>
+        {% endif %}
+
+        {% if form.destino_cliente.errors %}
+          <small class="text-danger">{{ form.destino_cliente.errors|striptags }}</small>
         {% endif %}
       </div>
 
@@ -111,6 +112,29 @@
       </div>
     </div>
 
+    <!-- ===================== RENGLÓN 3: NOMBRE ===================== -->
+    <div class="form-row">
+      <div class="form-group col-md-12">
+        <label for="{{ form.nombre.id_for_label }}">Nombre (opcional)</label>
+
+        {% if object %}
+          <input type="text" class="form-control form-control-sm"
+                 value="{{ object.nombre|default:object.display_name }}" readonly>
+          <input type="hidden" name="nombre" value="{{ object.nombre|default_if_none:'' }}">
+          <small class="text-muted">
+            En edición, el nombre y la ruta quedan fijos. Si necesitas cambiar origen/destino, crea una ruta nueva.
+          </small>
+        {% else %}
+          {{ form.nombre|add_class:"form-control" }}
+          <small class="text-muted">Ej: GDL → CDMX, o deja vacío para usar “Origen → Destino”.</small>
+        {% endif %}
+
+        {% if form.nombre.errors %}
+          <small class="text-danger">{{ form.nombre.errors|striptags }}</small>
+        {% endif %}
+      </div>
+    </div>
+
     <!-- ===== TARIFAS ===== -->
     <hr>
     <h6 class="text-primary mb-2"><i class="fas fa-dollar-sign mr-1"></i> Tarifas</h6>
@@ -131,17 +155,19 @@
           <small class="text-danger">{{ form.pago_operador.errors|striptags }}</small>
         {% endif %}
       </div>
+
       <div class="form-group col-md-3">
         <label for="{{ form.pago_transfer_propio.id_for_label }}">Pago transfer propio</label>
         {{ form.pago_transfer_propio|add_class:"form-control" }}
-        {% if form..errors %}
+        {% if form.pago_transfer_propio.errors %}
           <small class="text-danger">{{ form.pago_transfer_propio.errors|striptags }}</small>
         {% endif %}
       </div>
+
       <div class="form-group col-md-3">
         <label for="{{ form.pago_transfer_solo_cruce.id_for_label }}">Pago transfer externo</label>
         {{ form.pago_transfer_solo_cruce|add_class:"form-control" }}
-        {% if form..errors %}
+        {% if form.pago_transfer_solo_cruce.errors %}
           <small class="text-danger">{{ form.pago_transfer_solo_cruce.errors|striptags }}</small>
         {% endif %}
       </div>
@@ -170,13 +196,9 @@
           <span>&times;</span>
         </button>
       </div>
-      <div class="modal-body py-3" id="notifModalBody">
-        Texto del mensaje
-      </div>
+      <div class="modal-body py-3" id="notifModalBody">Texto del mensaje</div>
       <div class="modal-footer py-2">
-        <button type="button" class="btn btn-sm btn-primary" data-dismiss="modal">
-          Entendido
-        </button>
+        <button type="button" class="btn btn-sm btn-primary" data-dismiss="modal">Entendido</button>
       </div>
     </div>
   </div>
@@ -195,113 +217,103 @@
 
     modalBody.textContent = message;
 
-    if (type === "error") {
-      modalTitle.textContent = "Error";
-      modalHeader.className = "modal-header bg-danger text-white py-2";
-    } else if (type === "warning") {
+    if (type === "warning") {
       modalTitle.textContent = "Advertencia";
       modalHeader.className = "modal-header bg-warning text-dark py-2";
     } else {
-      modalTitle.textContent = "Información";
-      modalHeader.className = "modal-header bg-primary text-white py-2";
+      modalTitle.textContent = "Error";
+      modalHeader.className = "modal-header bg-danger text-white py-2";
     }
 
     $('#notifModal').modal('show');
   }
 
-  /* =========================
-   * ELEMENTOS
-   * ========================= */
-  const $client  = document.getElementById('id_client');
-  const $origen  = document.getElementById('id_origen');
-  const $destino = document.getElementById('id_destino');
-
   const isEdit = {{ object.pk|yesno:"true,false" }};
+  if (isEdit) return;
 
-  /* =========================
-   * REGLA: ORIGEN ≠ DESTINO (solo en create)
-   * ========================= */
-  function enforceSameLocationRule() {
-    if ($origen.value && $destino.value && $origen.value === $destino.value) {
-      $destino.value = "";
-      showNotif(
-        "El destino no puede ser igual al origen. Selecciona una ubicación diferente.",
-        "warning"
-      );
-      $destino.focus();
-    }
-  }
+  const $client         = document.getElementById('id_client');
+  const $origen         = document.getElementById('id_origen');
+  const $destinoCliente = document.getElementById('id_destino_cliente');
+  const $destino        = document.getElementById('id_destino');
 
-  /* =========================
-   * HELPERS SELECTS
-   * ========================= */
-  function setDisabled(state) {
-    if ($origen)  $origen.disabled  = state;
-    if ($destino) $destino.disabled = state;
-  }
-
-  function resetSelect($el) {
+  function resetSelect($el, placeholder) {
     if (!$el) return;
-    $el.innerHTML = '<option value="">Seleccione una ubicación</option>';
+    $el.innerHTML = `<option value="">${placeholder}</option>`;
   }
 
-  /* =========================
-   * FETCH UBICACIONES POR CLIENTE (solo create)
-   * ========================= */
-  async function fetchLocations(clientId) {
+  async function fetchLocations(clientId, $target, placeholder, preserveValue) {
     const url = "{% url 'locations:ajax_locations_by_client' %}?client=" + encodeURIComponent(clientId);
+    const prev = preserveValue ? ($target.value || "") : "";
 
     try {
-      setDisabled(true);
+      $target.disabled = true;
 
       const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
       const data = await res.json();
 
-      resetSelect($origen);
-      resetSelect($destino);
-
+      resetSelect($target, placeholder);
       if (!res.ok || !data.ok) return;
 
+      // ✅ Aquí solo usamos nombre (no razón social)
       const opts = (data.locations || [])
         .map(l => `<option value="${l.id}">${l.nombre}</option>`)
         .join('');
 
-      $origen.insertAdjacentHTML('beforeend', opts);
-      $destino.insertAdjacentHTML('beforeend', opts);
+      $target.insertAdjacentHTML('beforeend', opts);
+
+      // ✅ preservar selección (POST con error)
+      if (prev) $target.value = prev;
 
     } catch (e) {
       console.error(e);
-      resetSelect($origen);
-      resetSelect($destino);
+      resetSelect($target, placeholder);
     } finally {
-      setDisabled(false);
+      $target.disabled = false;
     }
   }
 
-  /* =========================
-   * INIT
-   * ========================= */
-  if (!isEdit) {
-    // Solo en creación aplica:
-    // - cargar ubicaciones por cliente
-    // - regla origen != destino
-    if ($origen && $destino) {
-      $origen.addEventListener("change", enforceSameLocationRule);
-      $destino.addEventListener("change", enforceSameLocationRule);
+  function enforceSameLocationRule() {
+    if ($origen?.value && $destino?.value && $origen.value === $destino.value) {
+      $destino.value = "";
+      showNotif("El destino no puede ser igual al origen. Selecciona una ubicación diferente.", "warning");
+      $destino.focus();
     }
+  }
 
-    if ($client) {
-      $client.addEventListener('change', () => {
-        const clientId = ($client.value || '').trim();
+  if ($origen && $destino) {
+    $origen.addEventListener("change", enforceSameLocationRule);
+    $destino.addEventListener("change", enforceSameLocationRule);
+  }
 
-        if (!clientId) {
-          resetSelect($origen);
-          resetSelect($destino);
-          return;
-        }
+  // Cliente facturación → carga ORIGEN
+  if ($client) {
+    $client.addEventListener('change', () => {
+      const clientId = ($client.value || '').trim();
+      resetSelect($origen, "Seleccione origen");
+      if (!clientId) return;
+      fetchLocations(clientId, $origen, "Seleccione origen", false);
+    });
 
-        fetchLocations(clientId);
-      });
+    // Si viene con valor (POST fallido), precarga origen y preserva selección
+    const initialClient = ($client.value || '').trim();
+    if (initialClient) {
+      fetchLocations(initialClient, $origen, "Seleccione origen", true);
+    }
+  }
+
+  // Cliente destino → carga DESTINO
+  if ($destinoCliente) {
+    $destinoCliente.addEventListener('change', () => {
+      const clientId = ($destinoCliente.value || '').trim();
+      resetSelect($destino, "Seleccione destino");
+      if (!clientId) return;
+      fetchLocations(clientId, $destino, "Seleccione destino", false);
+    });
+
+    // Si viene con valor (POST fallido), precarga destino y preserva selección
+    const initialDestinoClient = ($destinoCliente.value || '').trim();
+    if (initialDestinoClient) {
+      fetchLocations(initialDestinoClient, $destino, "Seleccione destino", true);
     }
   }
 

@@ -166,11 +166,7 @@ class Route(models.Model):
             self.save(update_fields=["deleted"])
 
     def clean(self):
-        # Prevent cross-client mismatch
-        if self.origen_id and self.client_id and self.origen.client_id != self.client_id:
-            raise ValidationError({"origen": "El origen no pertenece a este cliente."})
-        if self.destino_id and self.client_id and self.destino.client_id != self.client_id:
-            raise ValidationError({"destino": "El destino no pertenece a este cliente."})
+      
         if self.origen_id and self.destino_id and self.origen_id == self.destino_id:
             raise ValidationError("Origen y destino no pueden ser la misma ubicación.")
 

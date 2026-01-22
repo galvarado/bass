@@ -1,7 +1,7 @@
 # locations/forms.py
 from django import forms
 from .models import Location, Route
-
+from customers.models import Client
 from django_postalcodes_mexico.models import PostalCode as PC  # mismo helper
 import re
 
@@ -183,13 +183,24 @@ class LocationSearchForm(forms.Form):
 # FORM PARA CREAR RUTA
 # =========================
 class RouteForm(forms.ModelForm):
+    origen_cliente = forms.ModelChoiceField(
+        queryset=Client.objects.all().order_by("nombre"),
+        required=False,
+        label="Cliente origen",
+    )
+    destino_cliente = forms.ModelChoiceField(
+        queryset=Client.objects.all().order_by("nombre"),
+        required=False,
+        label="Cliente destino",
+    )
+
     class Meta:
         model = Route
         fields = [
-            "client",
+            "client",  # facturación
             "nombre",
-            "origen",
-            "destino",
+            "origen_cliente", "origen",
+            "destino_cliente", "destino",
             "tarifa_cliente",
             "pago_operador",
             "pago_transfer_propio",
@@ -199,51 +210,83 @@ class RouteForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Estilo
-        for field in self.fields.values():
-            field.widget.attrs.update({
-                "class": "form-control form-control-sm"
-            })
+        # Estilo consistente
+        for f in self.fields.values():
+            f.widget.attrs.update({"class": "form-control form-control-sm"})
 
-        # 👇 AQUÍ ESTÁ LA CLAVE
-        self.fields["client"].label_from_instance = (
-            lambda obj: obj.nombre
-        )
+        # ✅ Labels: SIEMPRE mostrar "nombre" (no razón social / __str__)
+        self.fields["client"].label_from_instance = lambda obj: obj.nombre
+        self.fields["origen_cliente"].label_from_instance = lambda obj: obj.nombre
+        self.fields["destino_cliente"].label_from_instance = lambda obj: obj.nombre
 
-        # Ordenar por nombre visible
+        # ✅ Orden consistente
         self.fields["client"].queryset = self.fields["client"].queryset.order_by("nombre")
+        self.fields["origen_cliente"].queryset = self.fields["origen_cliente"].queryset.order_by("nombre")
+        self.fields["destino_cliente"].queryset = self.fields["destino_cliente"].queryset.order_by("nombre")
 
-        # Origen / destino (como ya lo tenías)
+        # Defaults en creación: origen_cliente = client (facturación)
+        if not self.instance.pk and not self.is_bound:
+            # si traes initial['client'], úsalo para prellenar origen_cliente
+            initial_client = (self.initial.get("client") or "")
+            if initial_client:
+                self.initial["origen_cliente"] = initial_client
+
+        # Querysets de ubicaciones
         self.fields["origen"].queryset = Location.objects.none()
         self.fields["destino"].queryset = Location.objects.none()
 
-        client_id = None
-        if self.is_bound:
-            client_id = self.data.get("client")
-        elif self.instance.pk:
-            client_id = self.instance.client_id
+        # En edición: inferir clientes desde ubicaciones y asegurar que los selects no queden vacíos
+        if self.instance.pk:
+            if self.instance.client_id:
+                self.initial["origen_cliente"] = self.instance.client_id  # facturación/origen
 
-        if client_id:
-            qs = Location.objects.filter(client_id=client_id, deleted=False).order_by("nombre")
-            self.fields["origen"].queryset = qs
-            self.fields["destino"].queryset = qs
+            if getattr(self.instance, "origen_id", None):
+                self.fields["origen"].queryset = Location.objects.filter(pk=self.instance.origen_id)
+
+            if getattr(self.instance, "destino_id", None):
+                self.initial["destino_cliente"] = self.instance.destino.client_id
+                self.fields["destino"].queryset = Location.objects.filter(pk=self.instance.destino_id)
+
+            return  # no necesitamos recalcular más en edit
+
+        # En POST (create con errores): recargar querysets para mantener opciones/selecciones
+        if self.is_bound:
+            # Origen se filtra por ORIGEN_CLIENTE si existe, si no, por CLIENT (facturación)
+            oc = (self.data.get("origen_cliente") or "").strip()
+            fc = (self.data.get("client") or "").strip()
+            origen_client_id = oc or fc
+
+            dc = (self.data.get("destino_cliente") or "").strip()
+
+            if origen_client_id.isdigit():
+                self.fields["origen"].queryset = (
+                    Location.objects.filter(client_id=int(origen_client_id), deleted=False)
+                    .order_by("nombre")
+                )
+
+            if dc.isdigit():
+                self.fields["destino"].queryset = (
+                    Location.objects.filter(client_id=int(dc), deleted=False)
+                    .order_by("nombre")
+                )
+
+        else:
+            # En create (GET): si viene preseleccionado client, precargar origen
+            fc = (self.initial.get("client") or "")
+            if str(fc).isdigit():
+                self.fields["origen"].queryset = (
+                    Location.objects.filter(client_id=int(fc), deleted=False)
+                    .order_by("nombre")
+                )
+                self.initial["origen_cliente"] = int(fc)
     
     def clean(self):
         cleaned = super().clean()
-
-        client = cleaned.get("client")
         origen = cleaned.get("origen")
         destino = cleaned.get("destino")
 
-        # No repetir misma ubicación
         if origen and destino and origen == destino:
             self.add_error("destino", "El destino no puede ser igual al origen.")
-
-        # Coherencia cliente ↔ ubicaciones (por si postean manual)
-        if client and origen and origen.client_id != client.id:
-            self.add_error("origen", "El origen no pertenece al cliente seleccionado.")
-        if client and destino and destino.client_id != client.id:
-            self.add_error("destino", "El destino no pertenece al cliente seleccionado.")
 
         return cleaned
 
