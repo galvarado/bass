@@ -105,7 +105,6 @@ class SoftDeleteManager(models.Manager):
 
 class ReeferBox(models.Model):
     # ===== Datos generales =====
-    nombre = models.CharField("Nombre", max_length=15, unique=True)
     categoria = models.CharField("Categoría", max_length=50, blank=True, null=True)
     numero_economico = models.CharField("Número económico", max_length=20, unique=True)
     modelo = models.CharField("Modelo", max_length=50, blank=True, null=True)
