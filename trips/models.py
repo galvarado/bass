@@ -140,14 +140,16 @@ class Trip(models.Model):
 
     @property
     def total_cobro_cliente(self):
-        return (self.tarifa_cliente_snapshot or 0) + (self.casetas_snapshot or 0)
+        return (self.tarifa_cliente_snapshot or 0)
 
     @property
     def total_pago_operador(self):
-        return (self.pago_operador_snapshot or 0) + (self.bono_operador_snapshot or 0)
+        return (self.pago_operador_snapshot or 0)
 
     def __str__(self):
-        return f"{self.route.origen} → {self.route.destino} | {self.operator} | {self.truck} + {self.reefer_box}"
+        r = self.route
+        route_str = f"{r.origen} → {r.destino}" if r else "Sin ruta"
+        return f"{route_str} | {self.operator} | {self.truck} + {self.reefer_box}"
 
 
 class CartaPorteCFDI(models.Model):

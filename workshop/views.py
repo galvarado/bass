@@ -1,4 +1,3 @@
-
 from django.contrib import messages
 from django.db.models import Q
 from django.urls import reverse_lazy
@@ -14,6 +13,8 @@ from .models import WorkshopOrder, MaintenanceRequest
 from .forms import WorkshopOrderForm, WorkshopOrderSearchForm, SparePartUsageFormSet
 from warehouse.models import SparePartMovement
 
+from common.mixins import TallerRequiredMixin
+
 # Campos que podrías auditar (ajusta según tu bitácora real)
 FIELDS_AUDIT = [
     "truck",
@@ -27,22 +28,17 @@ FIELDS_AUDIT = [
 ]
 
 
-class WorkshopOrderListView(ListView):
+class WorkshopOrderHistoryListView(TallerRequiredMixin, ListView):
+    """
+    (Opcional / legado) Lista histórica simple separando activas vs históricas.
+    OJO: esta clase ya NO se llama WorkshopOrderListView para no pisar la principal.
+    """
     model = WorkshopOrder
     template_name = "workshop/list.html"
     context_object_name = "orders"  # estas serán las históricas
     paginate_by = 10
 
     def get_queryset(self):
-        """
-        - Por defecto: solo no eliminadas (deleted=False).
-        - Si ?show_deleted=1 → solo eliminadas.
-        - Si ?show_all=1 → todas (incluidas eliminadas).
-        - Filtros:
-          * q: económico, placas, descripción.
-          * estado: cualquiera de ESTADO_CHOICES.
-          * tipo_unidad (virtual): TRUCK / BOX.
-        """
         show_deleted = self.request.GET.get("show_deleted") == "1"
         show_all = self.request.GET.get("show_all") == "1"
 
@@ -70,20 +66,15 @@ class WorkshopOrderListView(ListView):
         if estado:
             qs = qs.filter(estado=estado)
 
-        # tipo_unidad es un filtro virtual basado en qué FK está llena
         if tipo_unidad == "TRUCK":
             qs = qs.filter(truck__isnull=False)
         elif tipo_unidad == "BOX":
             qs = qs.filter(reefer_box__isnull=False)
 
-        # Separar activas vs históricas
         activos = qs.exclude(estado__in=["TERMINADA", "CANCELADA"])
         historicos = qs.filter(estado__in=["TERMINADA", "CANCELADA"])
 
-        # Guardamos las activas para usarlas en el contexto
         self.active_orders = activos.order_by("-fecha_entrada")
-
-        # El queryset principal (con paginación) serán los históricos
         return historicos.order_by("-fecha_entrada")
 
     def get_context_data(self, **kwargs):
@@ -99,7 +90,7 @@ class WorkshopOrderListView(ListView):
             return self.paginate_by
 
 
-class WorkshopOrderCreateView(CreateView):
+class WorkshopOrderCreateView(TallerRequiredMixin, CreateView):
     model = WorkshopOrder
     form_class = WorkshopOrderForm
     template_name = "workshop/form.html"
@@ -115,7 +106,7 @@ class WorkshopOrderCreateView(CreateView):
         return HttpResponseRedirect(self.success_url)
 
 
-class WorkshopOrderUpdateView(UpdateView):
+class WorkshopOrderUpdateView(TallerRequiredMixin, UpdateView):
     model = WorkshopOrder
     form_class = WorkshopOrderForm
     template_name = "workshop/form.html"
@@ -156,47 +147,35 @@ class WorkshopOrderUpdateView(UpdateView):
         """
         ot = form.save()
 
-        # Recorremos cada form del formset
         instances = formset.save(commit=False)
 
-        # Marcar como borrados los que el usuario seleccionó para eliminar
         for obj in formset.deleted_objects:
             if isinstance(obj, SparePartMovement):
                 obj.deleted = True
                 obj.save(update_fields=["deleted"])
 
         for mv in instances:
-            # Tipo fijo para este formset
             mv.movement_type = "WORKSHOP_USAGE"
             mv.workshop_order = ot
 
-            # Si el usuario dejó la cantidad vacía, no se guarda
             if mv.quantity is None:
                 continue
 
-            # La cantidad capturada es positiva → la convertimos a negativa
             if mv.quantity > 0:
                 mv.quantity = -mv.quantity
 
             mv.save()
 
-        # Recalcular costo_refacciones si quieres (opcional)
-        # total_ref = ot.spare_part_movements.filter(deleted=False).aggregate(
-        #     total=Sum(F("quantity") * F("unit_cost"))
-        # )["total"] or 0
-        # ot.costo_refacciones = abs(total_ref)
-        # ot.save(update_fields=["costo_refacciones"])
-
         messages.success(self.request, "Orden de taller actualizada correctamente.")
         return HttpResponseRedirect(self.success_url)
 
-class WorkshopOrderDetailView(DetailView):
+
+class WorkshopOrderDetailView(TallerRequiredMixin, DetailView):
     model = WorkshopOrder
     template_name = "workshop/detail.html"
     context_object_name = "ot"
 
     def get_queryset(self):
-        # Permite ver detalle tanto vivas como eliminadas
         return WorkshopOrder.objects.all()
 
     def get_context_data(self, **kwargs):
@@ -210,7 +189,6 @@ class WorkshopOrderDetailView(DetailView):
               .order_by("date", "id")
         )
 
-        # Cantidad para mostrar siempre positiva
         for mv in movements:
             mv.display_quantity = abs(mv.quantity or 0)
 
@@ -218,19 +196,15 @@ class WorkshopOrderDetailView(DetailView):
         return ctx
 
 
-class WorkshopOrderSoftDeleteView(DeleteView):
+class WorkshopOrderSoftDeleteView(TallerRequiredMixin, DeleteView):
     model = WorkshopOrder
     template_name = "workshop/confirm_delete.html"
     success_url = reverse_lazy("workshop:list")
 
     def get_queryset(self):
-        # Solo órdenes no eliminadas
         return WorkshopOrder.objects.filter(deleted=False)
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        No permitir eliminar órdenes TERMINADA o CANCELADA.
-        """
         self.object = self.get_object()
         if self.object.estado in ("TERMINADA", "CANCELADA"):
             messages.error(
@@ -255,7 +229,7 @@ class WorkshopOrderSoftDeleteView(DeleteView):
         return self.delete(request, *args, **kwargs)
 
 
-class WorkshopOrderListView(ListView):
+class WorkshopOrderListView(TallerRequiredMixin, ListView):
     model = WorkshopOrder
     template_name = "workshop/list.html"
     context_object_name = "orders"  # estas serán las históricas
@@ -269,7 +243,7 @@ class WorkshopOrderListView(ListView):
         - Si ?show_all=1 → todas (incluidas eliminadas).
         - Filtros:
           * q: económico, placas, descripción.
-          * estado: estado de OT (si lo usas en tu form).
+          * estado: estado de OT.
           * tipo_unidad (virtual): TRUCK / BOX.
         - Separación:
           * active_orders (sin paginación)
@@ -314,24 +288,15 @@ class WorkshopOrderListView(ListView):
 
         self.active_orders = activos.order_by("-fecha_entrada")
 
-        # 👇 cargar también solicitudes (se guardan como atributo para el contexto)
         self.maintenance_requests = self._get_maintenance_requests(q=q, tipo_unidad=tipo_unidad)
 
         return historicos.order_by("-fecha_entrada")
 
     def _get_maintenance_requests(self, q: str, tipo_unidad: str):
-        """
-        Solicitudes de mantenimiento (SM):
-        - No eliminadas (deleted=False)
-        - Por defecto mostramos ABIERTA/EVALUADA y también CONVERTIDA
-          (para que se vea el link a la OT).
-        - Reusa filtros q y tipo_unidad.
-        """
         qs = MaintenanceRequest.objects.filter(deleted=False).select_related(
             "truck", "reefer_box", "orden_taller", "operador"
         )
 
-        # default: mostrar “vivas”
         qs = qs.filter(estado__in=["ABIERTA", "EVALUADA", "CONVERTIDA"])
 
         if q:
@@ -349,8 +314,6 @@ class WorkshopOrderListView(ListView):
         elif tipo_unidad == "BOX":
             qs = qs.filter(reefer_box__isnull=False)
 
-        # orden: primero abiertas/evaluadas, luego convertidas, más recientes arriba
-        # (sin depender de annotation)
         return qs.order_by("-creado_en", "-id")
 
     def get_context_data(self, **kwargs):

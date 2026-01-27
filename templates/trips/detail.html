@@ -94,11 +94,13 @@
     </h6>
 
     <dl class="row small">
+      <dt class="col-sm-3">Ruta</dt>
+      <dd class="col-sm-9">{{ trip.route.nombre }}</dd>
       <dt class="col-sm-3">Origen</dt>
-      <dd class="col-sm-9">{{ trip.origin }}</dd>
+      <dd class="col-sm-9">{{ trip.route.origen.nombre }}</dd>
 
       <dt class="col-sm-3">Destino</dt>
-      <dd class="col-sm-9">{{ trip.destination }}</dd>
+      <dd class="col-sm-9">{{ trip.route.destino.nombre }}</dd>
     </dl>
 
     <hr>
@@ -115,7 +117,7 @@
       <dt class="col-sm-3">Camión</dt>
       <dd class="col-sm-9">
         {% if trip.truck %}
-          {{ trip.truck.numero_economico }} — {{ trip.truck.placas|default:"Sin placas" }}
+          {{ trip.truck.numero_economico }}
         {% else %}
           <span class="text-muted">Sin camión</span>
         {% endif %}
@@ -124,7 +126,7 @@
       <dt class="col-sm-3">Caja</dt>
       <dd class="col-sm-9">
         {% if trip.reefer_box %}
-          {{ trip.reefer_box.numero_economico|default:"—" }}
+          {{ trip.reefer_box.numero_economico}}
         {% else %}
           <span class="text-muted">Sin caja</span>
         {% endif %}

@@ -1,25 +1,15 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth.views import PasswordChangeView
 from django.core.exceptions import PermissionDenied
 
-
-from django.contrib.auth.mixins import (
-    LoginRequiredMixin,
-    UserPassesTestMixin,
-)
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import Q
 from django.urls import reverse_lazy
 from django.views.generic import (
-    ListView,
-    CreateView,
-    UpdateView,
-    DeleteView,
-    FormView,
-    TemplateView,
+    ListView, CreateView, UpdateView, DeleteView, FormView, TemplateView
 )
 from django.contrib.auth.views import PasswordChangeView, PasswordChangeDoneView
 
@@ -41,17 +31,11 @@ ADMIN_GROUP = "admin"
 
 
 def is_superadmin(user):
-    return (
-        user.is_authenticated
-        and user.groups.filter(name=SUPERADMIN_GROUP).exists()
-    )
+    return user.is_authenticated and user.groups.filter(name=SUPERADMIN_GROUP).exists()
 
 
 def is_admin(user):
-    return (
-        user.is_authenticated
-        and user.groups.filter(name=ADMIN_GROUP).exists()
-    )
+    return user.is_authenticated and user.groups.filter(name=ADMIN_GROUP).exists()
 
 
 # ==============================================================
@@ -95,8 +79,7 @@ def profile_edit(request):
     )
 
 
-
-class ChangePasswordView(PasswordChangeView):
+class ChangePasswordView(LoginRequiredMixin, PasswordChangeView):
     template_name = "accounts/password_change.html"
     success_url = reverse_lazy("accounts:profile")
 
@@ -112,13 +95,11 @@ class ChangePasswordView(PasswordChangeView):
             user.must_change_password = False
             user.save()
 
-        # 🔹 mostrar un solo mensaje
         messages.success(self.request, "Tu contraseña se cambió correctamente.")
         return redirect("accounts:profile")
 
 
-
-class ChangePasswordDoneView(PasswordChangeDoneView):
+class ChangePasswordDoneView(LoginRequiredMixin, PasswordChangeDoneView):
     template_name = "accounts/password_change_done.html"
 
 
@@ -131,6 +112,12 @@ class SuperadminOrAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         u = self.request.user
         return is_superadmin(u) or is_admin(u)
+
+    def handle_no_permission(self):
+        # si está logueado pero no tiene rol, 403 (no redirect)
+        if self.request.user.is_authenticated:
+            raise PermissionDenied("No tienes permisos para acceder a esta sección.")
+        return super().handle_no_permission()
 
 
 # ==============================================================
@@ -150,7 +137,6 @@ class UserListView(SuperadminOrAdminRequiredMixin, ListView):
             .prefetch_related("groups")
         )
 
-        # 🔹 Excluir usuarios internos del sistema
         qs = qs.exclude(is_staff=True).exclude(is_superuser=True)
 
         q = self.request.GET.get("q", "").strip()
@@ -169,10 +155,8 @@ class UserListView(SuperadminOrAdminRequiredMixin, ListView):
         elif status == "0":
             qs = qs.filter(is_active=False)
 
-        # 🔹 No mostrar al usuario actual
         qs = qs.exclude(id=self.request.user.id)
 
-        # 🔹 Reglas por grupo
         if is_superadmin(self.request.user):
             return qs
         elif is_admin(self.request.user):
@@ -194,7 +178,6 @@ class UserCreateView(SuperadminOrAdminRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # Si el usuario actual no es superadmin, ocultar el grupo "Superadmin"
         if not is_superadmin(self.request.user):
             if "groups" in form.fields:
                 form.fields["groups"].queryset = (
@@ -206,17 +189,18 @@ class UserCreateView(SuperadminOrAdminRequiredMixin, CreateView):
         response = super().form_valid(form)
         user = self.object
 
-        # 🚩 Forzar cambio de contraseña en primer login
         if hasattr(user, "profile"):
             user.profile.must_change_password = True
             user.profile.save()
         else:
-            # Si lo tienes directo en el modelo User
             if hasattr(user, "must_change_password"):
                 user.must_change_password = True
                 user.save()
 
-        messages.success(self.request, "Usuario creado correctamente. Deberá cambiar su contraseña al iniciar sesión por primera vez.")
+        messages.success(
+            self.request,
+            "Usuario creado correctamente. Deberá cambiar su contraseña al iniciar sesión por primera vez."
+        )
         return response
 
 
@@ -228,11 +212,8 @@ class UserUpdateView(SuperadminOrAdminRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
-        # Si el objetivo es superadmin y el usuario no lo es → prohibido
         if obj.groups.filter(name=SUPERADMIN_GROUP).exists() and not is_superadmin(request.user):
-            from django.core.exceptions import PermissionDenied
             raise PermissionDenied("No tienes permisos para acceder a esta sección.")
-
         return super().dispatch(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
@@ -248,6 +229,7 @@ class UserUpdateView(SuperadminOrAdminRequiredMixin, UpdateView):
         messages.success(self.request, "Usuario actualizado correctamente.")
         return super().form_valid(form)
 
+
 class UserPasswordSetView(SuperadminOrAdminRequiredMixin, FormView):
     template_name = "accounts/password.html"
     form_class = UserSetPasswordForm
@@ -256,11 +238,8 @@ class UserPasswordSetView(SuperadminOrAdminRequiredMixin, FormView):
     def dispatch(self, request, *args, **kwargs):
         self.user_obj = User.objects.get(pk=kwargs["pk"])
 
-        # Solo superadmin puede cambiar contraseña de superadmins
         if self.user_obj.groups.filter(name=SUPERADMIN_GROUP).exists() and not is_superadmin(request.user):
-            from django.core.exceptions import PermissionDenied
             raise PermissionDenied("No tienes permisos para acceder a esta sección.")
-
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -272,7 +251,6 @@ class UserPasswordSetView(SuperadminOrAdminRequiredMixin, FormView):
     def form_valid(self, form):
         form.save()
 
-        # obligar al usuario destino a cambiarla
         if hasattr(self.user_obj, "profile"):
             self.user_obj.profile.must_change_password = True
             self.user_obj.profile.save()
@@ -284,7 +262,10 @@ class UserPasswordSetView(SuperadminOrAdminRequiredMixin, FormView):
         if self.request.user.pk == self.user_obj.pk:
             update_session_auth_hash(self.request, self.user_obj)
 
-        messages.success(self.request, "Contraseña actualizada correctamente. El usuario deberá cambiar su contraseña al iniciar sesión.")
+        messages.success(
+            self.request,
+            "Contraseña actualizada correctamente. El usuario deberá cambiar su contraseña al iniciar sesión."
+        )
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):

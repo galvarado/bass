@@ -7,6 +7,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DetailView, D
 
 from .models import Supplier
 from .forms import SupplierForm, SupplierSearchForm
+from common.mixins import CatalogosRequiredMixin
 
 # (Opcional) lista para auditoría si luego metes bitácora
 FIELDS_AUDIT = [
@@ -19,7 +20,7 @@ FIELDS_AUDIT = [
 ]
 
 
-class SupplierListView(ListView):
+class SupplierListView(CatalogosRequiredMixin, ListView):
     model = Supplier
     template_name = "suppliers/list.html"
     context_object_name = "suppliers"
@@ -83,7 +84,7 @@ class SupplierListView(ListView):
             return self.paginate_by
 
 
-class SupplierCreateView(CreateView):
+class SupplierCreateView(CatalogosRequiredMixin, CreateView):
     model = Supplier
     form_class = SupplierForm
     template_name = "suppliers/form.html"
@@ -95,7 +96,7 @@ class SupplierCreateView(CreateView):
         return resp
 
 
-class SupplierUpdateView(UpdateView):
+class SupplierUpdateView(CatalogosRequiredMixin, UpdateView):
     model = Supplier
     form_class = SupplierForm
     template_name = "suppliers/form.html"
@@ -112,7 +113,7 @@ class SupplierUpdateView(UpdateView):
         return resp
 
 
-class SupplierDetailView(DetailView):
+class SupplierDetailView(CatalogosRequiredMixin, DetailView):
     model = Supplier
     template_name = "suppliers/detail.html"
     context_object_name = "supplier"
@@ -122,7 +123,7 @@ class SupplierDetailView(DetailView):
         return Supplier.objects.all()
 
 
-class SupplierSoftDeleteView(DeleteView):
+class SupplierSoftDeleteView(CatalogosRequiredMixin, DeleteView):
     model = Supplier
     template_name = "suppliers/confirm_delete.html"
     success_url = reverse_lazy("suppliers:list")

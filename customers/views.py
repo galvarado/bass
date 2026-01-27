@@ -7,6 +7,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DetailView, D
 
 from .models import Client
 from .forms import ClientForm, ClientSearchForm
+from common.mixins import CatalogosRequiredMixin
 
 # Ajusta esta lista según lo que audites en tu bitácora
 FIELDS_AUDIT = [
@@ -15,7 +16,8 @@ FIELDS_AUDIT = [
     "limite_credito", "dias_credito", "forma_pago", "cuenta", "uso_cfdi",
 ]
 
-class ClientListView(ListView):
+
+class ClientListView(CatalogosRequiredMixin, ListView):
     model = Client
     template_name = "customers/list.html"
     context_object_name = "clients"
@@ -78,7 +80,7 @@ class ClientListView(ListView):
             return self.paginate_by
 
 
-class ClientCreateView(CreateView):
+class ClientCreateView(CatalogosRequiredMixin, CreateView):
     model = Client
     form_class = ClientForm
     template_name = "customers/form.html"
@@ -90,7 +92,7 @@ class ClientCreateView(CreateView):
         return resp
 
 
-class ClientUpdateView(UpdateView):
+class ClientUpdateView(CatalogosRequiredMixin, UpdateView):
     model = Client
     form_class = ClientForm
     template_name = "customers/form.html"
@@ -106,7 +108,7 @@ class ClientUpdateView(UpdateView):
         return resp
 
 
-class ClientDetailView(DetailView):
+class ClientDetailView(CatalogosRequiredMixin, DetailView):
     model = Client
     template_name = "customers/detail.html"
     context_object_name = "client"
@@ -116,7 +118,7 @@ class ClientDetailView(DetailView):
         return Client.objects.all()
 
 
-class ClientSoftDeleteView(DeleteView):
+class ClientSoftDeleteView(CatalogosRequiredMixin, DeleteView):
     model = Client
     template_name = "customers/confirm_delete.html"
     success_url = reverse_lazy("customers:list")

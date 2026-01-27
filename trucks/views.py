@@ -8,9 +8,10 @@ from django.views.generic import ListView, CreateView, UpdateView, DetailView, D
 
 from .models import Truck, ReeferBox
 from .forms import TruckForm, TruckSearchForm, ReeferBoxForm
+from common.mixins import CatalogosRequiredMixin
 
 
-class TruckReeferCombinedListView(ListView):
+class TruckReeferCombinedListView(CatalogosRequiredMixin, ListView):
     """
     Lista combinada de Camiones y Cajas en la misma página.
     - Usa template 'trucks/list.html'
@@ -150,7 +151,7 @@ class TruckReeferCombinedListView(ListView):
 
 # ====== CRUD Camiones ======
 
-class TruckCreateView(CreateView):
+class TruckCreateView(CatalogosRequiredMixin, CreateView):
     model = Truck
     form_class = TruckForm
     template_name = "trucks/trucks_form.html"
@@ -162,7 +163,7 @@ class TruckCreateView(CreateView):
         return resp
 
 
-class TruckUpdateView(UpdateView):
+class TruckUpdateView(CatalogosRequiredMixin, UpdateView):
     model = Truck
     form_class = TruckForm
     template_name = "trucks/trucks_form.html"
@@ -177,7 +178,7 @@ class TruckUpdateView(UpdateView):
         return resp
 
 
-class TruckDetailView(DetailView):
+class TruckDetailView(CatalogosRequiredMixin, DetailView):
     model = Truck
     template_name = "trucks/trucks_detail.html"
     context_object_name = "truck"
@@ -189,7 +190,7 @@ class TruckDetailView(DetailView):
         return ctx
 
 
-class TruckSoftDeleteView(DeleteView):
+class TruckSoftDeleteView(CatalogosRequiredMixin, DeleteView):
     model = Truck
     template_name = "trucks/trucks_confirm_delete.html"
     success_url = reverse_lazy("trucks:list")
@@ -209,7 +210,7 @@ class TruckSoftDeleteView(DeleteView):
 
 # ====== CRUD Cajas ======
 
-class ReeferBoxCreateView(CreateView):
+class ReeferBoxCreateView(CatalogosRequiredMixin, CreateView):
     model = ReeferBox
     form_class = ReeferBoxForm
     template_name = "trucks/reeferbox_form.html"
@@ -221,7 +222,7 @@ class ReeferBoxCreateView(CreateView):
         return resp
 
 
-class ReeferBoxUpdateView(UpdateView):
+class ReeferBoxUpdateView(CatalogosRequiredMixin, UpdateView):
     model = ReeferBox
     form_class = ReeferBoxForm
     template_name = "trucks/reeferbox_form.html"
@@ -236,7 +237,7 @@ class ReeferBoxUpdateView(UpdateView):
         return resp
 
 
-class ReeferBoxDetailView(DetailView):
+class ReeferBoxDetailView(CatalogosRequiredMixin, DetailView):
     model = ReeferBox
     template_name = "trucks/reeferbox_detail.html"
     context_object_name = "box"
@@ -248,7 +249,7 @@ class ReeferBoxDetailView(DetailView):
         return ctx
 
 
-class ReeferBoxSoftDeleteView(DeleteView):
+class ReeferBoxSoftDeleteView(CatalogosRequiredMixin, DeleteView):
     model = ReeferBox
     template_name = "trucks/reeferbox_confirm_delete.html"
     success_url = reverse_lazy("trucks:list")

@@ -4,14 +4,15 @@ from django.urls import reverse_lazy
 from django.http import HttpResponseRedirect, JsonResponse
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
 from django.views.decorators.http import require_GET
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger  
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.auth.decorators import login_required
 
 from .models import Location, Route
 from .forms import LocationForm, LocationSearchForm, RouteForm
+from common.mixins import CatalogosRequiredMixin
 
 
-
-class LocationListView(ListView):
+class LocationListView(CatalogosRequiredMixin, ListView):
     """
     UNA sola pantalla con tabs:
       - tab=routes (default)
@@ -149,7 +150,7 @@ class LocationListView(ListView):
         return ctx
 
 
-class LocationCreateView(CreateView):
+class LocationCreateView(CatalogosRequiredMixin, CreateView):
     model = Location
     form_class = LocationForm
     template_name = "locations/form.html"
@@ -164,7 +165,7 @@ class LocationCreateView(CreateView):
         return resp
 
 
-class LocationUpdateView(UpdateView):
+class LocationUpdateView(CatalogosRequiredMixin, UpdateView):
     model = Location
     form_class = LocationForm
     template_name = "locations/form.html"
@@ -181,7 +182,7 @@ class LocationUpdateView(UpdateView):
         return resp
 
 
-class LocationDetailView(DetailView):
+class LocationDetailView(CatalogosRequiredMixin, DetailView):
     model = Location
     template_name = "locations/detail.html"
     context_object_name = "location"
@@ -189,7 +190,8 @@ class LocationDetailView(DetailView):
     def get_queryset(self):
         return Location.objects.all()
 
-class LocationSoftDeleteView(DeleteView):
+
+class LocationSoftDeleteView(CatalogosRequiredMixin, DeleteView):
     model = Location
     template_name = "locations/confirm_delete.html"
 
@@ -210,7 +212,7 @@ class LocationSoftDeleteView(DeleteView):
 # ROUTES
 # =========================
 
-class RouteCreateView(CreateView):
+class RouteCreateView(CatalogosRequiredMixin, CreateView):
     model = Route
     form_class = RouteForm
     template_name = "locations/routes_form.html"
@@ -224,7 +226,7 @@ class RouteCreateView(CreateView):
         return resp
 
 
-class RouteUpdateView(UpdateView):
+class RouteUpdateView(CatalogosRequiredMixin, UpdateView):
     """
     Usa el MISMO template routes/form.html,
     pero en backend SOLO permite actualizar tarifas.
@@ -250,7 +252,7 @@ class RouteUpdateView(UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class RouteDetailView(DetailView):
+class RouteDetailView(CatalogosRequiredMixin, DetailView):
     model = Route
     template_name = "locations/routes_detail.html"
     context_object_name = "route"
@@ -259,7 +261,7 @@ class RouteDetailView(DetailView):
         return Route.objects.all().select_related("client", "origen", "destino")
 
 
-class RouteSoftDeleteView(DeleteView):
+class RouteSoftDeleteView(CatalogosRequiredMixin, DeleteView):
     model = Route
     template_name = "locations/routes_confirm_delete.html"
 
@@ -277,6 +279,7 @@ class RouteSoftDeleteView(DeleteView):
 
 
 @require_GET
+@login_required
 def ajax_locations_by_client(request):
     """
     Devuelve ubicaciones activas de un cliente (para selects origen/destino en creación).
