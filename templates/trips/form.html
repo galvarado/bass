@@ -47,31 +47,94 @@
     <div class="form-row">
       <div class="form-group col-md-4">
         <label for="{{ form.operator.id_for_label }}">Operador</label>
-        {{ form.operator|add_class:"form-control" }}
+        {{ form.operator|add_class:"form-control form-control-sm" }}
       </div>
       <div class="form-group col-md-4">
         <label for="{{ form.truck.id_for_label }}">Camión</label>
-        {{ form.truck|add_class:"form-control" }}
+        {{ form.truck|add_class:"form-control form-control-sm" }}
       </div>
       <div class="form-group col-md-4">
         <label for="{{ form.reefer_box.id_for_label }}">Caja</label>
-        {{ form.reefer_box|add_class:"form-control" }}
+        {{ form.reefer_box|add_class:"form-control form-control-sm" }}
       </div>
     </div>
 
-    <!-- ===== TRANSFER Y OBSERVACIONES ===== -->
+    <!-- ===== DETALLES ===== -->
     <hr>
     <h6 class="text-primary mb-2">
       <i class="fas fa-exchange-alt mr-1"></i> Detalles
     </h6>
+
     <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.clasificacion.id_for_label }}">Clasificación</label>
+        {{ form.clasificacion|add_class:"form-control form-control-sm" }}
+        {% if form.clasificacion.errors %}
+          <div class="text-danger small mt-1">
+            {% for e in form.clasificacion.errors %}{{ e }}<br>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
       <div class="form-group col-md-3">
         <label for="{{ form.transfer_operator.id_for_label }}">Transfer</label>
-        {{ form.transfer_operator|add_class:"form-control" }}
+        {{ form.transfer_operator|add_class:"form-control form-control-sm" }}
+        <input type="hidden" name="transfer_operator" id="transfer_operator_hidden" value="">
+
       </div>
-      <div class="form-group col-md-9">
+
+      <div class="form-group col-md-5">
+        <label for="{{ form.producto.id_for_label }}">Producto</label>
+        {{ form.producto|add_class:"form-control form-control-sm" }}
+        {% if form.producto.errors %}
+          <div class="text-danger small mt-1">
+            {% for e in form.producto.errors %}{{ e }}<br>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.temp_scale.id_for_label }}">Escala</label>
+        {{ form.temp_scale|add_class:"form-control form-control-sm" }}
+        {% if form.temp_scale.errors %}
+          <div class="text-danger small mt-1">
+            {% for e in form.temp_scale.errors %}{{ e }}<br>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-3">
+        <label for="{{ form.temperatura_min.id_for_label }}">Temp. mínima</label>
+        {{ form.temperatura_min|add_class:"form-control form-control-sm" }}
+        {% if form.temperatura_min.errors %}
+          <div class="text-danger small mt-1">
+            {% for e in form.temperatura_min.errors %}{{ e }}<br>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-3">
+        <label for="{{ form.temperatura_max.id_for_label }}">Temp. máxima</label>
+        {{ form.temperatura_max|add_class:"form-control form-control-sm" }}
+        {% if form.temperatura_max.errors %}
+          <div class="text-danger small mt-1">
+            {% for e in form.temperatura_max.errors %}{{ e }}<br>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-3">
+        {# espacio para que se vea balanceado; si quieres aquí metemos algo más luego #}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-12">
         <label for="{{ form.observations.id_for_label }}">Observaciones</label>
-        {{ form.observations|add_class:"form-control" }}
+        {{ form.observations|add_class:"form-control form-control-sm" }}
       </div>
     </div>
 
@@ -89,22 +152,17 @@
 (function() {
   const clientSelect = document.getElementById("{{ form.client.auto_id }}");
   const routeSelect  = document.getElementById("{{ form.route.auto_id }}");
-
   const routesUrl = "{% url 'trips:ajax_routes_by_client' %}";
 
   function setRouteOptions(items, keepValue) {
     const current = keepValue ? routeSelect.value : "";
-
-    // limpia
     routeSelect.innerHTML = "";
 
-    // opción default
     const opt0 = document.createElement("option");
     opt0.value = "";
     opt0.textContent = "Selecciona ruta…";
     routeSelect.appendChild(opt0);
 
-    // agrega items
     for (const it of items) {
       const opt = document.createElement("option");
       opt.value = String(it.id);
@@ -112,10 +170,7 @@
       routeSelect.appendChild(opt);
     }
 
-    // intenta restaurar selección
-    if (keepValue && current) {
-      routeSelect.value = current;
-    }
+    if (keepValue && current) routeSelect.value = current;
   }
 
   async function loadRoutesForClient(clientId, keepValue=false) {
@@ -136,20 +191,67 @@
     routeSelect.disabled = false;
   }
 
-  // evento: cambio cliente => recarga rutas
   clientSelect.addEventListener("change", function() {
     loadRoutesForClient(this.value, false);
   });
 
-  // al cargar página:
-  // - si estás editando, normalmente ya hay client y route
-  // - recarga rutas y conserva el valor actual
   const initialClient = clientSelect.value;
-  if (initialClient) {
-    loadRoutesForClient(initialClient, true);
-  } else {
-    routeSelect.disabled = true;
+  if (initialClient) loadRoutesForClient(initialClient, true);
+  else routeSelect.disabled = true;
+
+  // ===== Clasificación: NACIONAL => transfer disabled + vacío =====
+  const clasificacionSelect = document.getElementById("{{ form.clasificacion.auto_id }}");
+  const transferSelect = document.getElementById("{{ form.transfer_operator.auto_id }}");
+  const transferHidden = document.getElementById("transfer_operator_hidden");
+  const formEl = document.querySelector("form");
+
+  function applyClasificacionRules() {
+    if (!clasificacionSelect || !transferSelect || !transferHidden) return;
+
+    const isNacional = (clasificacionSelect.value === "NACIONAL");
+
+    if (isNacional) {
+      transferSelect.value = "";
+      transferSelect.disabled = true;
+      transferHidden.value = "";
+    } else {
+      transferSelect.disabled = false;
+      transferHidden.value = "";
+    }
+  }
+
+  if (clasificacionSelect) {
+    clasificacionSelect.addEventListener("change", applyClasificacionRules);
+  }
+  applyClasificacionRules();
+
+  if (formEl) {
+    formEl.addEventListener("submit", function() {
+      if (transferSelect && transferSelect.disabled && transferHidden) {
+        transferHidden.value = "";
+      }
+    });
+  }
+
+  // ===== Temperatura: sugeridos según escala =====
+  const scaleSelect = document.getElementById("{{ form.temp_scale.auto_id }}");
+  const minInput = document.getElementById("{{ form.temperatura_min.auto_id }}");
+  const maxInput = document.getElementById("{{ form.temperatura_max.auto_id }}");
+
+  if (scaleSelect && minInput && maxInput) {
+    scaleSelect.addEventListener("change", function () {
+      if (this.value === "C") {
+        // Celsius
+        minInput.value = "10";
+        maxInput.value = "12";
+      } else {
+        // Fahrenheit
+        minInput.value = "50";
+        maxInput.value = "52";
+      }
+    });
   }
 })();
 </script>
+
 {% endblock %}

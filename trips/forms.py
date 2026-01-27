@@ -21,6 +21,19 @@ from workshop.models import WorkshopOrder
 
 from .models import Trip, TransferType, TripStatus
 
+from .models import (
+    Trip,
+    TransferType,
+    TripStatus,
+    TripClassification,
+    TemperatureScale,
+    CartaPorteCFDI,
+    CartaPorteLocation,
+    CartaPorteGoods,
+    CartaPorteTransportFigure,
+)
+
+
 class TripForm(forms.ModelForm):
     class Meta:
         model = Trip
@@ -31,15 +44,25 @@ class TripForm(forms.ModelForm):
             "truck",
             "reefer_box",
             "transfer_operator",
+
+            # ✅ NUEVOS
+            "producto",
+            "clasificacion",
+            "temp_scale",
+            "temperatura_min",
+            "temperatura_max",
+
             "observations",
         ]
         widgets = {
             "observations": forms.Textarea(attrs={"rows": 3}),
+            "producto": forms.TextInput(attrs={"placeholder": "Ej. Hortaliza, Carne, Congelados..."}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Transfer operators (cruce)
         qs = Operator.objects.filter(
             deleted=False,
             status="ALTA",
@@ -48,33 +71,44 @@ class TripForm(forms.ModelForm):
                 CrossBorderCapability.SOLO_CRUCE,
             ],
         ).order_by("nombre")
-
         self.fields["transfer_operator"].queryset = qs
 
-
-        # Estilo
+        # Estilo Bootstrap (sm)
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.update({"class": "form-check-input"})
             else:
-                field.widget.attrs.update({"class": "form-control form-control-sm"})
+                base = field.widget.attrs.get("class", "")
+                field.widget.attrs.update({"class": (base + " form-control form-control-sm").strip()})
 
-        if "client" in self.fields:
-            self.fields["client"].label_from_instance = (
-                lambda obj: obj.nombre
+        # selects sm
+        for k in ["client", "route", "operator", "truck", "reefer_box", "transfer_operator", "clasificacion", "temp_scale"]:
+            if k in self.fields and isinstance(self.fields[k].widget, (forms.Select,)):
+                self.fields[k].widget.attrs.update({"class": "form-control form-control-sm"})
+
+        # Temperatura: inputs numéricos con step
+        if "temperatura_min" in self.fields:
+            self.fields["temperatura_min"].widget = forms.NumberInput(
+                attrs={"class": "form-control form-control-sm", "step": "0.01"}
             )
+        if "temperatura_max" in self.fields:
+            self.fields["temperatura_max"].widget = forms.NumberInput(
+                attrs={"class": "form-control form-control-sm", "step": "0.01"}
+            )
+
+        # labels / empty labels
+        if "client" in self.fields:
+            self.fields["client"].label_from_instance = lambda obj: obj.nombre
             self.fields["client"].empty_label = "Selecciona cliente…"
 
-        # Orden operadores
         if "operator" in self.fields:
             self.fields["operator"].queryset = self.fields["operator"].queryset.order_by("nombre")
 
         # --- Route: vacío hasta elegir cliente ---
         if "route" in self.fields:
-            qs = self.fields["route"].queryset.select_related("origen", "destino", "client")
+            qs_route = self.fields["route"].queryset.select_related("origen", "destino", "client")
 
             client_id = None
-
             if self.is_bound:
                 client_id = self.data.get("client") or self.data.get("client_id")
 
@@ -86,14 +120,11 @@ class TripForm(forms.ModelForm):
                 client_id = getattr(client_initial, "id", None) or client_initial
 
             if client_id:
-                qs = qs.filter(client_id=client_id).order_by("origen__nombre", "destino__nombre")
-                self.fields["route"].queryset = qs
+                qs_route = qs_route.filter(client_id=client_id).order_by("origen__nombre", "destino__nombre")
+                self.fields["route"].queryset = qs_route
             else:
-                # 👇 UX: no muestres rutas de todos si no hay cliente
-                self.fields["route"].queryset = qs.none()
+                self.fields["route"].queryset = qs_route.none()
 
-            # placeholders útiles
-            self.fields["client"].empty_label = "Selecciona cliente…"
             self.fields["route"].empty_label = "Selecciona ruta…"
 
         # === Filtro de unidades SOLO al crear viaje ===
@@ -131,21 +162,27 @@ class TripForm(forms.ModelForm):
     def clean_observations(self):
         return (self.cleaned_data.get("observations") or "").strip()
 
+    def clean_producto(self):
+        return (self.cleaned_data.get("producto") or "").strip()
+
     def clean(self):
         cleaned = super().clean()
+
         client = cleaned.get("client")
         route = cleaned.get("route")
 
-        # Si el usuario eligió ruta, asegura coherencia
+        # coherencia client-route
         if route and client and route.client_id != client.id:
             self.add_error("route", "La ruta no pertenece a este cliente.")
 
-        # Tip: si quieres que el client quede SIEMPRE derivado de la ruta:
-        # if route:
-        #     cleaned["client"] = route.client
+        # ✅ Validación de temperatura
+        tmin = cleaned.get("temperatura_min")
+        tmax = cleaned.get("temperatura_max")
+        if tmin is not None and tmax is not None and tmin > tmax:
+            self.add_error("temperatura_min", "La temperatura mínima no puede ser mayor que la máxima.")
+            self.add_error("temperatura_max", "La temperatura máxima no puede ser menor que la mínima.")
 
         return cleaned
-
 
 
 class TripSearchForm(forms.Form):
@@ -184,14 +221,6 @@ class TripSearchForm(forms.Form):
         ),
         widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
     )
-
-from .models import (
-    CartaPorteCFDI,
-    CartaPorteLocation,
-    CartaPorteGoods,
-    CartaPorteTransportFigure,
-)
-
 class CartaPorteCFDIForm(forms.ModelForm):
     """
     Main form for CartaPorteCFDI.

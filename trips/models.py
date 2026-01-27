@@ -23,6 +23,15 @@ class TripStatus(models.TextChoices):
     COMPLETADO = "COMPLETADO", "Completado"
     CANCELADO = "CANCELADO", "Cancelado"
 
+class TripClassification(models.TextChoices):
+    NACIONAL = "NACIONAL", "Nacional"
+    EXPORTACION = "EXPORTACION", "Exportación"
+
+
+class TemperatureScale(models.TextChoices):
+    F = "F", "Fahrenheit (°F)"
+    C = "C", "Celsius (°C)"
+
 
 class Trip(models.Model):
     """
@@ -104,8 +113,42 @@ class Trip(models.Model):
     pago_transfer_solo_cruce_snapshot = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00")
     )
+    producto = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Producto",
+        help_text="Hortaliza, Congelados, etc.)",
+    )
+    clasificacion = models.CharField(
+        max_length=20,
+        choices=TripClassification.choices,
+        default=TripClassification.NACIONAL,
+        verbose_name="Clasificación",
+    )
+    temp_scale = models.CharField(
+        max_length=1,
+        choices=TemperatureScale.choices,
+        default=TemperatureScale.C,
+        verbose_name="Escala de temperatura",
+    )
+    temperatura_min = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Temperatura mínima",
+        help_text="",
+    )
+    temperatura_max = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Temperatura máxima",
+        help_text="",
+    )
 
-        # --- Soft delete ---
+     # --- Soft delete ---
     deleted = models.BooleanField(default=False, db_index=True)
 
     # Managers (mismo patrón que Operator)
