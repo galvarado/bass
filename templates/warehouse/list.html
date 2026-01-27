@@ -1,3 +1,4 @@
+```django
 {% extends "base.html" %}
 {% load currency_extras %}
 
@@ -31,11 +32,13 @@
             </button>
           </div>
         </div>
+        <input type="hidden" name="tab" value="{{ tab|default:'spareparts' }}">
       </div>
+
       <div class="col-md-4 mb-2 text-right d-none d-md-block text-muted small">
-        Mostrando {{ spareparts|length }} refacción{{ spareparts|length|pluralize:"es" }}
-        · {{ purchases|length }} compra{{ purchases|length|pluralize:"s" }}
-        · {{ payments|length }} pago{{ payments|length|pluralize:"s" }}
+        Mostrando {{ spareparts_count|default:spareparts|length }} refacción{{ spareparts_count|default:spareparts|length|pluralize:"es" }}
+        · {{ purchases_count|default:purchases|length }} compra{{ purchases_count|default:purchases|length|pluralize:"s" }}
+        · {{ payments_count|default:payments|length }} pago{{ payments_count|default:payments|length|pluralize:"s" }}
       </div>
     </div>
   </div>
@@ -43,26 +46,56 @@
 
 <ul class="nav nav-tabs mb-3" id="warehouseTabs" role="tablist">
   <li class="nav-item">
-    <a class="nav-link active" id="tab-spareparts" data-toggle="tab" href="#pane-spareparts" role="tab">
+    <a class="nav-link {% if tab == 'spareparts' %}active{% endif %}"
+       id="tab-spareparts" data-toggle="tab" href="#pane-spareparts" role="tab">
       <i class="fas fa-cogs"></i> Refacciones
     </a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="tab-purchases" data-toggle="tab" href="#pane-purchases" role="tab">
+    <a class="nav-link {% if tab == 'purchases' %}active{% endif %}"
+       id="tab-purchases" data-toggle="tab" href="#pane-purchases" role="tab">
       <i class="fas fa-file-invoice-dollar"></i> Compras
     </a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="tab-payments" data-toggle="tab" href="#pane-payments" role="tab">
+    <a class="nav-link {% if tab == 'payments' %}active{% endif %}"
+       id="tab-payments" data-toggle="tab" href="#pane-payments" role="tab">
       <i class="fas fa-money-bill-wave"></i> Pagos
     </a>
   </li>
 </ul>
 
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if tab == "spareparts" %}
+      {% if sp_is_paginated %}
+        Mostrando {{ sp_page_obj.start_index }}–{{ sp_page_obj.end_index }} de {{ sp_paginator.count }}
+        · Página {{ sp_page_obj.number }} de {{ sp_paginator.num_pages }}
+      {% else %}
+        {{ spareparts|length }} refacción{{ spareparts|length|pluralize:"es" }}
+      {% endif %}
+    {% elif tab == "purchases" %}
+      {% if p_is_paginated %}
+        Mostrando {{ p_page_obj.start_index }}–{{ p_page_obj.end_index }} de {{ p_paginator.count }}
+        · Página {{ p_page_obj.number }} de {{ p_paginator.num_pages }}
+      {% else %}
+        {{ purchases|length }} compra{{ purchases|length|pluralize:"s" }}
+      {% endif %}
+    {% else %}
+      {% if pay_is_paginated %}
+        Mostrando {{ pay_page_obj.start_index }}–{{ pay_page_obj.end_index }} de {{ pay_paginator.count }}
+        · Página {{ pay_page_obj.number }} de {{ pay_paginator.num_pages }}
+      {% else %}
+        {{ payments|length }} pago{{ payments|length|pluralize:"s" }}
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
 <div class="tab-content" id="warehouseTabsContent">
 
   <!-- ===== REFACCIONES ===== -->
-  <div class="tab-pane fade show active" id="pane-spareparts" role="tabpanel">
+  <div class="tab-pane fade {% if tab == 'spareparts' %}show active{% endif %}" id="pane-spareparts" role="tabpanel">
     <div class="card">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
@@ -116,11 +149,40 @@
           </tbody>
         </table>
       </div>
+
+      {% if sp_is_paginated %}
+      <div class="card-footer py-2">
+        <ul class="pagination pagination-sm mb-0">
+          {% if sp_page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link"
+                 href="?tab=spareparts&spage={{ sp_page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}">‹</a>
+            </li>
+          {% endif %}
+          {% for i in sp_paginator.page_range %}
+            {% if i == sp_page_obj.number %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% elif i >= sp_page_obj.number|add:'-2' and i <= sp_page_obj.number|add:'2' %}
+              <li class="page-item">
+                <a class="page-link"
+                   href="?tab=spareparts&spage={{ i }}&q={{ request.GET.q|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+          {% if sp_page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link"
+                 href="?tab=spareparts&spage={{ sp_page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}">›</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
     </div>
   </div>
 
   <!-- ===== COMPRAS ===== -->
-  <div class="tab-pane fade" id="pane-purchases" role="tabpanel">
+  <div class="tab-pane fade {% if tab == 'purchases' %}show active{% endif %}" id="pane-purchases" role="tabpanel">
     <div class="card">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
@@ -235,11 +297,40 @@
           </tbody>
         </table>
       </div>
+
+      {% if p_is_paginated %}
+      <div class="card-footer py-2">
+        <ul class="pagination pagination-sm mb-0">
+          {% if p_page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link"
+                 href="?tab=purchases&ppage={{ p_page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}">‹</a>
+            </li>
+          {% endif %}
+          {% for i in p_paginator.page_range %}
+            {% if i == p_page_obj.number %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% elif i >= p_page_obj.number|add:'-2' and i <= p_page_obj.number|add:'2' %}
+              <li class="page-item">
+                <a class="page-link"
+                   href="?tab=purchases&ppage={{ i }}&q={{ request.GET.q|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+          {% if p_page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link"
+                 href="?tab=purchases&ppage={{ p_page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}">›</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
     </div>
   </div>
 
   <!-- ===== PAGOS ===== -->
-  <div class="tab-pane fade" id="pane-payments" role="tabpanel">
+  <div class="tab-pane fade {% if tab == 'payments' %}show active{% endif %}" id="pane-payments" role="tabpanel">
     <div class="card">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
@@ -310,9 +401,65 @@
           </tbody>
         </table>
       </div>
+
+      {% if pay_is_paginated %}
+      <div class="card-footer py-2">
+        <ul class="pagination pagination-sm mb-0">
+          {% if pay_page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link"
+                 href="?tab=payments&paypage={{ pay_page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}">‹</a>
+            </li>
+          {% endif %}
+          {% for i in pay_paginator.page_range %}
+            {% if i == pay_page_obj.number %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% elif i >= pay_page_obj.number|add:'-2' and i <= pay_page_obj.number|add:'2' %}
+              <li class="page-item">
+                <a class="page-link"
+                   href="?tab=payments&paypage={{ i }}&q={{ request.GET.q|urlencode }}">{{ i }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+          {% if pay_page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link"
+                 href="?tab=payments&paypage={{ pay_page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}">›</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
     </div>
   </div>
 
 </div>
 
+<script>
+  document.getElementById("tab-spareparts")?.addEventListener("click", () => {
+    const u = new URL(window.location);
+    u.searchParams.set("tab", "spareparts");
+    u.searchParams.delete("ppage");
+    u.searchParams.delete("paypage");
+    window.history.replaceState({}, "", u);
+  });
+
+  document.getElementById("tab-purchases")?.addEventListener("click", () => {
+    const u = new URL(window.location);
+    u.searchParams.set("tab", "purchases");
+    u.searchParams.delete("spage");
+    u.searchParams.delete("paypage");
+    window.history.replaceState({}, "", u);
+  });
+
+  document.getElementById("tab-payments")?.addEventListener("click", () => {
+    const u = new URL(window.location);
+    u.searchParams.set("tab", "payments");
+    u.searchParams.delete("spage");
+    u.searchParams.delete("ppage");
+    window.history.replaceState({}, "", u);
+  });
+</script>
+
 {% endblock %}
+```

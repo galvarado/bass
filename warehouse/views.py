@@ -8,6 +8,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DetailView, D
 from django.db import transaction
 from decimal import Decimal
 from django.forms import inlineformset_factory
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from .models import SparePart, SparePartPurchase, SparePartMovement, SupplierPayment, SupplierPaymentAllocation
 from .forms import (
@@ -20,61 +21,136 @@ from .forms import (
     SupplierPaymentAllocationForm
 )
 
+from common.mixins import AlmacenRequiredMixin
 
 
-class SparePartListView(ListView):
+
+class SparePartListView(AlmacenRequiredMixin, ListView):
+    """
+    Lista combinada (tabs) de:
+      - Refacciones (spage)
+      - Compras (ppage)
+      - Pagos (paypage)
+    Búsqueda: q aplica a los 3
+    """
     model = SparePart
     template_name = "warehouse/list.html"
     context_object_name = "spareparts"
-    paginate_by = 10
+    paginate_by = None  # manual
 
-    def get_queryset(self):
-        """
-        Búsqueda simple:
-        - ?q=<texto>
-        Filtra en: code, name y description.
-        """
-        # El manager ya filtra deleted=False, pero dejamos el filtro explícito
-        qs = SparePart.objects.filter(deleted=False)
+    # ---------- helpers ----------
+    def _paginate(self, qs, page_param, page_size_param, default_size=10):
+        page = self.request.GET.get(page_param, 1)
+        try:
+            size = int(self.request.GET.get(page_size_param, default_size))
+        except (TypeError, ValueError):
+            size = default_size
 
+        paginator = Paginator(qs, size)
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+
+        return paginator, page_obj, page_obj.object_list
+
+    def _q_tokens(self):
         q = (self.request.GET.get("q") or "").strip()
+        return q.split() if q else []
 
-        if q:
-            for token in q.split():
-                qs = qs.filter(
-                    Q(code__icontains=token)
-                    | Q(name__icontains=token)
-                    | Q(description__icontains=token)
-                )
-
+    # ---------- filtros ----------
+    def _filter_spareparts(self, qs):
+        for token in self._q_tokens():
+            qs = qs.filter(
+                Q(code__icontains=token) |
+                Q(name__icontains=token) |
+                Q(description__icontains=token)
+            )
         return qs.order_by("name")
+
+    def _filter_purchases(self, qs):
+        # ajusta campos si tu modelo difiere
+        for token in self._q_tokens():
+            qs = qs.filter(
+                Q(invoice_number__icontains=token) |
+                Q(notes__icontains=token) |
+                Q(supplier__nombre__icontains=token)
+            )
+        return qs.select_related("supplier").order_by("-date", "-created_at", "-id")
+
+    def _filter_payments(self, qs):
+        for token in self._q_tokens():
+            qs = qs.filter(
+                Q(reference__icontains=token) |
+                Q(notes__icontains=token) |
+                Q(method__icontains=token) |
+                Q(supplier__nombre__icontains=token)
+            )
+        return qs.select_related("supplier").order_by("-date", "-created_at", "-id")
+
+    # ---------- main ----------
+    def get_queryset(self):
+        qs = SparePart.objects.filter(deleted=False)
+        qs = self._filter_spareparts(qs)
+        self._spareparts_qs = qs
+        return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        # Form de búsqueda (para refacciones)
+
+        ctx["tab"] = self.request.GET.get("tab") or "spareparts"
         ctx["search_form"] = SparePartSearchForm(self.request.GET or None)
 
-        # Compras para la segunda tabla (solo no eliminadas)
-        ctx["purchases"] = (
-            SparePartPurchase.objects.filter(deleted=False)
-            .order_by("-date", "-created_at")
+        # ---------- Refacciones ----------
+        sp_paginator, sp_page_obj, sp_list = self._paginate(
+            self._spareparts_qs,
+            page_param="spage",
+            page_size_param="spage_size",
+            default_size=10,
         )
+        ctx["sp_paginator"] = sp_paginator
+        ctx["sp_page_obj"] = sp_page_obj
+        ctx["sp_is_paginated"] = sp_paginator.num_pages > 1
+        ctx["spareparts"] = sp_list
+        ctx["spareparts_count"] = sp_paginator.count
 
-        ctx["payments"] = (
-            SupplierPayment.objects.filter(deleted=False)
-            .select_related("supplier")
-            .order_by("-date", "-created_at", "-id")
+        # ---------- Compras ----------
+        purchases_qs = SparePartPurchase.objects.filter(deleted=False)
+        purchases_qs = self._filter_purchases(purchases_qs)
+
+        p_paginator, p_page_obj, p_list = self._paginate(
+            purchases_qs,
+            page_param="ppage",
+            page_size_param="ppage_size",
+            default_size=10,
         )
+        ctx["p_paginator"] = p_paginator
+        ctx["p_page_obj"] = p_page_obj
+        ctx["p_is_paginated"] = p_paginator.num_pages > 1
+        ctx["purchases"] = p_list
+        ctx["purchases_count"] = p_paginator.count
+
+        # ---------- Pagos ----------
+        payments_qs = SupplierPayment.objects.filter(deleted=False)
+        payments_qs = self._filter_payments(payments_qs)
+
+        pay_paginator, pay_page_obj, pay_list = self._paginate(
+            payments_qs,
+            page_param="paypage",
+            page_size_param="paypage_size",
+            default_size=10,
+        )
+        ctx["pay_paginator"] = pay_paginator
+        ctx["pay_page_obj"] = pay_page_obj
+        ctx["pay_is_paginated"] = pay_paginator.num_pages > 1
+        ctx["payments"] = pay_list
+        ctx["payments_count"] = pay_paginator.count
+
         return ctx
 
-    def get_paginate_by(self, queryset):
-        try:
-            return int(self.request.GET.get("page_size", self.paginate_by))
-        except (TypeError, ValueError):
-            return self.paginate_by
-
-
-class SparePartCreateView(CreateView):
+class SparePartCreateView(AlmacenRequiredMixin, CreateView):
     model = SparePart
     form_class = SparePartForm
     template_name = "warehouse/sparepart_form.html"
@@ -85,7 +161,8 @@ class SparePartCreateView(CreateView):
         messages.success(self.request, "Refacción creada correctamente.")
         return resp
 
-class SparePartUpdateView(UpdateView):
+
+class SparePartUpdateView(AlmacenRequiredMixin, UpdateView):
     model = SparePart
     form_class = SparePartForm
     template_name = "warehouse/sparepart_form.html"
@@ -99,7 +176,8 @@ class SparePartUpdateView(UpdateView):
         messages.success(self.request, "Refacción actualizada correctamente.")
         return resp
 
-class SparePartDetailView(DetailView):
+
+class SparePartDetailView(AlmacenRequiredMixin, DetailView):
     model = SparePart
     template_name = "warehouse/sparepart_detail.html"
     context_object_name = "part"
@@ -109,7 +187,8 @@ class SparePartDetailView(DetailView):
         ctx["movements"] = self.object.movements.filter(deleted=False).order_by("-date")
         return ctx
 
-class SparePartSoftDeleteView(DeleteView):
+
+class SparePartSoftDeleteView(AlmacenRequiredMixin, DeleteView):
     model = SparePart
     template_name = "warehouse/sparepart_confirm_delete.html"
     success_url = reverse_lazy("warehouse:sparepart_list")
@@ -131,7 +210,8 @@ class SparePartSoftDeleteView(DeleteView):
         # redirige el POST hacia delete()
         return self.delete(request, *args, **kwargs)
 
-class SparePartPurchaseCreateView(CreateView):
+
+class SparePartPurchaseCreateView(AlmacenRequiredMixin, CreateView):
     model = SparePartPurchase
     form_class = SparePartPurchaseForm
     template_name = "warehouse/purchase_form.html"
@@ -213,14 +293,14 @@ class SparePartPurchaseCreateView(CreateView):
 
         return HttpResponseRedirect(self.get_success_url())
 
-
     def form_invalid_with_items(self, form, formset):
         messages.error(self.request, "Por favor corrige los errores en la compra.")
         return self.render_to_response(
             self.get_context_data(form=form, item_formset=formset)
         )
 
-class SparePartPurchaseDetailView(DetailView):
+
+class SparePartPurchaseDetailView(AlmacenRequiredMixin, DetailView):
     model = SparePartPurchase
     template_name = "warehouse/purchase_detail.html"
     context_object_name = "purchase"
@@ -233,7 +313,8 @@ class SparePartPurchaseDetailView(DetailView):
         ctx["items"] = self.object.items.all().order_by("id")
         return ctx
 
-class SparePartPurchaseUpdateStatusView(UpdateView):
+
+class SparePartPurchaseUpdateStatusView(AlmacenRequiredMixin, UpdateView):
     model = SparePartPurchase
     form_class = SparePartPurchaseStatusForm
     template_name = "warehouse/purchase_form.html"
@@ -294,6 +375,7 @@ class SparePartPurchaseUpdateStatusView(UpdateView):
 
         return resp
 
+
 SupplierPaymentAllocationFormSet = inlineformset_factory(
     SupplierPayment,
     SupplierPaymentAllocation,
@@ -302,7 +384,8 @@ SupplierPaymentAllocationFormSet = inlineformset_factory(
     can_delete=False,
 )
 
-class SupplierPaymentCreateView(CreateView):
+
+class SupplierPaymentCreateView(AlmacenRequiredMixin, CreateView):
     model = SupplierPayment
     form_class = SupplierPaymentForm
     template_name = "warehouse/payment_form.html"
@@ -411,7 +494,8 @@ class SupplierPaymentCreateView(CreateView):
         messages.success(self.request, "Pago registrado correctamente.")
         return HttpResponseRedirect(self.get_success_url())
 
-class SupplierPaymentDetailView(DetailView):
+
+class SupplierPaymentDetailView(AlmacenRequiredMixin, DetailView):
     model = SupplierPayment
     template_name = "warehouse/payment_detail.html"
     context_object_name = "payment"
