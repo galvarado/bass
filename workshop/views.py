@@ -8,6 +8,7 @@ from django.db import transaction
 from django.views.generic import (
     ListView, CreateView, UpdateView, DetailView, DeleteView
 )
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from .models import WorkshopOrder, MaintenanceRequest
 from .forms import WorkshopOrderForm, WorkshopOrderSearchForm, SparePartUsageFormSet
@@ -229,42 +230,35 @@ class WorkshopOrderSoftDeleteView(TallerRequiredMixin, DeleteView):
         return self.delete(request, *args, **kwargs)
 
 
+
 class WorkshopOrderListView(TallerRequiredMixin, ListView):
     model = WorkshopOrder
     template_name = "workshop/list.html"
-    context_object_name = "orders"  # estas serán las históricas
-    paginate_by = 10
+    context_object_name = "orders"  # histórico
+    paginate_by = None  # manual para 3 paginadores
+
+    def _paginate(self, qs, page_param, page_size_param, default_size=10):
+        page = self.request.GET.get(page_param, 1)
+        try:
+            size = int(self.request.GET.get(page_size_param, default_size))
+        except (TypeError, ValueError):
+            size = default_size
+
+        paginator = Paginator(qs, size)
+        try:
+            page_obj = paginator.page(page)
+        except PageNotAnInteger:
+            page_obj = paginator.page(1)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages)
+
+        return paginator, page_obj, page_obj.object_list
 
     def get_queryset(self):
-        """
-        Órdenes de taller (OT):
-        - Por defecto: solo no eliminadas (deleted=False).
-        - Si ?show_deleted=1 → solo eliminadas.
-        - Si ?show_all=1 → todas (incluidas eliminadas).
-        - Filtros:
-          * q: económico, placas, descripción.
-          * estado: estado de OT.
-          * tipo_unidad (virtual): TRUCK / BOX.
-        - Separación:
-          * active_orders (sin paginación)
-          * orders (histórico con paginación)
-        Además, en el contexto se agregan:
-          * maintenance_requests (solicitudes de mantenimiento)
-        """
-        show_deleted = self.request.GET.get("show_deleted") == "1"
-        show_all = self.request.GET.get("show_all") == "1"
+        # histórico se calcula en get_context_data (para no duplicar)
+        return WorkshopOrder.objects.none()
 
-        if show_all:
-            qs = WorkshopOrder.objects.all()
-        elif show_deleted:
-            qs = WorkshopOrder.objects.filter(deleted=True)
-        else:
-            qs = WorkshopOrder.objects.filter(deleted=False)
-
-        q = (self.request.GET.get("q") or "").strip()
-        estado = (self.request.GET.get("estado") or "").strip()
-        tipo_unidad = (self.request.GET.get("tipo_unidad") or "").strip()
-
+    def _apply_filters_orders(self, qs, q, estado, tipo_unidad):
         if q:
             for token in q.split():
                 qs = qs.filter(
@@ -283,21 +277,12 @@ class WorkshopOrderListView(TallerRequiredMixin, ListView):
         elif tipo_unidad == "BOX":
             qs = qs.filter(reefer_box__isnull=False)
 
-        activos = qs.exclude(estado__in=["TERMINADA", "CANCELADA"])
-        historicos = qs.filter(estado__in=["TERMINADA", "CANCELADA"])
+        return qs
 
-        self.active_orders = activos.order_by("-fecha_entrada")
-
-        self.maintenance_requests = self._get_maintenance_requests(q=q, tipo_unidad=tipo_unidad)
-
-        return historicos.order_by("-fecha_entrada")
-
-    def _get_maintenance_requests(self, q: str, tipo_unidad: str):
+    def _get_maintenance_requests(self, q, tipo_unidad):
         qs = MaintenanceRequest.objects.filter(deleted=False).select_related(
             "truck", "reefer_box", "orden_taller", "operador"
-        )
-
-        qs = qs.filter(estado__in=["ABIERTA", "EVALUADA", "CONVERTIDA"])
+        ).filter(estado__in=["ABIERTA", "EVALUADA", "CONVERTIDA"])
 
         if q:
             for token in q.split():
@@ -318,15 +303,55 @@ class WorkshopOrderListView(TallerRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["search_form"] = WorkshopOrderSearchForm(self.request.GET or None)
-        ctx["active_orders"] = getattr(self, "active_orders", WorkshopOrder.objects.none())
-        ctx["maintenance_requests"] = getattr(
-            self, "maintenance_requests", MaintenanceRequest.objects.none()
-        )
-        return ctx
 
-    def get_paginate_by(self, queryset):
-        try:
-            return int(self.request.GET.get("page_size", self.paginate_by))
-        except (TypeError, ValueError):
-            return self.paginate_by
+        q = (self.request.GET.get("q") or "").strip()
+        estado = (self.request.GET.get("estado") or "").strip()
+        tipo_unidad = (self.request.GET.get("tipo_unidad") or "").strip()
+
+        show_deleted = self.request.GET.get("show_deleted") == "1"
+        show_all = self.request.GET.get("show_all") == "1"
+
+        if show_all:
+            base_orders = WorkshopOrder.objects.all()
+        elif show_deleted:
+            base_orders = WorkshopOrder.objects.filter(deleted=True)
+        else:
+            base_orders = WorkshopOrder.objects.filter(deleted=False)
+
+        base_orders = self._apply_filters_orders(base_orders, q=q, estado=estado, tipo_unidad=tipo_unidad)
+
+        # ===== Activas (paginadas) =====
+        active_qs = base_orders.exclude(estado__in=["TERMINADA", "CANCELADA"]).order_by("-fecha_entrada")
+        a_paginator, a_page_obj, a_list = self._paginate(
+            active_qs, page_param="apage", page_size_param="apage_size", default_size=10
+        )
+        ctx["a_paginator"] = a_paginator
+        ctx["a_page_obj"] = a_page_obj
+        ctx["a_is_paginated"] = a_paginator.num_pages > 1
+        ctx["active_orders"] = a_list
+        ctx["apage"] = a_page_obj.number
+
+        # ===== Históricas (paginadas) =====
+        history_qs = base_orders.filter(estado__in=["TERMINADA", "CANCELADA"]).order_by("-fecha_entrada")
+        paginator, page_obj, history_list = self._paginate(
+            history_qs, page_param="page", page_size_param="page_size", default_size=10
+        )
+        ctx["paginator"] = paginator
+        ctx["page_obj"] = page_obj
+        ctx["is_paginated"] = paginator.num_pages > 1
+        ctx["orders"] = history_list
+
+        # ===== Maintenance Requests (paginadas) =====
+        mr_qs = self._get_maintenance_requests(q=q, tipo_unidad=tipo_unidad)
+        mr_paginator, mr_page_obj, mr_list = self._paginate(
+            mr_qs, page_param="mrpage", page_size_param="mrpage_size", default_size=10
+        )
+        ctx["mr_paginator"] = mr_paginator
+        ctx["mr_page_obj"] = mr_page_obj
+        ctx["mr_is_paginated"] = mr_paginator.num_pages > 1
+        ctx["maintenance_requests"] = mr_list
+
+        # Search form
+        ctx["search_form"] = WorkshopOrderSearchForm(self.request.GET or None)
+
+        return ctx

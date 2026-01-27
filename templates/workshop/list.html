@@ -46,6 +46,19 @@
   <i class="fas fa-clipboard-list"></i> Solicitudes de mantenimiento
 </h5>
 
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if mr_is_paginated and mr_paginator.count %}
+      Mostrando {{ mr_page_obj.start_index }}–{{ mr_page_obj.end_index }} de {{ mr_paginator.count }}
+      · Página {{ mr_page_obj.number }} de {{ mr_paginator.num_pages }}
+    {% elif mr_paginator and mr_paginator.count == 0 %}
+      0 resultados
+    {% else %}
+      {{ maintenance_requests|length }} solicitud{{ maintenance_requests|length|pluralize:"es" }}
+    {% endif %}
+  </div>
+</div>
+
 <div class="card mb-4">
   <div class="table-responsive">
     <table class="table table-hover mb-0">
@@ -104,7 +117,6 @@
               <i class="fas fa-eye"></i>
             </a>
 
-            {# Convertir a OT: solo si no está convertida #}
             {% if sm.estado != "CONVERTIDA" and not sm.orden_taller %}
               <a href="{% url 'workshop:maintenance_convert' sm.pk %}"
                  class="btn btn-sm btn-outline-success"
@@ -112,7 +124,6 @@
                 <i class="fas fa-exchange-alt"></i>
               </a>
             {% else %}
-              {# Si ya está convertida, link a la OT #}
               {% if sm.orden_taller %}
                 <a href="{% url 'workshop:detail' sm.orden_taller.pk %}"
                    class="btn btn-sm btn-outline-success"
@@ -134,7 +145,7 @@
 
         {% empty %}
         <tr>
-          <td colspan="8" class="text-center text-muted py-4">
+          <td colspan="6" class="text-center text-muted py-4">
             No hay solicitudes de mantenimiento.
           </td>
         </tr>
@@ -143,6 +154,37 @@
 
     </table>
   </div>
+
+  {% if mr_is_paginated %}
+  <div class="card-footer py-2">
+    <ul class="pagination pagination-sm mb-0">
+      {% if mr_page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link"
+             href="?mrpage={{ mr_page_obj.previous_page_number }}&apage={{ apage|default:'' }}&page={{ page_obj.number|default:1 }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">‹</a>
+        </li>
+      {% endif %}
+
+      {% for i in mr_paginator.page_range %}
+        {% if i == mr_page_obj.number %}
+          <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% elif i >= mr_page_obj.number|add:'-2' and i <= mr_page_obj.number|add:'2' %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?mrpage={{ i }}&apage={{ apage|default:'' }}&page={{ page_obj.number|default:1 }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">{{ i }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if mr_page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link"
+             href="?mrpage={{ mr_page_obj.next_page_number }}&apage={{ apage|default:'' }}&page={{ page_obj.number|default:1 }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">›</a>
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+  {% endif %}
 </div>
 
 
@@ -152,6 +194,19 @@
 <h5 class="text-primary mt-4 mb-2">
   <i class="fas fa-wrench"></i> Órdenes activas
 </h5>
+
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if a_is_paginated and a_paginator.count %}
+      Mostrando {{ a_page_obj.start_index }}–{{ a_page_obj.end_index }} de {{ a_paginator.count }}
+      · Página {{ a_page_obj.number }} de {{ a_paginator.num_pages }}
+    {% elif a_paginator and a_paginator.count == 0 %}
+      0 resultados
+    {% else %}
+      {{ active_orders|length }} activa{{ active_orders|length|pluralize:"s" }}
+    {% endif %}
+  </div>
+</div>
 
 <div class="card mb-4">
   <div class="table-responsive">
@@ -192,7 +247,6 @@
 
           <td>{{ ot.descripcion|default:"Sin descripción"|truncatechars:60 }}</td>
 
-          <!-- Estado -->
           <td>
             {% if ot.estado == "ABIERTA" %}
               <span class="badge badge-warning">Abierta</span>
@@ -233,6 +287,37 @@
 
     </table>
   </div>
+
+  {% if a_is_paginated %}
+  <div class="card-footer py-2">
+    <ul class="pagination pagination-sm mb-0">
+      {% if a_page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link"
+             href="?apage={{ a_page_obj.previous_page_number }}&mrpage={{ mr_page_obj.number|default:1 }}&page={{ page_obj.number|default:1 }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">‹</a>
+        </li>
+      {% endif %}
+
+      {% for i in a_paginator.page_range %}
+        {% if i == a_page_obj.number %}
+          <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% elif i >= a_page_obj.number|add:'-2' and i <= a_page_obj.number|add:'2' %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?apage={{ i }}&mrpage={{ mr_page_obj.number|default:1 }}&page={{ page_obj.number|default:1 }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">{{ i }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if a_page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link"
+             href="?apage={{ a_page_obj.next_page_number }}&mrpage={{ mr_page_obj.number|default:1 }}&page={{ page_obj.number|default:1 }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">›</a>
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+  {% endif %}
 </div>
 
 
@@ -294,7 +379,6 @@
 
           <td>{{ ot.descripcion|default:"Sin descripción"|truncatechars:60 }}</td>
 
-          <!-- Estado -->
           <td>
             {% if ot.estado == "TERMINADA" %}
               <span class="badge badge-success">Terminada</span>
@@ -307,9 +391,9 @@
 
           <td>
             {% if ot.fecha_salida_real %}
-              {{ ot.fecha_salida_estimada|date:"d/m/Y" }}
+              {{ ot.fecha_salida_real|date:"d/m/Y" }}
             {% else %}
-              <span class="text-muted">Sin estimar</span>
+              <span class="text-muted">—</span>
             {% endif %}
           </td>
         </tr>
@@ -322,58 +406,37 @@
         </tr>
         {% endfor %}
       </tbody>
-
     </table>
   </div>
 
-  <!-- Paginación SOLO para el historial -->
   {% if is_paginated %}
   <div class="card-footer py-2">
-    <nav aria-label="Paginación">
-      <ul class="pagination pagination-sm mb-0">
+    <ul class="pagination pagination-sm mb-0">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link"
+             href="?page={{ page_obj.previous_page_number }}&mrpage={{ mr_page_obj.number|default:1 }}&apage={{ a_page_obj.number|default:1 }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">‹</a>
+        </li>
+      {% endif %}
 
-        {% if page_obj.has_previous %}
+      {% for i in paginator.page_range %}
+        {% if i == page_obj.number %}
+          <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% elif i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
           <li class="page-item">
-            <a class="page-link" href="?page=1&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">« Primero</a>
+            <a class="page-link"
+               href="?page={{ i }}&mrpage={{ mr_page_obj.number|default:1 }}&apage={{ a_page_obj.number|default:1 }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">{{ i }}</a>
           </li>
-          <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">‹ Anterior</a>
-          </li>
-        {% else %}
-          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
-          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
         {% endif %}
+      {% endfor %}
 
-        {% for i in paginator.page_range %}
-          {% if i == 1 or i == paginator.num_pages or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
-            {% if page_obj.number == i %}
-              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-            {% else %}
-              <li class="page-item">
-                <a class="page-link" href="?page={{ i }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">{{ i }}</a>
-              </li>
-            {% endif %}
-          {% elif i == 2 and page_obj.number > 4 %}
-            <li class="page-item disabled"><span class="page-link">…</span></li>
-          {% elif i == paginator.num_pages|add:'-1' and page_obj.number < paginator.num_pages|add:'-3' %}
-            <li class="page-item disabled"><span class="page-link">…</span></li>
-          {% endif %}
-        {% endfor %}
-
-        {% if page_obj.has_next %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">Siguiente ›</a>
-          </li>
-          <li class="page-item">
-            <a class="page-link" href="?page={{ paginator.num_pages }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">Última »</a>
-          </li>
-        {% else %}
-          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
-          <li class="page-item disabled"><span class="page-link">Última »</span></li>
-        {% endif %}
-
-      </ul>
-    </nav>
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link"
+             href="?page={{ page_obj.next_page_number }}&mrpage={{ mr_page_obj.number|default:1 }}&apage={{ a_page_obj.number|default:1 }}&q={{ request.GET.q|urlencode }}&tipo_unidad={{ request.GET.tipo_unidad|urlencode }}">›</a>
+        </li>
+      {% endif %}
+    </ul>
   </div>
   {% endif %}
 </div>
