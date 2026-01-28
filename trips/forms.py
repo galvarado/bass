@@ -264,8 +264,10 @@ class CartaPorteCFDIForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # Lazily resolve the Customer model when the form is instantiated
-        Client = apps.get_model("customers", "Client")  
-        self.fields["customer"].queryset = Client.objects.all()
+        Client = apps.get_model("customers", "Client")
+        qs = Client.objects.all().order_by("nombre")
+        self.fields["customer"].queryset = qs
+        self.fields["customer"].label_from_instance = lambda o: o.nombre
 
         # If instance has a customer, set the initial value
         if self.instance and self.instance.pk and getattr(self.instance, "customer_id", None):
@@ -275,9 +277,14 @@ class CartaPorteCFDIForm(forms.ModelForm):
 class CartaPorteLocationForm(forms.ModelForm):
     class Meta:
         model = CartaPorteLocation
-        exclude = ["carta_porte"]
+        exclude = [
+            "carta_porte",
+            "distancia_recorrida_km",         # ❌ fuera
+            "fecha_hora_salida_llegada",      # ❌ fuera (la tomamos del Trip)
+        ]
         widgets = {
             "tipo_ubicacion": forms.Select(attrs={"class": "form-control form-control-sm"}),
+
             "rfc": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "nombre": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "num_reg_id_trib": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
@@ -293,11 +300,6 @@ class CartaPorteLocationForm(forms.ModelForm):
             "estado": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "pais": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "codigo_postal": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-
-            "fecha_hora_salida_llegada": forms.DateTimeInput(
-                attrs={"class": "form-control form-control-sm", "type": "datetime-local"}
-            ),
-            "distancia_recorrida_km": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
 
             "orden": forms.NumberInput(attrs={"class": "form-control form-control-sm"}),
         }
@@ -335,8 +337,10 @@ CartaPorteLocationFormSet = inlineformset_factory(
     parent_model=CartaPorteCFDI,
     model=CartaPorteLocation,
     form=CartaPorteLocationForm,
-    extra=2,            # por ejemplo: 1 origen, 1 destino
-    can_delete=True
+    extra=0,            # ✅ no filas extra
+    can_delete=False,   # ✅ no se elimina
+    max_num=2,          # ✅ solo 2
+    validate_max=True,
 )
 
 CartaPorteGoodsFormSet = inlineformset_factory(

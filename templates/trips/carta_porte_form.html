@@ -1,110 +1,285 @@
 {% extends "base.html" %}
+{% load form_extras %}
 
-{% block title %}Carta Porte · Viaje {{ trip.id }}{% endblock %}
+{% block title %}Carta Porte · Viaje #{{ trip.id }} · BASS{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h4 mb-0">Carta Porte – Viaje {{ trip.id }}</h1>
+  <h1 class="h4 mb-0">Carta Porte · Viaje #{{ trip.id }}</h1>
   <a href="{% url 'trips:detail' trip.id %}" class="btn btn-light btn-sm">
-    <i class="fas fa-arrow-left"></i> Volver al viaje
+    <i class="fas fa-arrow-left"></i> Volver
   </a>
 </div>
 
-<form method="post" class="card shadow-sm form-compact">
+<form method="post" class="card shadow-sm">
   {% csrf_token %}
+
   <div class="card-body">
 
-    <h5 class="mb-3">Datos generales CFDI</h5>
-    {{ form.non_field_errors }}
-    <div class="row">
-      {% for field in form %}
-      <div class="col-md-4 mb-2">
-        <div class="form-group">
-          <label>{{ field.label }}</label>
-          {{ field }}
-          {% if field.errors %}
-          <div class="text-danger small">{{ field.errors|striptags }}</div>
+    {% if messages %}
+      {% for m in messages %}
+        <div class="alert alert-{{ m.tags }}">{{ m }}</div>
+      {% endfor %}
+    {% endif %}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- =========================
+         HEADER (solo receptor)
+    ========================== -->
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-file-invoice mr-1"></i> Datos generales
+    </h6>
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label>Cliente (Receptor)</label>
+        {{ form.customer|add_class:"form-control form-control-sm" }}
+        <small class="text-muted">
+          Por default es el cliente de origen, pero puedes cambiarlo.
+        </small>
+        {% if form.customer.errors %}
+          <div class="text-danger small mt-1">
+            {% for e in form.customer.errors %}{{ e }}<br>{% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- =========================
+         TRIP SNAPSHOT (read-only)
+    ========================== -->
+    <hr>
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-route mr-1"></i> Datos del viaje
+    </h6>
+
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label>Cliente</label>
+        <input class="form-control form-control-sm" value="{{ trip.client.nombre }}" readonly>
+      </div>
+      <div class="form-group col-md-3">
+        <label>Ruta</label>
+        <input class="form-control form-control-sm" value="{{ trip.route }}" readonly>
+      </div>
+      <div class="form-group col-md-3">
+        <label>Operador</label>
+        <input class="form-control form-control-sm" value="{{ trip.operator }}" readonly>
+      </div>
+      <div class="form-group col-md-3">
+        <label>Unidad</label>
+        <input class="form-control form-control-sm" value="{{ trip.truck }}" readonly>
+      </div>
+    </div>
+
+<hr>
+<h6 class="text-primary mb-2">
+  <i class="fas fa-map-marker-alt mr-1"></i> Ubicaciones (Origen / Destino)
+</h6>
+
+{{ fs_locations.management_form }}
+
+<div id="loc-forms">
+  {% for f in fs_locations.forms %}
+    <div class="border rounded p-2 mb-2 loc-form">
+      {{ f.id }}
+
+      {# ocultos pero necesarios para guardar #}
+      <div class="d-none">
+        {{ f.tipo_ubicacion }}
+        {{ f.orden }}
+        {{ f.rfc }}
+        {{ f.codigo_postal }}
+        {{ f.pais }}
+        {{ f.estado }}
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+          {% if f.instance.tipo_ubicacion == "Origen" %}
+            <span class="badge badge-success">Origen</span>
+          {% elif f.instance.tipo_ubicacion == "Destino" %}
+            <span class="badge badge-primary">Destino</span>
+          {% else %}
+            <span class="badge badge-secondary">{{ f.instance.tipo_ubicacion|default:"Ubicación" }}</span>
           {% endif %}
         </div>
       </div>
-      {% endfor %}
+
+      <div class="form-row">
+        <div class="form-group col-md-4">
+          <label>Cliente</label>
+          {% if f.instance.tipo_ubicacion == "Origen" %}
+            <input class="form-control form-control-sm" value="{{ trip.route.origen.client.nombre }}" readonly>
+          {% elif f.instance.tipo_ubicacion == "Destino" %}
+            <input class="form-control form-control-sm" value="{{ trip.route.destino.client.nombre }}" readonly>
+          {% else %}
+            <input class="form-control form-control-sm" value="" readonly>
+          {% endif %}
+        </div>
+
+        <div class="form-group col-md-4">
+          <label>Ubicación</label>
+          {{ f.nombre|add_class:"form-control form-control-sm loc-ro" }}
+        </div>
+
+        <div class="form-group col-md-4">
+          <label>Población</label>
+          {{ f.localidad|add_class:"form-control form-control-sm loc-ro" }}
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-md-4">
+          <label>Fecha/Hora salida/llegada</label>
+          {{ f.fecha_hora_salida_llegada|add_class:"form-control form-control-sm" }}
+        </div>
+      </div>
+
+      {% if f.non_field_errors %}
+        <div class="alert alert-danger py-1 mb-0">
+          {% for e in f.non_field_errors %}{{ e }}<br>{% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+    <!-- =========================
+         GOODS GRID
+    ========================== -->
+    <hr>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="text-primary mb-0">
+        <i class="fas fa-boxes mr-1"></i> Mercancías
+      </h6>
+      <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-good">
+        <i class="fas fa-plus"></i> Agregar mercancía
+      </button>
     </div>
 
-    <hr>
+    {{ fs_goods.management_form }}
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered mb-0" id="goods-table">
+        <thead class="thead-light">
+          <tr>
+            <th style="min-width:120px;">BienesTransp</th>
+            <th style="min-width:220px;">Descripción</th>
+            <th style="min-width:110px;">Cantidad</th>
+            <th style="min-width:110px;">Clave unidad</th>
+            <th style="min-width:140px;">Unidad</th>
+            <th style="min-width:110px;">Peso (kg)</th>
+            <th style="min-width:110px;">Peligroso</th>
+            <th style="min-width:110px;">Clave Mat.</th>
+            <th style="min-width:90px;">Embalaje</th>
+            <th style="min-width:80px;">Del</th>
+          </tr>
+        </thead>
+        <tbody id="goods-rows">
+          {% for f in fs_goods.forms %}
+          <tr class="goods-row">
+            <td>{{ f.bienes_transp|add_class:"form-control form-control-sm" }}{{ f.id }}</td>
+            <td>{{ f.descripcion|add_class:"form-control form-control-sm" }}</td>
+            <td>{{ f.cantidad|add_class:"form-control form-control-sm" }}</td>
+            <td>{{ f.clave_unidad|add_class:"form-control form-control-sm" }}</td>
+            <td>{{ f.unidad|add_class:"form-control form-control-sm" }}</td>
+            <td>{{ f.peso_en_kg|add_class:"form-control form-control-sm" }}</td>
+            <td class="text-center">{{ f.material_peligroso|add_class:"form-check-input" }}</td>
+            <td>{{ f.clave_material_peligroso|add_class:"form-control form-control-sm" }}</td>
+            <td>{{ f.embalaje|add_class:"form-control form-control-sm" }}</td>
+            <td class="text-center">
+              {% if f.DELETE %}
+                {{ f.DELETE|add_class:"form-check-input" }}
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-    <h5>Ubicaciones (Origen / Destino / Escalas)</h5>
-    {{ location_formset.management_form }}
-    {% for form in location_formset %}
-      <div class="border rounded p-2 mb-2">
-        {% for field in form.visible_fields %}
-          <div class="form-group mb-1">
-            <label class="small">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-            <div class="text-danger small">{{ field.errors|striptags }}</div>
-            {% endif %}
-          </div>
-        {% endfor %}
-        {% if form.can_delete %}
-          <div class="form-check">
-            {{ form.DELETE }} <label class="form-check-label small">Eliminar</label>
-          </div>
-        {% endif %}
-      </div>
-    {% endfor %}
-
-    <hr>
-
-    <h5>Mercancías</h5>
-    {{ goods_formset.management_form }}
-    {% for form in goods_formset %}
-      <div class="border rounded p-2 mb-2">
-        {% for field in form.visible_fields %}
-          <div class="form-group mb-1">
-            <label class="small">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-            <div class="text-danger small">{{ field.errors|striptags }}</div>
-            {% endif %}
-          </div>
-        {% endfor %}
-        {% if form.can_delete %}
-          <div class="form-check">
-            {{ form.DELETE }} <label class="form-check-label small">Eliminar</label>
-          </div>
-        {% endif %}
-      </div>
-    {% endfor %}
-
-    <hr>
-
-    <h5>Figura Transporte</h5>
-    {{ figures_formset.management_form }}
-    {% for form in figures_formset %}
-      <div class="border rounded p-2 mb-2">
-        {% for field in form.visible_fields %}
-          <div class="form-group mb-1">
-            <label class="small">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-            <div class="text-danger small">{{ field.errors|striptags }}</div>
-            {% endif %}
-          </div>
-        {% endfor %}
-        {% if form.can_delete %}
-          <div class="form-check">
-            {{ form.DELETE }} <label class="form-check-label small">Eliminar</label>
-          </div>
-        {% endif %}
-      </div>
-    {% endfor %}
+    <template id="goods-empty-row">
+      <tr class="goods-row">
+        <td>__BIENESTRANSP____ID__</td>
+        <td>__DESC__</td>
+        <td>__CANT__</td>
+        <td>__CLAVEU__</td>
+        <td>__UNIDAD__</td>
+        <td>__PESO__</td>
+        <td class="text-center">__PELIG__</td>
+        <td>__CLAVEMAT__</td>
+        <td>__EMB__</td>
+        <td class="text-center">__DELETE__</td>
+      </tr>
+    </template>
 
   </div>
 
-  <div class="card-footer text-right">
-    <button type="submit" class="btn btn-primary">
-      <i class="fas fa-save"></i> Guardar Carta Porte
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      <i class="fas fa-save"></i> Guardar
     </button>
   </div>
 </form>
+<script>
+(function() {
+  // readonly para ubicación y población
+  document.querySelectorAll(".loc-ro").forEach(el => {
+    el.readOnly = true;
+  });
+
+  // Goods add (si lo sigues usando)
+  function bumpTotal(prefix) {
+    const totalInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+    totalInput.value = String(parseInt(totalInput.value || "0", 10) + 1);
+    return parseInt(totalInput.value, 10) - 1;
+  }
+
+  function replaceAll(html, repls) {
+    let out = html;
+    for (const [k, v] of Object.entries(repls)) out = out.split(k).join(v);
+    return out;
+  }
+
+  function pickInput(empty, prefix, idx, fieldName) {
+    const re = new RegExp(`name="${prefix}-__prefix__-${fieldName}"[\\s\\S]*?>`, "m");
+    const m = empty.match(re);
+    return (m ? m[0] : "").replaceAll("__prefix__", idx);
+  }
+
+  const btnAddGood = document.getElementById("btn-add-good");
+  const goodsBody = document.getElementById("goods-rows");
+  const goodsTpl = document.getElementById("goods-empty-row");
+
+  btnAddGood?.addEventListener("click", function() {
+    const idx = bumpTotal("goods");
+    const empty = `{{ fs_goods.empty_form.as_p|escapejs }}`;
+
+    let html = goodsTpl.innerHTML;
+
+    html = replaceAll(html, {
+      "__BIENESTRANSP__": pickInput(empty, "goods", idx, "bienes_transp"),
+      "__DESC__": pickInput(empty, "goods", idx, "descripcion"),
+      "__CANT__": pickInput(empty, "goods", idx, "cantidad"),
+      "__CLAVEU__": pickInput(empty, "goods", idx, "clave_unidad"),
+      "__UNIDAD__": pickInput(empty, "goods", idx, "unidad"),
+      "__PESO__": pickInput(empty, "goods", idx, "peso_en_kg"),
+      "__PELIG__": pickInput(empty, "goods", idx, "material_peligroso"),
+      "__CLAVEMAT__": pickInput(empty, "goods", idx, "clave_material_peligroso"),
+      "__EMB__": pickInput(empty, "goods", idx, "embalaje"),
+      "__DELETE__": pickInput(empty, "goods", idx, "DELETE"),
+      "__ID__": pickInput(empty, "goods", idx, "id"),
+    });
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = html;
+    goodsBody.appendChild(tr);
+  });
+})();
+</script>
 {% endblock %}

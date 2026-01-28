@@ -34,11 +34,9 @@
           <i class="fas fa-trash"></i> Eliminar
         </button>
       {% endif %}
-      <a href="{% url 'trips:carta_porte_form' trip.id %}"
-           class="btn btn-sm btn-outline-secondary"
-           title="Carta Porte">
-          <i class="fas fa-edit"></i> Carta Porte
-        </a>
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'trips:carta_porte_edit' trip.id %}">
+      <i class="fas fa-file-invoice"></i> Carta Porte
+    </a>
     </div>
   </div>
 

@@ -151,6 +151,10 @@
           </td>
 
           <td class="text-right">
+             <a href="{% url 'trips:detail' t.pk %}"
+               class="btn btn-sm btn-outline-secondary" title="Ver detalle">
+              <i class="fas fa-eye"></i>
+            </a>
 
             {% if t.status == "PROGRAMADO" %}
                 <!-- Botón EDITAR habilitado -->
