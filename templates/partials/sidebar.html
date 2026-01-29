@@ -122,6 +122,10 @@
               <a class="collapse-item {% if '/trucks' in request.path %}active{% endif %}" href="{% url 'trucks:list' %}">
                 <i class="fas fa-truck mr-2 text-muted"></i> Vehículos
               </a>
+              <a class="collapse-item {% if '/goods' in request.path %}active{% endif %}"
+                href="{% url 'goods:list' %}">
+                <i class="fas fa-box mr-2 text-muted"></i> Mercancías
+              </a>
               <a class="collapse-item {% if '/suppliers' in request.path %}active{% endif %}" href="{% url 'suppliers:list' %}">
                 <i class="fas fa-id-card mr-2 text-muted"></i> Proveedores
               </a>

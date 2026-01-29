@@ -1,0 +1,77 @@
+{# templates/mercancias/detail.html #}
+{% extends "base.html" %}
+
+{% block title %}Detalle de Mercancía · BASS{% endblock %}
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Detalle de Mercancía</strong>
+    <div>
+      <a href="{% url 'mercancias:update' mercancia.pk %}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-edit"></i> Editar
+      </a>
+      <a href="{% url 'mercancias:delete' mercancia.pk %}" class="btn btn-sm btn-outline-danger">
+        <i class="fas fa-trash"></i> Eliminar
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body">
+
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-box mr-1"></i> Datos generales
+    </h6>
+
+    <dl class="row small">
+      <dt class="col-sm-3">Clave</dt>
+      <dd class="col-sm-9">
+        {{ mercancia.clave }}
+        {% if mercancia.deleted %}
+          <span class="badge badge-danger ml-2">Eliminada</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">Nombre / Descripción</dt>
+      <dd class="col-sm-9">{{ mercancia.nombre }}</dd>
+
+      <dt class="col-sm-3">Fracción arancelaria</dt>
+      <dd class="col-sm-9">
+        {% if mercancia.fraccion_arancelaria %}
+          <code>{{ mercancia.fraccion_arancelaria }}</code>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-3">UUID Comercio Exterior</dt>
+      <dd class="col-sm-9">
+        {% if mercancia.comercio_exterior_uuid %}
+          <code>{{ mercancia.comercio_exterior_uuid }}</code>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+    <hr>
+
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-info-circle mr-1"></i> Estado
+    </h6>
+
+    <dl class="row small mb-0">
+      <dt class="col-sm-3">Estatus</dt>
+      <dd class="col-sm-9">
+        {% if mercancia.deleted %}
+          <span class="badge badge-danger">Eliminada</span>
+        {% else %}
+          <span class="badge badge-success">Activa</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+  </div>
+</div>
+
+{% endblock %}

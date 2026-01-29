@@ -304,7 +304,13 @@ class CartaPorteGoods(models.Model):
         on_delete=models.CASCADE,
         related_name="goods",
     )
-
+    mercancia = models.ForeignKey(
+        "goods.Mercancia",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,   # o SET_NULL si prefieres permitir borrado lógico
+        related_name="carta_porte_goods",
+    )
     bienes_transp = models.CharField(max_length=8)   # clave producto SAT para CP
     descripcion = models.CharField(max_length=255)
     clave_unidad = models.CharField(max_length=5)   # clave unidad SAT

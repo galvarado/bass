@@ -1,9 +1,22 @@
+
 {% extends "base.html" %}
 {% load form_extras %}
 
 {% block title %}Carta Porte · Viaje #{{ trip.id }} · BASS{% endblock %}
 
 {% block content %}
+<style>
+  .loc-collapse { display: none; }
+  .loc-collapse.show { display: block; }
+
+  .loc-toggle { text-decoration: none !important; }
+  .loc-chevron { transition: transform .15s ease-in-out; }
+  .loc-chevron.rotate-180 { transform: rotate(180deg); }
+
+  /* Dropdown de mercancía un poco más ancho */
+  .goods-mercancia select { min-width: 260px; }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">Carta Porte · Viaje #{{ trip.id }}</h1>
   <a href="{% url 'trips:detail' trip.id %}" class="btn btn-light btn-sm">
@@ -28,9 +41,6 @@
       </div>
     {% endif %}
 
-    <!-- =========================
-         HEADER (solo receptor)
-    ========================== -->
     <h6 class="text-primary mb-2">
       <i class="fas fa-file-invoice mr-1"></i> Datos generales
     </h6>
@@ -50,9 +60,6 @@
       </div>
     </div>
 
-    <!-- =========================
-         TRIP SNAPSHOT (read-only)
-    ========================== -->
     <hr>
     <h6 class="text-primary mb-2">
       <i class="fas fa-route mr-1"></i> Datos del viaje
@@ -77,82 +84,125 @@
       </div>
     </div>
 
-<hr>
-<h6 class="text-primary mb-2">
-  <i class="fas fa-map-marker-alt mr-1"></i> Ubicaciones (Origen / Destino)
-</h6>
+    <hr>
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-map-marker-alt mr-1"></i> Ubicaciones (Origen / Destino)
+    </h6>
 
-{{ fs_locations.management_form }}
+    {{ fs_locations.management_form }}
 
-<div id="loc-forms">
-  {% for f in fs_locations.forms %}
-    <div class="border rounded p-2 mb-2 loc-form">
-      {{ f.id }}
+    <div id="loc-forms">
+      {% for f in fs_locations.forms %}
+        <div class="border rounded mb-2 loc-form">
+          {{ f.id }}
 
-      {# ocultos pero necesarios para guardar #}
-      <div class="d-none">
-        {{ f.tipo_ubicacion }}
-        {{ f.orden }}
-        {{ f.rfc }}
-        {{ f.codigo_postal }}
-        {{ f.pais }}
-        {{ f.estado }}
-      </div>
+          {# ocultos mínimos para guardar #}
+          <div class="d-none">
+            {{ f.tipo_ubicacion }}
+            {{ f.orden }}
+          </div>
 
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <div>
-          {% if f.instance.tipo_ubicacion == "Origen" %}
-            <span class="badge badge-success">Origen</span>
-          {% elif f.instance.tipo_ubicacion == "Destino" %}
-            <span class="badge badge-primary">Destino</span>
-          {% else %}
-            <span class="badge badge-secondary">{{ f.instance.tipo_ubicacion|default:"Ubicación" }}</span>
-          {% endif %}
+          <button type="button"
+                  class="btn btn-link btn-block text-left py-2 px-2 d-flex justify-content-between align-items-center loc-toggle"
+                  data-target="#loc-{{ forloop.counter0 }}"
+                  aria-controls="loc-{{ forloop.counter0 }}"
+                  aria-expanded="false">
+
+            <div class="d-flex align-items-center">
+              {% if f.instance.tipo_ubicacion == "Origen" %}
+                <span class="badge badge-success mr-2">Origen</span>
+              {% else %}
+                <span class="badge badge-primary mr-2">Destino</span>
+              {% endif %}
+
+              <span class="text-dark font-weight-bold">
+                {{ f.nombre.value|default:f.instance.nombre|default:"(sin nombre)" }}
+              </span>
+
+              {% if f.localidad.value or f.instance.localidad %}
+                <span class="text-muted ml-2 small">
+                  · {{ f.localidad.value|default:f.instance.localidad }}
+                </span>
+              {% endif %}
+            </div>
+
+            <i class="fas fa-chevron-down text-muted loc-chevron"></i>
+          </button>
+
+          <div id="loc-{{ forloop.counter0 }}" class="loc-collapse px-2 pb-2">
+
+            <div class="form-row mt-2">
+              <div class="form-group col-md-4">
+                <label>Cliente</label>
+                {% if f.instance.tipo_ubicacion == "Origen" %}
+                  <input class="form-control form-control-sm" value="{{ trip.route.origen.client.nombre }}" readonly>
+                {% else %}
+                  <input class="form-control form-control-sm" value="{{ trip.route.destino.client.nombre }}" readonly>
+                {% endif %}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label>Ubicación</label>
+                {{ f.nombre|add_class:"form-control form-control-sm loc-ro" }}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label>Población</label>
+                {{ f.localidad|add_class:"form-control form-control-sm loc-ro" }}
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label>Calle</label>
+                {{ f.calle|add_class:"form-control form-control-sm loc-ro" }}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label>No. exterior</label>
+                {{ f.numero_exterior|add_class:"form-control form-control-sm loc-ro" }}
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label>Colonia</label>
+                {{ f.colonia|add_class:"form-control form-control-sm loc-ro" }}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label>Municipio</label>
+                {{ f.municipio|add_class:"form-control form-control-sm loc-ro" }}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label>Estado</label>
+                {{ f.estado|add_class:"form-control form-control-sm loc-ro" }}
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label>País</label>
+                {{ f.pais|add_class:"form-control form-control-sm loc-ro" }}
+              </div>
+
+              <div class="form-group col-md-4">
+                <label>CP</label>
+                {{ f.codigo_postal|add_class:"form-control form-control-sm loc-ro" }}
+              </div>
+            </div>
+
+            {% if f.non_field_errors %}
+              <div class="alert alert-danger py-1 mb-0">
+                {% for e in f.non_field_errors %}{{ e }}<br>{% endfor %}
+              </div>
+            {% endif %}
+          </div>
         </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group col-md-4">
-          <label>Cliente</label>
-          {% if f.instance.tipo_ubicacion == "Origen" %}
-            <input class="form-control form-control-sm" value="{{ trip.route.origen.client.nombre }}" readonly>
-          {% elif f.instance.tipo_ubicacion == "Destino" %}
-            <input class="form-control form-control-sm" value="{{ trip.route.destino.client.nombre }}" readonly>
-          {% else %}
-            <input class="form-control form-control-sm" value="" readonly>
-          {% endif %}
-        </div>
-
-        <div class="form-group col-md-4">
-          <label>Ubicación</label>
-          {{ f.nombre|add_class:"form-control form-control-sm loc-ro" }}
-        </div>
-
-        <div class="form-group col-md-4">
-          <label>Población</label>
-          {{ f.localidad|add_class:"form-control form-control-sm loc-ro" }}
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group col-md-4">
-          <label>Fecha/Hora salida/llegada</label>
-          {{ f.fecha_hora_salida_llegada|add_class:"form-control form-control-sm" }}
-        </div>
-      </div>
-
-      {% if f.non_field_errors %}
-        <div class="alert alert-danger py-1 mb-0">
-          {% for e in f.non_field_errors %}{{ e }}<br>{% endfor %}
-        </div>
-      {% endif %}
+      {% endfor %}
     </div>
-  {% endfor %}
-</div>
 
-    <!-- =========================
-         GOODS GRID
-    ========================== -->
     <hr>
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="text-primary mb-0">
@@ -168,6 +218,7 @@
       <table class="table table-sm table-bordered mb-0" id="goods-table">
         <thead class="thead-light">
           <tr>
+            <th style="min-width:260px;">Mercancía</th>
             <th style="min-width:120px;">BienesTransp</th>
             <th style="min-width:220px;">Descripción</th>
             <th style="min-width:110px;">Cantidad</th>
@@ -183,7 +234,11 @@
         <tbody id="goods-rows">
           {% for f in fs_goods.forms %}
           <tr class="goods-row">
-            <td>{{ f.bienes_transp|add_class:"form-control form-control-sm" }}{{ f.id }}</td>
+            <td class="goods-mercancia">
+              {{ f.mercancia|add_class:"form-control form-control-sm js-mercancia" }}
+              {{ f.id }}
+            </td>
+            <td>{{ f.bienes_transp|add_class:"form-control form-control-sm" }}</td>
             <td>{{ f.descripcion|add_class:"form-control form-control-sm" }}</td>
             <td>{{ f.cantidad|add_class:"form-control form-control-sm" }}</td>
             <td>{{ f.clave_unidad|add_class:"form-control form-control-sm" }}</td>
@@ -205,7 +260,8 @@
 
     <template id="goods-empty-row">
       <tr class="goods-row">
-        <td>__BIENESTRANSP____ID__</td>
+        <td class="goods-mercancia">__MERCANCIA____ID__</td>
+        <td>__BIENESTRANSP__</td>
         <td>__DESC__</td>
         <td>__CANT__</td>
         <td>__CLAVEU__</td>
@@ -226,60 +282,103 @@
     </button>
   </div>
 </form>
+
 <script>
-(function() {
-  // readonly para ubicación y población
-  document.querySelectorAll(".loc-ro").forEach(el => {
-    el.readOnly = true;
-  });
+(function () {
+  function ready(fn){ if(document.readyState !== "loading") fn(); else document.addEventListener("DOMContentLoaded", fn); }
 
-  // Goods add (si lo sigues usando)
-  function bumpTotal(prefix) {
-    const totalInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
-    totalInput.value = String(parseInt(totalInput.value || "0", 10) + 1);
-    return parseInt(totalInput.value, 10) - 1;
-  }
+  ready(function () {
 
-  function replaceAll(html, repls) {
-    let out = html;
-    for (const [k, v] of Object.entries(repls)) out = out.split(k).join(v);
-    return out;
-  }
-
-  function pickInput(empty, prefix, idx, fieldName) {
-    const re = new RegExp(`name="${prefix}-__prefix__-${fieldName}"[\\s\\S]*?>`, "m");
-    const m = empty.match(re);
-    return (m ? m[0] : "").replaceAll("__prefix__", idx);
-  }
-
-  const btnAddGood = document.getElementById("btn-add-good");
-  const goodsBody = document.getElementById("goods-rows");
-  const goodsTpl = document.getElementById("goods-empty-row");
-
-  btnAddGood?.addEventListener("click", function() {
-    const idx = bumpTotal("goods");
-    const empty = `{{ fs_goods.empty_form.as_p|escapejs }}`;
-
-    let html = goodsTpl.innerHTML;
-
-    html = replaceAll(html, {
-      "__BIENESTRANSP__": pickInput(empty, "goods", idx, "bienes_transp"),
-      "__DESC__": pickInput(empty, "goods", idx, "descripcion"),
-      "__CANT__": pickInput(empty, "goods", idx, "cantidad"),
-      "__CLAVEU__": pickInput(empty, "goods", idx, "clave_unidad"),
-      "__UNIDAD__": pickInput(empty, "goods", idx, "unidad"),
-      "__PESO__": pickInput(empty, "goods", idx, "peso_en_kg"),
-      "__PELIG__": pickInput(empty, "goods", idx, "material_peligroso"),
-      "__CLAVEMAT__": pickInput(empty, "goods", idx, "clave_material_peligroso"),
-      "__EMB__": pickInput(empty, "goods", idx, "embalaje"),
-      "__DELETE__": pickInput(empty, "goods", idx, "DELETE"),
-      "__ID__": pickInput(empty, "goods", idx, "id"),
+    // readonly
+    document.querySelectorAll(".loc-ro").forEach(el => {
+      if (el.tagName === "SELECT") el.disabled = true;
+      else el.readOnly = true;
     });
 
-    const tr = document.createElement("tr");
-    tr.innerHTML = html;
-    goodsBody.appendChild(tr);
+    // collapse sin bootstrap
+    function togglePanel(btn) {
+      let targetSel = (btn.getAttribute("data-target") || "").trim();
+      if (!targetSel) return;
+      if (!targetSel.startsWith("#")) targetSel = "#" + targetSel;
+
+      const panel = document.querySelector(targetSel);
+      if (!panel) return;
+
+      const open = !panel.classList.contains("show");
+      panel.classList.toggle("show", open);
+
+      const chevron = btn.querySelector(".loc-chevron");
+      if (chevron) chevron.classList.toggle("rotate-180", open);
+
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    document.querySelectorAll(".loc-toggle").forEach(btn => {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePanel(btn);
+      });
+    });
+
+    // goods add (sin regex)
+    function bumpTotal(prefix) {
+      const totalInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+      const current = parseInt(totalInput.value || "0", 10);
+      totalInput.value = String(current + 1);
+      return current;
+    }
+
+    function replaceAll(html, repls) {
+      let out = html;
+      for (const [k, v] of Object.entries(repls)) out = out.split(k).join(v);
+      return out;
+    }
+
+    function fieldOuterHTMLFromEmpty(emptyHtml, fieldName) {
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = emptyHtml;
+      const el = wrapper.querySelector(`[name="${fieldName}"]`);
+      return el ? el.outerHTML : "";
+    }
+
+    const btnAddGood = document.getElementById("btn-add-good");
+    const goodsBody = document.getElementById("goods-rows");
+    const goodsTpl = document.getElementById("goods-empty-row");
+
+    btnAddGood?.addEventListener("click", function () {
+      const idx = bumpTotal("goods");
+      const empty = `{{ fs_goods.empty_form.as_p|escapejs }}`;
+
+      function field(shortName) {
+        const name = `goods-__prefix__-${shortName}`;
+        return fieldOuterHTMLFromEmpty(empty, name).replaceAll("__prefix__", String(idx));
+      }
+
+      let html = goodsTpl.innerHTML;
+      html = replaceAll(html, {
+        "__MERCANCIA__": field("mercancia"),
+        "__BIENESTRANSP__": field("bienes_transp"),
+        "__DESC__": field("descripcion"),
+        "__CANT__": field("cantidad"),
+        "__CLAVEU__": field("clave_unidad"),
+        "__UNIDAD__": field("unidad"),
+        "__PESO__": field("peso_en_kg"),
+        "__PELIG__": field("material_peligroso"),
+        "__CLAVEMAT__": field("clave_material_peligroso"),
+        "__EMB__": field("embalaje"),
+        "__DELETE__": field("DELETE"),
+        "__ID__": field("id"),
+      });
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = html;
+      goodsBody.appendChild(tr);
+    });
+
   });
 })();
 </script>
+
 {% endblock %}
+

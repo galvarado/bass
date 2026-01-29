@@ -1,3 +1,4 @@
+
 # trips/views.py
 import json
 from datetime import datetime
@@ -19,9 +20,9 @@ from .models import Trip, TripStatus, CartaPorteCFDI
 from .forms import (
     TripForm, TripSearchForm,
     CartaPorteCFDIForm,
-    CartaPorteLocationFormSet,
-    CartaPorteGoodsFormSet,
-    CartaPorteTransportFigureFormSet,
+    get_carta_porte_location_formset,
+    get_carta_porte_goods_formset,
+    get_carta_porte_transport_figure_formset,
 )
 
 from common.mixins import (
@@ -339,10 +340,14 @@ class CartaPorteCreateUpdateView(OperacionRequiredMixin, View):
     def get(self, request, trip_id):
         trip, carta_porte = self.get_trip_and_cp(trip_id)
 
+        LocationFS = get_carta_porte_location_formset()
+        GoodsFS = get_carta_porte_goods_formset()
+        FiguresFS = get_carta_porte_transport_figure_formset()
+
         form = CartaPorteCFDIForm(instance=carta_porte)
-        location_formset = CartaPorteLocationFormSet(instance=carta_porte)
-        goods_formset = CartaPorteGoodsFormSet(instance=carta_porte)
-        figures_formset = CartaPorteTransportFigureFormSet(instance=carta_porte)
+        location_formset = LocationFS(instance=carta_porte)
+        goods_formset = GoodsFS(instance=carta_porte)
+        figures_formset = FiguresFS(instance=carta_porte)
 
         return render(request, self.template_name, {
             "trip": trip,
@@ -355,10 +360,14 @@ class CartaPorteCreateUpdateView(OperacionRequiredMixin, View):
     def post(self, request, trip_id):
         trip, carta_porte = self.get_trip_and_cp(trip_id)
 
+        LocationFS = get_carta_porte_location_formset()
+        GoodsFS = get_carta_porte_goods_formset()
+        FiguresFS = get_carta_porte_transport_figure_formset()
+
         form = CartaPorteCFDIForm(request.POST, instance=carta_porte)
-        location_formset = CartaPorteLocationFormSet(request.POST, instance=carta_porte)
-        goods_formset = CartaPorteGoodsFormSet(request.POST, instance=carta_porte)
-        figures_formset = CartaPorteTransportFigureFormSet(request.POST, instance=carta_porte)
+        location_formset = LocationFS(request.POST, instance=carta_porte)
+        goods_formset = GoodsFS(request.POST, instance=carta_porte)
+        figures_formset = FiguresFS(request.POST, instance=carta_porte)
 
         if form.is_valid() and location_formset.is_valid() and goods_formset.is_valid() and figures_formset.is_valid():
             form.save()

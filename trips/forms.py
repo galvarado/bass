@@ -1,25 +1,11 @@
 # trips/forms.py
 from django import forms
+from django.apps import apps
 from django.db.models import Exists, OuterRef
 from django.forms import inlineformset_factory
-from django.apps import apps 
+
 from operators.models import Operator, CrossBorderCapability
-from .models import Trip, TransferType, TripStatus
 from workshop.models import WorkshopOrder
-from .models import (
-    CartaPorteCFDI,
-    CartaPorteLocation,
-    CartaPorteGoods,
-    CartaPorteTransportFigure,
-)
-
-# trips/forms.py
-from django import forms
-from django.db.models import Exists, OuterRef
-from django.urls import reverse
-from workshop.models import WorkshopOrder
-
-from .models import Trip, TransferType, TripStatus
 
 from .models import (
     Trip,
@@ -45,7 +31,6 @@ class TripForm(forms.ModelForm):
             "reefer_box",
             "transfer_operator",
 
-            # ✅ NUEVOS
             "producto",
             "clasificacion",
             "temp_scale",
@@ -62,7 +47,6 @@ class TripForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Transfer operators (cruce)
         qs = Operator.objects.filter(
             deleted=False,
             status="ALTA",
@@ -73,7 +57,6 @@ class TripForm(forms.ModelForm):
         ).order_by("nombre")
         self.fields["transfer_operator"].queryset = qs
 
-        # Estilo Bootstrap (sm)
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs.update({"class": "form-check-input"})
@@ -81,12 +64,10 @@ class TripForm(forms.ModelForm):
                 base = field.widget.attrs.get("class", "")
                 field.widget.attrs.update({"class": (base + " form-control form-control-sm").strip()})
 
-        # selects sm
         for k in ["client", "route", "operator", "truck", "reefer_box", "transfer_operator", "clasificacion", "temp_scale"]:
-            if k in self.fields and isinstance(self.fields[k].widget, (forms.Select,)):
+            if k in self.fields and isinstance(self.fields[k].widget, forms.Select):
                 self.fields[k].widget.attrs.update({"class": "form-control form-control-sm"})
 
-        # Temperatura: inputs numéricos con step
         if "temperatura_min" in self.fields:
             self.fields["temperatura_min"].widget = forms.NumberInput(
                 attrs={"class": "form-control form-control-sm", "step": "0.01"}
@@ -96,7 +77,6 @@ class TripForm(forms.ModelForm):
                 attrs={"class": "form-control form-control-sm", "step": "0.01"}
             )
 
-        # labels / empty labels
         if "client" in self.fields:
             self.fields["client"].label_from_instance = lambda obj: obj.nombre
             self.fields["client"].empty_label = "Selecciona cliente…"
@@ -104,7 +84,6 @@ class TripForm(forms.ModelForm):
         if "operator" in self.fields:
             self.fields["operator"].queryset = self.fields["operator"].queryset.order_by("nombre")
 
-        # --- Route: vacío hasta elegir cliente ---
         if "route" in self.fields:
             qs_route = self.fields["route"].queryset.select_related("origen", "destino", "client")
 
@@ -127,7 +106,6 @@ class TripForm(forms.ModelForm):
 
             self.fields["route"].empty_label = "Selecciona ruta…"
 
-        # === Filtro de unidades SOLO al crear viaje ===
         if not self.instance.pk:
             allowed_estados = ["TERMINADA", "CANCELADA"]
 
@@ -167,15 +145,12 @@ class TripForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-
         client = cleaned.get("client")
         route = cleaned.get("route")
 
-        # coherencia client-route
         if route and client and route.client_id != client.id:
             self.add_error("route", "La ruta no pertenece a este cliente.")
 
-        # ✅ Validación de temperatura
         tmin = cleaned.get("temperatura_min")
         tmax = cleaned.get("temperatura_max")
         if tmin is not None and tmax is not None and tmin > tmax:
@@ -221,11 +196,9 @@ class TripSearchForm(forms.Form):
         ),
         widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
     )
+
+
 class CartaPorteCFDIForm(forms.ModelForm):
-    """
-    Main form for CartaPorteCFDI.
-    We define `customer` manually to avoid the "related model not loaded yet" error.
-    """
     customer = forms.ModelChoiceField(
         queryset=None,
         required=False,
@@ -235,7 +208,6 @@ class CartaPorteCFDIForm(forms.ModelForm):
 
     class Meta:
         model = CartaPorteCFDI
-        # 👈 IMPORTANT: exclude `customer` so Django doesn't try to auto-generate it
         exclude = [
             "trip",
             "uuid",
@@ -247,7 +219,7 @@ class CartaPorteCFDIForm(forms.ModelForm):
             "response_snapshot",
             "created_at",
             "updated_at",
-            "customer",  # 👈 avoid auto formfield creation
+            "customer",
         ]
         widgets = {
             "type": forms.Select(attrs={"class": "form-control"}),
@@ -262,14 +234,11 @@ class CartaPorteCFDIForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Lazily resolve the Customer model when the form is instantiated
         Client = apps.get_model("customers", "Client")
         qs = Client.objects.all().order_by("nombre")
         self.fields["customer"].queryset = qs
         self.fields["customer"].label_from_instance = lambda o: o.nombre
 
-        # If instance has a customer, set the initial value
         if self.instance and self.instance.pk and getattr(self.instance, "customer_id", None):
             self.fields["customer"].initial = self.instance.customer
 
@@ -279,8 +248,8 @@ class CartaPorteLocationForm(forms.ModelForm):
         model = CartaPorteLocation
         exclude = [
             "carta_porte",
-            "distancia_recorrida_km",         # ❌ fuera
-            "fecha_hora_salida_llegada",      # ❌ fuera (la tomamos del Trip)
+            "distancia_recorrida_km",
+            "fecha_hora_salida_llegada",
         ]
         widgets = {
             "tipo_ubicacion": forms.Select(attrs={"class": "form-control form-control-sm"}),
@@ -304,10 +273,18 @@ class CartaPorteLocationForm(forms.ModelForm):
             "orden": forms.NumberInput(attrs={"class": "form-control form-control-sm"}),
         }
 
+
 class CartaPorteGoodsForm(forms.ModelForm):
+    mercancia = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        label="Mercancía (Catálogo)",
+        widget=forms.Select(attrs={"class": "form-control form-control-sm js-mercancia"})
+    )
+
     class Meta:
         model = CartaPorteGoods
-        exclude = ["carta_porte"]
+        exclude = ["carta_porte", "mercancia"]
         widgets = {
             "bienes_transp": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "descripcion": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
@@ -322,6 +299,33 @@ class CartaPorteGoodsForm(forms.ModelForm):
             "embalaje": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        Mercancia = apps.get_model("goods", "Mercancia")
+        self.fields["mercancia"].queryset = Mercancia.objects.filter(deleted=False).order_by("nombre")
+        self.fields["mercancia"].empty_label = "Selecciona mercancía…"
+        self.fields["mercancia"].label_from_instance = lambda m: f"{m.nombre}"
+
+        if self.instance and getattr(self.instance, "mercancia_id", None):
+            self.fields["mercancia"].initial = self.instance.mercancia_id
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.mercancia = self.cleaned_data.get("mercancia")
+
+        merc = instance.mercancia
+        if merc:
+            if not (instance.bienes_transp or "").strip():
+                instance.bienes_transp = merc.clave
+            if not (instance.descripcion or "").strip():
+                instance.descripcion = merc.nombre
+
+        if commit:
+            instance.save()
+        return instance
+
+
 class CartaPorteTransportFigureForm(forms.ModelForm):
     class Meta:
         model = CartaPorteTransportFigure
@@ -333,28 +337,36 @@ class CartaPorteTransportFigureForm(forms.ModelForm):
             "num_licencia": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
         }
 
-CartaPorteLocationFormSet = inlineformset_factory(
-    parent_model=CartaPorteCFDI,
-    model=CartaPorteLocation,
-    form=CartaPorteLocationForm,
-    extra=0,            # ✅ no filas extra
-    can_delete=False,   # ✅ no se elimina
-    max_num=2,          # ✅ solo 2
-    validate_max=True,
-)
 
-CartaPorteGoodsFormSet = inlineformset_factory(
-    parent_model=CartaPorteCFDI,
-    model=CartaPorteGoods,
-    form=CartaPorteGoodsForm,
-    extra=3,            # número inicial de filas
-    can_delete=True
-)
+# -----------------------
+# ✅ Formsets LAZY (no se ejecutan en import time)
+# -----------------------
 
-CartaPorteTransportFigureFormSet = inlineformset_factory(
-    parent_model=CartaPorteCFDI,
-    model=CartaPorteTransportFigure,
-    form=CartaPorteTransportFigureForm,
-    extra=1,
-    can_delete=True
-)
+def get_carta_porte_location_formset():
+    return inlineformset_factory(
+        CartaPorteCFDI,
+        CartaPorteLocation,
+        form=CartaPorteLocationForm,
+        extra=0,
+        can_delete=False,
+        max_num=2,
+        validate_max=True,
+    )
+
+def get_carta_porte_goods_formset():
+    return inlineformset_factory(
+        CartaPorteCFDI,
+        CartaPorteGoods,
+        form=CartaPorteGoodsForm,
+        extra=1,
+        can_delete=True,
+    )
+
+def get_carta_porte_transport_figure_formset():
+    return inlineformset_factory(
+        CartaPorteCFDI,
+        CartaPorteTransportFigure,
+        form=CartaPorteTransportFigureForm,
+        extra=1,
+        can_delete=True,
+    )

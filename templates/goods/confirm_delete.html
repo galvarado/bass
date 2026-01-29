@@ -1,0 +1,62 @@
+
+
+{# templates/mercancias/confirm_delete.html #}
+{% extends "base.html" %}
+{% block title %}Eliminar Mercancía · BASS{% endblock %}
+{% block content %}
+
+<div class="card border-danger shadow-sm">
+  <div class="card-header bg-danger text-white">
+    <strong>Confirmar eliminación</strong>
+  </div>
+  <div class="card-body">
+    <p>
+      ¿Seguro que deseas eliminar la mercancía
+      <strong>{{ object.clave }} - {{ object.nombre }}</strong>?
+    </p>
+
+    <dl class="row small mb-3">
+      <dt class="col-sm-4">Clave</dt>
+      <dd class="col-sm-8">{{ object.clave }}</dd>
+
+      <dt class="col-sm-4">Nombre</dt>
+      <dd class="col-sm-8">{{ object.nombre }}</dd>
+
+      <dt class="col-sm-4">Fracción arancelaria</dt>
+      <dd class="col-sm-8">
+        {% if object.fraccion_arancelaria %}
+          <code>{{ object.fraccion_arancelaria }}</code>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+
+      <dt class="col-sm-4">UUID Comercio Exterior</dt>
+      <dd class="col-sm-8">
+        {% if object.comercio_exterior_uuid %}
+          <code>{{ object.comercio_exterior_uuid }}</code>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+      </dd>
+    </dl>
+
+    <form method="post" class="mt-3">
+      {% csrf_token %}
+      <a href="{% url 'goods:list' %}" class="btn btn-outline-secondary">
+        Cancelar
+      </a>
+      <button type="submit" class="btn btn-danger">
+        <i class="fas fa-trash"></i> Eliminar
+      </button>
+    </form>
+
+    <p class="text-muted mt-3 mb-0 small">
+      <i class="fas fa-info-circle"></i>
+      Esta acción elimina  la mercancía del listado.
+    </p>
+  </div>
+</div>
+
+{% endblock %}
+```

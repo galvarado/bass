@@ -39,6 +39,7 @@ urlpatterns = [
     path("locations/", include("locations.urls", namespace="locations")),
     path("trucks/", include("trucks.urls", namespace="trucks")),
     path("suppliers/", include("suppliers.urls", namespace="suppliers")),
+    path("goods/", include("goods.urls", namespace="goods")),
     path("trips/", include("trips.urls", namespace="trips")),
     path("audit/", include("audit.urls")),
     path("workshop/", include("workshop.urls")),

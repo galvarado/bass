@@ -1,0 +1,76 @@
+{# templates/mercancias/form.html #}
+{% extends "base.html" %}
+{% load form_extras %}
+{% block title %}{% if object %}Editar Mercancía{% else %}Nueva Mercancía{% endif %} · BASS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">{% if object %}Editar Mercancía{% else %}Nueva Mercancía{% endif %}</h1>
+  <a href="{% url 'mercancias:list' %}" class="btn btn-light btn-sm">
+    <i class="fas fa-arrow-left"></i> Volver
+  </a>
+</div>
+
+<form method="post" class="card shadow-sm form-compact">
+  {% csrf_token %}
+  <div class="card-body">
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-box mr-1"></i> Datos de la mercancía
+    </h6>
+
+    <div class="form-row">
+      <div class="form-group col-md-3">
+        <label for="{{ form.clave.id_for_label }}">Clave</label>
+        {{ form.clave|add_class:"form-control" }}
+        {% if form.clave.errors %}
+          <div class="invalid-feedback d-block">{{ form.clave.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-9">
+        <label for="{{ form.nombre.id_for_label }}">Nombre / Descripción</label>
+        {{ form.nombre|add_class:"form-control" }}
+        {% if form.nombre.errors %}
+          <div class="invalid-feedback d-block">{{ form.nombre.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-4">
+        <label for="{{ form.fraccion_arancelaria.id_for_label }}">Fracción arancelaria</label>
+        {{ form.fraccion_arancelaria|add_class:"form-control" }}
+        {% if form.fraccion_arancelaria.errors %}
+          <div class="invalid-feedback d-block">{{ form.fraccion_arancelaria.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-8">
+        <label for="{{ form.comercio_exterior_uuid.id_for_label }}">UUID Comercio Exterior</label>
+        {{ form.comercio_exterior_uuid|add_class:"form-control" }}
+        {% if form.comercio_exterior_uuid.errors %}
+          <div class="invalid-feedback d-block">{{ form.comercio_exterior_uuid.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card-footer text-right py-2">
+    <button class="btn btn-primary btn-sm" type="submit">
+      {% if object %}
+        <i class="fas fa-save"></i> Guardar cambios
+      {% else %}
+        <i class="fas fa-save"></i> Crear mercancía
+      {% endif %}
+    </button>
+  </div>
+</form>
+{% endblock %}

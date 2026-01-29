@@ -1,16 +1,17 @@
+
 # trips/views_carta_porte.py
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.generic import TemplateView
 from django.utils import timezone
+from django.views.generic import TemplateView
 
 from .models import Trip, CartaPorteCFDI, CartaPorteLocation
 from .forms import (
     CartaPorteCFDIForm,
-    CartaPorteLocationFormSet,
-    CartaPorteGoodsFormSet,
+    get_carta_porte_location_formset,
+    get_carta_porte_goods_formset,
 )
 
 
@@ -31,14 +32,17 @@ class CartaPorteEditView(TemplateView):
         """
         customer por default = cliente del origen (pero NO readonly).
         """
+        LocationFS = get_carta_porte_location_formset()
+        GoodsFS = get_carta_porte_goods_formset()
+
         if bound:
             form = CartaPorteCFDIForm(request.POST, instance=carta)
-            fs_locations = CartaPorteLocationFormSet(request.POST, instance=carta, prefix="loc")
-            fs_goods = CartaPorteGoodsFormSet(request.POST, instance=carta, prefix="goods")
+            fs_locations = LocationFS(request.POST, instance=carta, prefix="loc")
+            fs_goods = GoodsFS(request.POST, instance=carta, prefix="goods")
         else:
             form = CartaPorteCFDIForm(instance=carta)
-            fs_locations = CartaPorteLocationFormSet(instance=carta, prefix="loc")
-            fs_goods = CartaPorteGoodsFormSet(instance=carta, prefix="goods")
+            fs_locations = LocationFS(instance=carta, prefix="loc")
+            fs_goods = GoodsFS(instance=carta, prefix="goods")
 
             # default sugerido: receptor = mismo cliente del ORIGEN
             try:
@@ -51,18 +55,11 @@ class CartaPorteEditView(TemplateView):
         return form, fs_locations, fs_goods
 
     def ensure_locations_from_route(self, trip: Trip, carta: CartaPorteCFDI):
-        """
-        Deja EXACTAMENTE 2 ubicaciones: Origen y Destino.
-        - nombre = Location.nombre
-        - localidad = Location.poblacion
-        - cliente viene por Location.client (pero no lo guardamos en CP; lo usas en UI)
-        - fechas: si no existen, se sugieren con trip.* o timezone.now()
-        """
         r = trip.route
         if not r:
             return
 
-        # borra cualquier cosa que no sea Origen/Destino
+        # deja solo Origen/Destino
         carta.locations.exclude(tipo_ubicacion__in=["Origen", "Destino"]).delete()
 
         def client_rfc(loc_model):
@@ -73,55 +70,73 @@ class CartaPorteEditView(TemplateView):
                 carta_porte=carta,
                 tipo_ubicacion=tipo,
                 orden=orden,
-
-                # ✅ ubicación = Location.nombre
-                nombre=getattr(loc_model, "nombre", "") or "",
-
-                # ✅ población = Location.poblacion
-                localidad=getattr(loc_model, "poblacion", "") or "",
-
-                # mínimos obligatorios de tu modelo
                 rfc=client_rfc(loc_model),
+                nombre=getattr(loc_model, "nombre", "") or "",
+                localidad=getattr(loc_model, "poblacion", "") or "",
                 codigo_postal=getattr(loc_model, "cp", "") or "",
-
-                pais="MEX",
+                calle=getattr(loc_model, "calle", "") or "",
+                numero_exterior=getattr(loc_model, "no_ext", "") or "",
+                numero_interior="",
+                colonia=getattr(loc_model, "colonia_sat", "") or getattr(loc_model, "colonia", "") or "",
+                municipio=getattr(loc_model, "municipio", "") or "",
+                estado=getattr(loc_model, "estado", "") or "",
+                pais=getattr(loc_model, "pais", "") or "MX",
+                referencia=getattr(loc_model, "referencias", "") or "",
                 fecha_hora_salida_llegada=dt,
             )
 
-        dt_origen = trip.departure_origin_at or timezone.now()
-        dt_destino = trip.arrival_destination_at or timezone.now()
+        dt_origen = getattr(trip, "departure_origin_at", None) or timezone.now()
+        dt_destino = getattr(trip, "arrival_destination_at", None) or timezone.now()
 
-        # ----- ORIGEN -----
+        # ORIGEN
         o = carta.locations.filter(tipo_ubicacion="Origen").first()
         if not o:
             o = build(r.origen, "Origen", 0, dt_origen)
             o.save()
         else:
             o.orden = 0
-            o.nombre = o.nombre or r.origen.nombre
+            o.nombre = o.nombre or (r.origen.nombre or "")
             o.localidad = o.localidad or (r.origen.poblacion or "")
             o.codigo_postal = o.codigo_postal or (r.origen.cp or "")
             o.rfc = o.rfc or client_rfc(r.origen)
+
+            o.calle = o.calle or (r.origen.calle or "")
+            o.numero_exterior = o.numero_exterior or (r.origen.no_ext or "")
+            o.colonia = o.colonia or (r.origen.colonia_sat or r.origen.colonia or "")
+            o.municipio = o.municipio or (r.origen.municipio or "")
+            o.estado = o.estado or (r.origen.estado or "")
+            o.pais = o.pais or (r.origen.pais or "MX")
+            o.referencia = o.referencia or (r.origen.referencias or "")
+
             if not o.fecha_hora_salida_llegada:
                 o.fecha_hora_salida_llegada = dt_origen
             o.save()
 
-        # ----- DESTINO -----
+        # DESTINO
         d = carta.locations.filter(tipo_ubicacion="Destino").first()
         if not d:
             d = build(r.destino, "Destino", 99, dt_destino)
             d.save()
         else:
             d.orden = 99
-            d.nombre = d.nombre or r.destino.nombre
+            d.nombre = d.nombre or (r.destino.nombre or "")
             d.localidad = d.localidad or (r.destino.poblacion or "")
             d.codigo_postal = d.codigo_postal or (r.destino.cp or "")
             d.rfc = d.rfc or client_rfc(r.destino)
+
+            d.calle = d.calle or (r.destino.calle or "")
+            d.numero_exterior = d.numero_exterior or (r.destino.no_ext or "")
+            d.colonia = d.colonia or (r.destino.colonia_sat or r.destino.colonia or "")
+            d.municipio = d.municipio or (r.destino.municipio or "")
+            d.estado = d.estado or (r.destino.estado or "")
+            d.pais = d.pais or (r.destino.pais or "MX")
+            d.referencia = d.referencia or (r.destino.referencias or "")
+
             if not d.fecha_hora_salida_llegada:
                 d.fecha_hora_salida_llegada = dt_destino
             d.save()
 
-        # seguridad: deja solo esos 2
+        # asegura exactamente 2 registros
         carta.locations.exclude(id__in=[o.id, d.id]).delete()
 
     def get_context_data(self, **kwargs):
@@ -150,7 +165,6 @@ class CartaPorteEditView(TemplateView):
         trip = self.get_trip()
         carta = self.get_carta(trip)
 
-        # en POST no recreamos ubicaciones; solo validamos/guardamos
         form, fs_locations, fs_goods = self.build_forms(
             request=request, carta=carta, trip=trip, bound=True
         )
@@ -169,11 +183,10 @@ class CartaPorteEditView(TemplateView):
         carta.customer = form.cleaned_data.get("customer")  # no readonly
         carta.save()
 
-        # ✅ NO forzamos fechas desde trip (fechas editables)
         fs_locations.save()
         fs_goods.save()
 
-        # (opcional) asegurar que no se cuelen más de 2 ubicaciones
+        # asegurar que no se cuelen más de 2 ubicaciones
         self.ensure_locations_from_route(trip, carta)
 
         messages.success(request, "Carta Porte guardada.")

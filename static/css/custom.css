@@ -285,3 +285,8 @@ table.table th {
 .text-danger { background-color: #ffe6e6; }
 .text-success { background-color: #e6ffe6; }
 .modal-header { background-color: #f1f5ff; border-bottom: 1px solid #dee2e6; }
+.rotate-180 { transform: rotate(180deg); transition: transform .15s ease; }
+.loc-collapse { display: none !important; }
+.loc-collapse.show { display: block !important; }
+.rotate-180 { transform: rotate(180deg); }
+.loc-chevron { transition: transform .15s ease-in-out; }
