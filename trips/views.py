@@ -20,9 +20,7 @@ from .models import Trip, TripStatus, CartaPorteCFDI
 from .forms import (
     TripForm, TripSearchForm,
     CartaPorteCFDIForm,
-    get_carta_porte_location_formset,
     get_carta_porte_goods_formset,
-    get_carta_porte_transport_figure_formset,
 )
 
 from common.mixins import (
@@ -340,7 +338,6 @@ class CartaPorteCreateUpdateView(OperacionRequiredMixin, View):
     def get(self, request, trip_id):
         trip, carta_porte = self.get_trip_and_cp(trip_id)
 
-        LocationFS = get_carta_porte_location_formset()
         GoodsFS = get_carta_porte_goods_formset()
         FiguresFS = get_carta_porte_transport_figure_formset()
 
@@ -360,7 +357,6 @@ class CartaPorteCreateUpdateView(OperacionRequiredMixin, View):
     def post(self, request, trip_id):
         trip, carta_porte = self.get_trip_and_cp(trip_id)
 
-        LocationFS = get_carta_porte_location_formset()
         GoodsFS = get_carta_porte_goods_formset()
         FiguresFS = get_carta_porte_transport_figure_formset()
 

@@ -4,6 +4,7 @@
 {% block title %}Carta Porte · Viaje #{{ trip.id }} · BASS{% endblock %}
 
 {% block content %}
+
 <style>
   .loc-collapse { display: none; }
   .loc-collapse.show { display: block; }
@@ -101,6 +102,47 @@
   </a>
 </div>
 
+{% if form.errors or form.non_field_errors %}
+  <div class="alert alert-danger">
+    <strong>Errores CFDI</strong>
+    <pre>{{ form.errors }}</pre>
+    {% if form.non_field_errors %}
+      <pre>{{ form.non_field_errors }}</pre>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% if fs_locations.errors or fs_locations.non_form_errors %}
+  <div class="alert alert-danger">
+    <strong>Errores Ubicaciones</strong>
+    <pre>{{ fs_locations.errors }}</pre>
+    {% if fs_locations.non_form_errors %}
+      <pre>{{ fs_locations.non_form_errors }}</pre>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% if fs_goods.errors or fs_goods.non_form_errors %}
+  <div class="alert alert-danger">
+    <strong>Errores Mercancías</strong>
+    <pre>{{ fs_goods.errors }}</pre>
+    {% if fs_goods.non_form_errors %}
+      <pre>{{ fs_goods.non_form_errors }}</pre>
+    {% endif %}
+  </div>
+{% endif %}
+{% if fs_items %}
+  {% if fs_items.errors or fs_items.non_form_errors %}
+    <div class="alert alert-danger">
+      <strong>Errores Items</strong>
+      <pre>{{ fs_items.errors }}</pre>
+      {% if fs_items.non_form_errors %}
+        <pre>{{ fs_items.non_form_errors }}</pre>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endif %}
+
 <form method="post" class="card shadow-sm">
   {% csrf_token %}
 
@@ -159,7 +201,7 @@
           <div class="form-group col-md-2">
             <label>Fecha llegada</label>
             {{ form.fecha_llegada|add_class:"form-control form-control-sm" }}
-            {% if form.fecha_llegadfa.errors %}
+            {% if form.fecha_llegada.errors %}
               <div class="text-danger small mt-1">
                 {% for e in form.fecha_llegada.errors %}{{ e }}<br>{% endfor %}
               </div>
@@ -425,6 +467,154 @@
 <div class="goods-scroll-ctrl my-2" id="goods-scroll-ctrl" aria-label="Scroll horizontal mercancías">
   <div class="goods-scroll-ctrl-inner"></div>
 </div>
+
+<hr>
+<h6 class="text-primary mb-2">
+  <i class="fas fa-file-invoice mr-1"></i> Complemento Carta de Porte
+</h6>
+
+<div class="row cp-compact">
+  <div class="col-md-12">
+    <div class="form-row">
+
+      <div class="form-group col-md-3">
+        <label>Método de pago</label>
+        {{ form.payment_method|add_class:"form-control form-control-sm" }}
+        {% if form.payment_method.errors %}
+          <div class="text-danger small mt-1">{% for e in form.payment_method.errors %}{{ e }}<br>{% endfor %}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-3">
+        <label>Forma de pago</label>
+        {{ form.payment_form|add_class:"form-control form-control-sm" }}
+        {% if form.payment_form.errors %}
+          <div class="text-danger small mt-1">{% for e in form.payment_form.errors %}{{ e }}<br>{% endfor %}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-2">
+        <label>Moneda</label>
+        {{ form.currency|add_class:"form-control form-control-sm" }}
+        {% if form.currency.errors %}
+          <div class="text-danger small mt-1">{% for e in form.currency.errors %}{{ e }}<br>{% endfor %}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-2">
+        <label>Tipo</label>
+        {{ form.type|add_class:"form-control form-control-sm" }}
+        {% if form.type.errors %}
+          <div class="text-danger small mt-1">{% for e in form.type.errors %}{{ e }}<br>{% endfor %}</div>
+        {% endif %}
+      </div>
+
+       <div class="form-group col-md-2">
+        <label>Uso CFDI</label>
+        {{ form.uso_cfdi|add_class:"form-control form-control-sm" }}
+        {% if form.uso_cfdi.errors %}
+          <div class="text-danger small mt-1">{% for e in form.uso_cfdi.errors %}{{ e }}<br>{% endfor %}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group col-md-4">
+        <label>Observaciones</label>
+        {{ form.observations|add_class:"form-control form-control-sm" }}
+        {% if form.observations.errors %}
+          <div class="text-danger small mt-1">{% for e in form.observations.errors %}{{ e }}<br>{% endfor %}</div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<hr class="my-2">
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h6 class="text-primary mb-0">
+    <i class="fas fa-list mr-1"></i> Conceptos
+  </h6>
+  <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-item">
+    <i class="fas fa-plus"></i> Agregar item
+  </button>
+</div>
+
+{{ fs_items.management_form }}
+
+<div class="table-responsive" id="cpitems-scroll-wrap">
+  <table class="table table-sm table-bordered mb-0" id="cpitems-table">
+    <thead class="thead-light">
+      <tr>
+        <th style="min-width:90px;">Cantidad</th>
+        <th style="min-width:130px;">Unidad</th>
+        <th style="min-width:160px;">Producto</th>
+        <th style="min-width:220px;">Descripción</th>
+        <th style="min-width:110px;">Precio</th>
+        <th style="min-width:110px;">Descuento</th>
+        <th style="min-width:120px;">Subtotal</th>
+        <th style="min-width:90px;">IVA %</th>
+        <th style="min-width:120px;">IVA monto</th>
+        <th style="min-width:120px;">Ret IVA %</th>
+        <th style="min-width:150px;">Ret IVA monto</th>
+        <th style="min-width:120px;">Importe</th>
+        <th style="min-width:60px;"></th>
+      </tr>
+    </thead>
+
+    <tbody id="cpitems-rows">
+      {% for f in fs_items.forms %}
+      <tr class="cpitem-row">
+        <td>{{ f.cantidad }}</td>
+        <td>{{ f.unidad }}</td>
+        <td>{{ f.producto }}</td>
+        <td>{{ f.descripcion }}</td>
+        <td>{{ f.precio }}</td>
+        <td>{{ f.descuento }}</td>
+
+        {# display-only calculados en server #}
+        <td><input class="form-control form-control-sm text-right" value="{{ f.instance.subtotal|default_if_none:'0.00' }}" readonly></td>
+        <td>{{ f.iva_pct }}</td>
+        <td><input class="form-control form-control-sm text-right" value="{{ f.instance.iva_monto|default_if_none:'0.00' }}" readonly></td>
+        <td>{{ f.ret_iva_pct }}</td>
+        <td><input class="form-control form-control-sm text-right" value="{{ f.instance.ret_iva_monto|default_if_none:'0.00' }}" readonly></td>
+        <td><input class="form-control form-control-sm text-right" value="{{ f.instance.importe|default_if_none:'0.00' }}" readonly></td>
+
+        <td class="text-center">
+          {{ f.id }}
+          {% if f.DELETE %}<div class="d-none">{{ f.DELETE }}</div>{% endif %}
+          <button type="button" class="btn btn-link text-danger p-0 js-remove-item" title="Quitar item">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<template id="cpitems-empty-row">
+  <tr class="cpitem-row">
+    <td>__CANT__</td>
+    <td>__UNIDAD__</td>
+    <td>__PROD__</td>
+    <td>__DESC__</td>
+    <td>__PRECIO__</td>
+    <td>__DESCUENTO__</td>
+    <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
+    <td>__IVA_PCT__</td>
+    <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
+    <td>__RETIVA_PCT__</td>
+    <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
+    <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
+    <td class="text-center">
+      <div class="d-none">__DELETE__</div>
+      <button type="button" class="btn btn-link text-danger p-0 js-remove-item" title="Quitar item">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+    </td>
+  </tr>
+</template>
 
 <hr>
 

@@ -298,6 +298,30 @@ class CartaPorteCFDI(models.Model):
         super().save(*args, **kwargs)
 
 
+
+class CartaPorteGoods(models.Model):
+    carta_porte = models.ForeignKey(
+        CartaPorteCFDI,
+        on_delete=models.CASCADE,
+        related_name="goods",
+    )
+    mercancia = models.ForeignKey(
+        "goods.Mercancia",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,   # o SET_NULL si prefieres permitir borrado lógico
+        related_name="carta_porte_goods",
+    )
+    cantidad = models.DecimalField(max_digits=14, decimal_places=3, default=Decimal("0"))
+    unidad = models.CharField(max_length=50, blank=True, null=True)
+    embalaje = models.CharField(max_length=10, blank=True, null=True)
+    peso_en_kg = models.DecimalField(max_digits=14, decimal_places=3, blank=True, null=True)
+
+    valor_mercancia = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
+    moneda = models.CharField(max_length=3, blank=True, null=True)  # ej: MXN, USD
+
+    pedimento = models.CharField(max_length=40, blank=True, null=True)
+
 class CartaPorteLocation(models.Model):
     TYPE_CHOICES = [
         ("Origen", "Origen"),
@@ -329,8 +353,6 @@ class CartaPorteLocation(models.Model):
     estado = models.CharField(max_length=3, blank=True, null=True)
     pais = models.CharField(max_length=3, default="MEX")
     codigo_postal = models.CharField(max_length=10)
-
-    fecha_hora_salida_llegada = models.DateTimeField()
     distancia_recorrida_km = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     orden = models.PositiveIntegerField(default=0)  # para ordenar origen, escalas, destino
@@ -338,45 +360,58 @@ class CartaPorteLocation(models.Model):
     class Meta:
         ordering = ["orden"]
 
-class CartaPorteGoods(models.Model):
+class CartaPorteItem(models.Model):
     carta_porte = models.ForeignKey(
-        CartaPorteCFDI,
+        "trips.CartaPorteCFDI",
         on_delete=models.CASCADE,
-        related_name="goods",
-    )
-    mercancia = models.ForeignKey(
-        "goods.Mercancia",
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,   # o SET_NULL si prefieres permitir borrado lógico
-        related_name="carta_porte_goods",
-    )
-    cantidad = models.DecimalField(max_digits=14, decimal_places=3, default=Decimal("0"))
-    unidad = models.CharField(max_length=50, blank=True, null=True)
-    embalaje = models.CharField(max_length=10, blank=True, null=True)
-    peso_en_kg = models.DecimalField(max_digits=14, decimal_places=3, blank=True, null=True)
-
-    valor_mercancia = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
-    moneda = models.CharField(max_length=3, blank=True, null=True)  # ej: MXN, USD
-
-    pedimento = models.CharField(max_length=40, blank=True, null=True)
-
-
-class CartaPorteTransportFigure(models.Model):
-    ROLE_CHOICES = [
-        ("01", "Operador"),
-        ("02", "Propietario"),
-        ("03", "Arrendatario"),
-        ("04", "Notificado"),
-    ]
-
-    carta_porte = models.ForeignKey(
-        CartaPorteCFDI,
-        on_delete=models.CASCADE,
-        related_name="figures",
+        related_name="items",
     )
 
-    tipo_figura = models.CharField(max_length=2, choices=ROLE_CHOICES)
-    rfc = models.CharField(max_length=13)
-    nombre = models.CharField(max_length=255)
-    num_licencia = models.CharField(max_length=40, blank=True, null=True)
+    cantidad = models.DecimalField(max_digits=14, decimal_places=3, default=Decimal("1.000"))
+    unidad = models.CharField(max_length=20, blank=True, null=True)     # SAT: H87, KGM...
+    producto = models.CharField(max_length=100, blank=True, null=True)  # SKU/Clave interna
+    descripcion = models.CharField(max_length=255, blank=True, null=True)
+
+    precio = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    descuento = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+
+    # Impuestos por línea (porcentaje)
+    iva_pct = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("16.00"))
+    ret_iva_pct = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
+
+    # Calculados por línea
+    subtotal = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    iva_monto = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    ret_iva_monto = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    importe = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+
+    orden = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["orden", "id"]
+
+    def compute(self):
+        qty = self.cantidad or Decimal("0")
+        price = self.precio or Decimal("0")
+        disc = self.descuento or Decimal("0")
+
+        line_subtotal = (qty * price) - disc
+        if line_subtotal < 0:
+            line_subtotal = Decimal("0.00")
+
+        iva_pct = (self.iva_pct or Decimal("0")) / Decimal("100")
+        ret_pct = (self.ret_iva_pct or Decimal("0")) / Decimal("100")
+
+        iva_m = line_subtotal * iva_pct
+        ret_m = line_subtotal * ret_pct
+        importe = line_subtotal + iva_m - ret_m
+
+        # redondeo a 2 dec
+        self.subtotal = line_subtotal.quantize(Decimal("0.01"))
+        self.iva_monto = iva_m.quantize(Decimal("0.01"))
+        self.ret_iva_monto = ret_m.quantize(Decimal("0.01"))
+        self.importe = importe.quantize(Decimal("0.01"))
+
+    def save(self, *args, **kwargs):
+        self.compute()
+        super().save(*args, **kwargs)

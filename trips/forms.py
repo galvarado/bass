@@ -1,8 +1,11 @@
 # trips/forms.py
+from decimal import Decimal
+
 from django import forms
 from django.apps import apps
 from django.db.models import Exists, OuterRef
 from django.forms import inlineformset_factory
+from django.forms.widgets import Select
 
 from operators.models import Operator, CrossBorderCapability
 from workshop.models import WorkshopOrder
@@ -16,10 +19,12 @@ from .models import (
     CartaPorteCFDI,
     CartaPorteLocation,
     CartaPorteGoods,
-    CartaPorteTransportFigure,
+    CartaPorteItem,
 )
-from django.forms.widgets import Select
 
+# =========================
+# Trip forms (tu código)
+# =========================
 
 class TripForm(forms.ModelForm):
     class Meta:
@@ -31,13 +36,11 @@ class TripForm(forms.ModelForm):
             "truck",
             "reefer_box",
             "transfer_operator",
-
             "producto",
             "clasificacion",
             "temp_scale",
             "temperatura_min",
             "temperatura_max",
-
             "observations",
         ]
         widgets = {
@@ -198,26 +201,81 @@ class TripSearchForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
     )
 
+# =========================
+# Carta Porte - Choices (7)
+# =========================
+
+CURRENCY_CHOICES = (
+    ("MXN", "MXN"),
+    ("USD", "USD"),
+)
+
+PAYMENT_METHOD_CHOICES = (
+    ("PUE", "PUE - Pago en una sola exhibición"),
+    ("PPD", "PPD - Pago en parcialidades o diferido"),
+)
+
+PAYMENT_FORM_CHOICES = (
+    ("01", "01 - Efectivo"),
+    ("02", "02 - Cheque nominativo"),
+    ("03", "03 - Transferencia electrónica"),
+    ("04", "04 - Tarjeta de crédito"),
+    ("28", "28 - Tarjeta de débito"),
+    ("99", "99 - Por definir"),
+)
+
+USO_CFDI_CHOICES = (
+    ("S01", "S01 - Sin efectos fiscales"),
+    ("G01", "G01 - Adquisición de mercancías"),
+    ("G03", "G03 - Gastos en general"),
+    ("I01", "I01 - Construcciones"),
+    ("I04", "I04 - Equipo de cómputo y accesorios"),
+)
+
+CFDI_TYPE_CHOICES = (
+    ("I", "Ingreso"),
+    ("T", "Traslado"),
+)
+
+UNIDAD_CHOICES = (
+    ("", "—"),
+    ("H87", "Pieza (H87)"),
+    ("KGM", "Kilogramo (KGM)"),
+    ("LTR", "Litro (LTR)"),
+    ("TNE", "Tonelada (TNE)"),
+    ("MTR", "Metro (MTR)"),
+    ("XBX", "Caja (XBX)"),
+    ("XPK", "Paquete (XPK)"),
+    ("XBG", "Bolsa (XBG)"),
+)
+
+# =========================
+# Goods Select with data-*
+# =========================
+
 class MercanciaSelectWithData(Select):
     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
         option = super().create_option(name, value, label, selected, index, subindex=subindex, attrs=attrs)
 
-        # value puede ser ModelChoiceIteratorValue con .instance
         inst = getattr(value, "instance", None)
         if inst is not None:
-            option["attrs"]["data-clave"] = inst.clave or ""
-            option["attrs"]["data-fraccion"] = inst.fraccion_arancelaria or ""
-            option["attrs"]["data-uuidce"] = str(inst.comercio_exterior_uuid) if inst.comercio_exterior_uuid else ""
+            option["attrs"]["data-clave"] = getattr(inst, "clave", "") or ""
+            option["attrs"]["data-fraccion"] = getattr(inst, "fraccion_arancelaria", "") or ""
+            ce_uuid = getattr(inst, "comercio_exterior_uuid", None)
+            option["attrs"]["data-uuidce"] = str(ce_uuid) if ce_uuid else ""
 
         return option
-        
+
+# =========================
+# Carta Porte CFDI form
+# =========================
 
 class CartaPorteCFDIForm(forms.ModelForm):
     customer = forms.ModelChoiceField(
         queryset=None,
         required=False,
         widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
-        label="Cliente (Receptor)"
+        label="Cliente (Receptor)",
     )
 
     class Meta:
@@ -236,17 +294,17 @@ class CartaPorteCFDIForm(forms.ModelForm):
             "customer",
         ]
         widgets = {
-            # CFDI base
-            "type": forms.Select(attrs={"class": "form-control form-control-sm"}),
+            # CFDI base (7 ✅ con selects)
+            "type": forms.Select(choices=CFDI_TYPE_CHOICES, attrs={"class": "form-control form-control-sm"}),
             "series": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "folio": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "uso_cfdi": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "currency": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "uso_cfdi": forms.Select(choices=USO_CFDI_CHOICES, attrs={"class": "form-control form-control-sm"}),
+            "currency": forms.Select(choices=CURRENCY_CHOICES, attrs={"class": "form-control form-control-sm"}),
             "exchange_rate": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.0001"}),
-            "payment_form": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "payment_method": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "payment_form": forms.Select(choices=PAYMENT_FORM_CHOICES, attrs={"class": "form-control form-control-sm"}),
+            "payment_method": forms.Select(choices=PAYMENT_METHOD_CHOICES, attrs={"class": "form-control form-control-sm"}),
 
-            # ✅ Encabezado Carta Porte
+            # Encabezado CP
             "fecha_salida": forms.DateTimeInput(
                 attrs={"type": "datetime-local", "class": "form-control form-control-sm"},
                 format="%Y-%m-%dT%H:%M",
@@ -262,6 +320,7 @@ class CartaPorteCFDIForm(forms.ModelForm):
             "iva": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
             "retencion": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
             "total": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
+            "observations": forms.Textarea(attrs={"class": "form-control form-control-sm", "rows": 2}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -272,7 +331,7 @@ class CartaPorteCFDIForm(forms.ModelForm):
         self.fields["customer"].queryset = qs
         self.fields["customer"].label_from_instance = lambda o: o.nombre
 
-        # Para que al editar se vea bien en el input
+        # Para que al editar se vea bien en el input datetime-local
         for f in ("fecha_salida", "fecha_llegada"):
             if self.instance and getattr(self.instance, f, None):
                 self.initial[f] = getattr(self.instance, f).strftime("%Y-%m-%dT%H:%M")
@@ -280,104 +339,92 @@ class CartaPorteCFDIForm(forms.ModelForm):
         if self.instance and self.instance.pk and getattr(self.instance, "customer_id", None):
             self.fields["customer"].initial = self.instance.customer
 
-        # ✅ subtotal y total readonly (subtotal viene del trip, total se calcula)
+        # subtotal y total readonly (en UI se postean hidden, pero estos campos quedan disabled)
         if "subtotal" in self.fields:
-            self.fields["subtotal"].disabled = True  # evita que se postee/edite
+            self.fields["subtotal"].disabled = True
         if "total" in self.fields:
             self.fields["total"].disabled = True
 
     def clean(self):
         cleaned = super().clean()
-        # Normaliza None -> 0
         for k in ["iva", "retencion"]:
             if k in cleaned and cleaned[k] is None:
-                cleaned[k] = 0
+                cleaned[k] = Decimal("0.00")
         return cleaned
-
 class CartaPorteLocationForm(forms.ModelForm):
+    # ⬅️ OVERRIDE de campos (rompe el max_length del modelo SOLO en el form)
+    estado = forms.CharField(required=False, max_length=50)
+    pais = forms.CharField(required=False, max_length=50)
+    rfc = forms.CharField(required=False, max_length=13)
+
     class Meta:
         model = CartaPorteLocation
-        exclude = [
-            "carta_porte",
-            "distancia_recorrida_km",
-            "fecha_hora_salida_llegada",
-        ]
-        widgets = {
-            "tipo_ubicacion": forms.Select(attrs={"class": "form-control form-control-sm"}),
+        fields = "__all__"
 
-            "rfc": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "nombre": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "num_reg_id_trib": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "residencia_fiscal": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+    ESTADO_SAT_MAP = {
+        "Aguascalientes": "AGS",
+        "Baja California": "BCN",
+        "Baja California Sur": "BCS",
+        "Campeche": "CAM",
+        "Chiapas": "CHP",
+        "Chihuahua": "CHH",
+        "Ciudad de México": "CMX",
+        "Coahuila": "COA",
+        "Colima": "COL",
+        "Durango": "DUR",
+        "Guanajuato": "GUA",
+        "Guerrero": "GRO",
+        "Hidalgo": "HID",
+        "Jalisco": "JAL",
+        "México": "MEX",
+        "Michoacán": "MIC",
+        "Morelos": "MOR",
+        "Nayarit": "NAY",
+        "Nuevo León": "NLE",
+        "Oaxaca": "OAX",
+        "Puebla": "PUE",
+        "Querétaro": "QUE",
+        "Quintana Roo": "ROO",
+        "San Luis Potosí": "SLP",
+        "Sinaloa": "SIN",
+        "Sonora": "SON",
+        "Tabasco": "TAB",
+        "Tamaulipas": "TAM",
+        "Tlaxcala": "TLA",
+        "Veracruz": "VER",
+        "Yucatán": "YUC",
+        "Zacatecas": "ZAC",
+    }
 
-            "calle": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "numero_exterior": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "numero_interior": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "colonia": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "localidad": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "referencia": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "municipio": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "estado": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "pais": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "codigo_postal": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+    def clean_estado(self):
+        estado = self.cleaned_data.get("estado", "")
+        return self.ESTADO_SAT_MAP.get(estado, "")[:3]
 
-            "orden": forms.NumberInput(attrs={"class": "form-control form-control-sm"}),
-        }
+    def clean_pais(self):
+        return "MX"
 
+# =========================
+# Carta Porte Goods form
+# =========================
 
-CURRENCY_CHOICES = (
-    ("MXN", "MXN"),
-    ("USD", "USD"),
-)
-
-UNIDAD_CHOICES = (
-    ("", "—"),
-    ("H87", "Pieza (H87)"),
-    ("KGM", "Kilogramo (KGM)"),
-    ("LTR", "Litro (LTR)"),
-    ("TNE", "Tonelada (TNE)"),
-    ("MTR", "Metro (MTR)"),
-    ("XBX", "Caja (XBX)"),
-    ("XPK", "Paquete (XPK)"),
-    ("XBG", "Bolsa (XBG)"),
-)
 class CartaPorteGoodsForm(forms.ModelForm):
     mercancia = forms.ModelChoiceField(
         queryset=None,
         required=False,
         label="Mercancía",
-        widget=MercanciaSelectWithData(attrs={"class": "form-control form-control-sm js-mercancia"})
+        widget=MercanciaSelectWithData(attrs={"class": "form-control form-control-sm js-mercancia"}),
     )
 
     class Meta:
         model = CartaPorteGoods
-        exclude = [
-            "carta_porte",
-            "mercancia",
-
-            # ❌ ya no los usas en UI (si todavía existen en el modelo)
-            "bienes_transp",
-            "descripcion",
-            "clave_unidad",
-            "material_peligroso",
-            "clave_material_peligroso",
-        ]
+        exclude = ["carta_porte", "mercancia"]
         widgets = {
-            # ✅ orden/control lo haces en HTML, aquí solo widgets
             "cantidad": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.001"}),
-            "unidad": forms.Select(
-                choices=UNIDAD_CHOICES,
-                attrs={
-                    "class": "form-control form-control-sm",
-                }
-            ),
+            "unidad": forms.Select(choices=UNIDAD_CHOICES, attrs={"class": "form-control form-control-sm"}),
             "embalaje": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "peso_en_kg": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.001"}),
             "valor_mercancia": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
-            "moneda": forms.Select(
-                choices=CURRENCY_CHOICES,
-                attrs={"class": "form-control form-control-sm js-moneda"}
-            ),
+            "moneda": forms.Select(choices=CURRENCY_CHOICES, attrs={"class": "form-control form-control-sm js-moneda"}),
             "pedimento": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
         }
 
@@ -398,15 +445,16 @@ class CartaPorteGoodsForm(forms.ModelForm):
 
         merc = instance.mercancia
         if merc:
-            # ✅ autollenado SOLO si está vacío (no pisa lo que el user ya puso)
-            if not (instance.clave or "").strip():
-                instance.clave = merc.clave
+            # ✅ autollenado defensivo (solo si existen los campos)
+            if hasattr(instance, "clave") and not (getattr(instance, "clave", "") or "").strip():
+                instance.clave = getattr(merc, "clave", "") or ""
 
-            if not (instance.fraccion_arancelaria or "").strip():
-                instance.fraccion_arancelaria = merc.fraccion_arancelaria or ""
+            if hasattr(instance, "fraccion_arancelaria") and not (getattr(instance, "fraccion_arancelaria", "") or "").strip():
+                instance.fraccion_arancelaria = getattr(merc, "fraccion_arancelaria", "") or ""
 
-            if not (instance.uuid_comercio_exterior or "").strip():
-                instance.uuid_comercio_exterior = str(merc.comercio_exterior_uuid) if merc.comercio_exterior_uuid else ""
+            if hasattr(instance, "uuid_comercio_exterior") and not (getattr(instance, "uuid_comercio_exterior", "") or "").strip():
+                ce_uuid = getattr(merc, "comercio_exterior_uuid", None)
+                instance.uuid_comercio_exterior = str(ce_uuid) if ce_uuid else ""
 
             # moneda por default desde carta si existe
             if not (instance.moneda or "").strip() and getattr(instance.carta_porte, "currency", None):
@@ -415,21 +463,36 @@ class CartaPorteGoodsForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
-class CartaPorteTransportFigureForm(forms.ModelForm):
+
+# =========================
+# Carta Porte Item form
+# =========================
+
+class CartaPorteItemForm(forms.ModelForm):
     class Meta:
-        model = CartaPorteTransportFigure
-        exclude = ["carta_porte"]
+        model = CartaPorteItem
+        exclude = ["carta_porte", "subtotal", "iva_monto", "ret_iva_monto", "importe", "orden"]
         widgets = {
-            "tipo_figura": forms.Select(attrs={"class": "form-control form-control-sm"}),
-            "rfc": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "nombre": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "num_licencia": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "cantidad": forms.NumberInput(attrs={"class": "form-control form-control-sm js-itm-cant", "step": "0.001"}),
+            "unidad": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Ej. H87"}),
+            "producto": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "SKU / Producto"}),
+            "descripcion": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Descripción"}),
+            "precio": forms.NumberInput(attrs={"class": "form-control form-control-sm js-itm-precio text-right", "step": "0.01"}),
+            "descuento": forms.NumberInput(attrs={"class": "form-control form-control-sm js-itm-desc text-right", "step": "0.01"}),
+            "iva_pct": forms.NumberInput(attrs={"class": "form-control form-control-sm js-itm-iva text-right", "step": "0.01"}),
+            "ret_iva_pct": forms.NumberInput(attrs={"class": "form-control form-control-sm js-itm-retiva text-right", "step": "0.01"}),
         }
 
+    def clean(self):
+        cleaned = super().clean()
+        for k in ["cantidad", "precio", "descuento", "iva_pct", "ret_iva_pct"]:
+            if cleaned.get(k) is None:
+                cleaned[k] = Decimal("0.00")
+        return cleaned
 
-# -----------------------
-# ✅ Formsets LAZY (no se ejecutan en import time)
-# -----------------------
+# =========================
+# Formsets (lazy)
+# =========================
 
 def get_carta_porte_location_formset():
     return inlineformset_factory(
@@ -438,8 +501,6 @@ def get_carta_porte_location_formset():
         form=CartaPorteLocationForm,
         extra=0,
         can_delete=False,
-        max_num=2,
-        validate_max=True,
     )
 
 def get_carta_porte_goods_formset():
@@ -451,12 +512,11 @@ def get_carta_porte_goods_formset():
         can_delete=True,
     )
 
-def get_carta_porte_transport_figure_formset():
+def get_carta_porte_item_formset():
     return inlineformset_factory(
         CartaPorteCFDI,
-        CartaPorteTransportFigure,
-        form=CartaPorteTransportFigureForm,
+        CartaPorteItem,
+        form=CartaPorteItemForm,
         extra=1,
         can_delete=True,
     )
-
