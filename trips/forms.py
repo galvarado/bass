@@ -549,7 +549,7 @@ def get_carta_porte_location_formset():
         CartaPorteLocation,
         form=CartaPorteLocationForm,
         extra=0,
-        can_delete=False,
+        can_delete=True,
     )
 
 def get_carta_porte_goods_formset():
@@ -557,7 +557,7 @@ def get_carta_porte_goods_formset():
         CartaPorteCFDI,
         CartaPorteGoods,
         form=CartaPorteGoodsForm,
-        extra=1,
+        extra=0,
         can_delete=True,
     )
 

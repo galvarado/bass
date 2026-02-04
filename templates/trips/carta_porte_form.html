@@ -1,3 +1,4 @@
+{# templates/trips/carta_porte_form.html (o el nombre que estés usando) #}
 {% extends "base.html" %}
 {% load form_extras %}
 
@@ -59,6 +60,9 @@
   .w-uuid { width: 180px; min-width:180px; }
   .w-ped  { width: 100px; min-width:100px; }
 
+  /* ✅ columna eliminar fija y siempre visible */
+  .w-del { width: 48px; min-width: 48px; }
+
   /* display-only */
   .cp-ro {
     background: #f6f7fb;
@@ -74,9 +78,14 @@
     text-overflow: ellipsis;
   }
 
-  .js-remove-good { line-height: 1; }
-  .js-remove-good i { font-size: .95rem; }
-  .js-remove-good:hover { text-decoration: none; color: #c82333; }
+  .js-remove-good{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:32px;
+    height:26px;
+    padding:0;
+  }
 
   /* ✅ Control horizontal antes de Totales */
   .goods-scroll-ctrl{
@@ -89,8 +98,7 @@
   }
   .goods-scroll-ctrl-inner{ height:1px; }
 
-  /* (Opcional) oculta el scrollbar nativo del table-responsive
-     para no tener doble barra */
+  /* (Opcional) oculta el scrollbar nativo del table-responsive para no tener doble barra */
   #goods-scroll-wrap { scrollbar-width: none; }
   #goods-scroll-wrap::-webkit-scrollbar { height: 0; }
 </style>
@@ -131,6 +139,7 @@
     {% endif %}
   </div>
 {% endif %}
+
 {% if fs_items %}
   {% if fs_items.errors or fs_items.non_form_errors %}
     <div class="alert alert-danger">
@@ -370,337 +379,334 @@
       {% endfor %}
     </div>
 
-   <hr>
-<div class="d-flex justify-content-between align-items-center mb-2">
-  <h6 class="text-primary mb-0">
-    <i class="fas fa-boxes mr-1"></i> Mercancías
-  </h6>
-  <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-good">
-    <i class="fas fa-plus"></i> Agregar mercancía
-  </button>
-</div>
+    <hr>
 
-{{ fs_goods.management_form }}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="text-primary mb-0">
+        <i class="fas fa-boxes mr-1"></i> Mercancías
+      </h6>
+      <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-good">
+        <i class="fas fa-plus"></i> Agregar mercancía
+      </button>
+    </div>
 
-{# ✅ SOLO LA TABLA VA DENTRO DEL SCROLL #}
-<div class="table-responsive" id="goods-scroll-wrap">
-  <table class="table table-sm table-bordered mb-0" id="goods-table">
-    <thead class="thead-light">
-      <tr>
-        <th class="w-merc">Mercancía</th>
-        <th class="w-clv">Clave</th>
-        <th class="w-frac">Fracción arancelaria</th>
-        <th class="w-uuid">UUID comercio exterior</th>
-        <th class="w-cant">Cantidad</th>
-        <th class="w-und">Unidad</th>
-        <th class="w-peso">Peso</th>
-        <th class="w-val">Valor</th>
-        <th class="w-mon">Moneda</th>
-        <th class="w-emb">Embalaje</th>
-        <th class="w-ped">Pedimento</th>
-        <th style="min-width:60px;"></th>
-      </tr>
-    </thead>
+    {{ fs_goods.management_form }}
 
-    <tbody id="goods-rows">
-      {% for f in fs_goods.forms %}
+    <div class="table-responsive" id="goods-scroll-wrap">
+      <table class="table table-sm table-bordered mb-0" id="goods-table">
+        <thead class="thead-light">
+          <tr>
+            <th class="w-merc">Mercancía</th>
+            <th class="w-clv">Clave</th>
+            <th class="w-frac">Fracción arancelaria</th>
+            <th class="w-uuid">UUID comercio exterior</th>
+            <th class="w-cant">Cantidad</th>
+            <th class="w-und">Unidad</th>
+            <th class="w-peso">Peso</th>
+            <th class="w-val">Valor</th>
+            <th class="w-mon">Moneda</th>
+            <th class="w-emb">Embalaje</th>
+            <th class="w-ped">Pedimento</th>
+            <th class="w-del text-center">✕</th>
+          </tr>
+        </thead>
+
+        <tbody id="goods-rows">
+          {% for f in fs_goods.forms %}
+          <tr class="goods-row">
+            <td class="w-merc goods-mercancia">
+              {{ f.mercancia|add_class:"form-control form-control-sm js-mercancia" }}
+              {{ f.id }}
+            </td>
+
+            <td class="w-clv"><div class="cp-ro js-clave"></div></td>
+            <td class="w-frac"><div class="cp-ro js-fraccion"></div></td>
+            <td class="w-uuid"><div class="cp-ro js-uuidce"></div></td>
+            <td class="w-cant">{{ f.cantidad|add_class:"form-control form-control-sm" }}</td>
+            <td class="w-und">{{ f.unidad|add_class:"form-control form-control-sm" }}</td>
+            <td class="w-peso">{{ f.peso_en_kg|add_class:"form-control form-control-sm" }}</td>
+            <td class="w-val">{{ f.valor_mercancia|add_class:"form-control form-control-sm" }}</td>
+            <td class="w-mon">{{ f.moneda|add_class:"form-control form-control-sm js-moneda" }}</td>
+            <td class="w-emb">{{ f.embalaje|add_class:"form-control form-control-sm" }}</td>
+            <td class="w-ped">{{ f.pedimento|add_class:"form-control form-control-sm" }}</td>
+
+            <td class="w-del text-center align-middle">
+              <div class="d-none">
+                {{ f.DELETE }}
+              </div>
+              <button type="button"
+                      class="btn btn-sm btn-outline-danger js-remove-good"
+                      title="Quitar mercancía">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <template id="goods-empty-row">
       <tr class="goods-row">
-        <td class="w-merc goods-mercancia">
-          {{ f.mercancia|add_class:"form-control form-control-sm js-mercancia" }}
-          {{ f.id }}
-        </td>
-
+        <td class="w-merc goods-mercancia">__MERCANCIA____ID__</td>
         <td class="w-clv"><div class="cp-ro js-clave"></div></td>
         <td class="w-frac"><div class="cp-ro js-fraccion"></div></td>
         <td class="w-uuid"><div class="cp-ro js-uuidce"></div></td>
-        <td class="w-cant">{{ f.cantidad|add_class:"form-control form-control-sm" }}</td>
-        <td class="w-und">{{ f.unidad|add_class:"form-control form-control-sm" }}</td>
-        <td class="w-peso">{{ f.peso_en_kg|add_class:"form-control form-control-sm" }}</td>
-        <td class="w-val">{{ f.valor_mercancia|add_class:"form-control form-control-sm" }}</td>
-        <td class="w-mon">{{ f.moneda|add_class:"form-control form-control-sm js-moneda" }}</td>
-        <td class="w-emb">{{ f.embalaje|add_class:"form-control form-control-sm" }}</td>
-        <td class="w-ped">{{ f.pedimento|add_class:"form-control form-control-sm" }}</td>
 
-        <td class="text-center">
-          {% if f.DELETE %}
-            <div class="d-none">{{ f.DELETE }}</div>
-          {% endif %}
+        <td class="w-cant">__CANT__</td>
+        <td class="w-und">__UNIDAD__</td>
+        <td class="w-peso">__PESO__</td>
+        <td class="w-val">__VALOR__</td>
+        <td class="w-mon">__MONEDA__</td>
+        <td class="w-emb">__EMB__</td>
+
+        <td class="w-ped">__PEDIMENTO__</td>
+        <td class="w-del text-center align-middle">
+          <div class="d-none">__DELETE__</div>
           <button type="button"
-                  class="btn btn-link text-danger p-0 js-remove-good"
+                  class="btn btn-sm btn-outline-danger js-remove-good"
                   title="Quitar mercancía">
             <i class="fas fa-trash-alt"></i>
           </button>
         </td>
       </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div> {# ✅ CIERRA goods-scroll-wrap AQUÍ #}
+    </template>
 
-<template id="goods-empty-row">
-  <tr class="goods-row">
-    <td class="w-merc goods-mercancia">__MERCANCIA____ID__</td>
-    <td class="w-clv"><div class="cp-ro js-clave"></div></td>
-    <td class="w-frac"><div class="cp-ro js-fraccion"></div></td>
-    <td class="w-uuid"><div class="cp-ro js-uuidce"></div></td>
-
-    <td class="w-cant">__CANT__</td>
-    <td class="w-und">__UNIDAD__</td>
-    <td class="w-peso">__PESO__</td>
-    <td class="w-val">__VALOR__</td>
-    <td class="w-mon">__MONEDA__</td>
-    <td class="w-emb">__EMB__</td>
-
-    <td class="w-ped">__PEDIMENTO__</td>
-    <td class="text-center">
-      <div class="d-none">__DELETE__</div>
-      <button type="button"
-        class="btn btn-link text-danger p-0 js-remove-good"
-        title="Quitar mercancía">
-        <i class="fas fa-trash-alt"></i>
-      </button>
-    </td>
-  </tr>
-</template>
-
-<!-- ✅ CONTROL HORIZONTAL (antes de Totales) -->
-<div class="goods-scroll-ctrl my-2" id="goods-scroll-ctrl" aria-label="Scroll horizontal mercancías">
-  <div class="goods-scroll-ctrl-inner"></div>
-</div>
-
-<hr>
-<h6 class="text-primary mb-2">
-  <i class="fas fa-file-invoice mr-1"></i> Complemento Carta de Porte
-</h6>
-
-<div class="row cp-compact">
-  <div class="col-md-12">
-    <div class="form-row">
-
-      <div class="form-group col-md-3">
-        <label>Método de pago</label>
-        {{ form.payment_method|add_class:"form-control form-control-sm" }}
-        {% if form.payment_method.errors %}
-          <div class="text-danger small mt-1">{% for e in form.payment_method.errors %}{{ e }}<br>{% endfor %}</div>
-        {% endif %}
-      </div>
-
-      <div class="form-group col-md-3">
-        <label>Forma de pago</label>
-        {{ form.payment_form|add_class:"form-control form-control-sm" }}
-        {% if form.payment_form.errors %}
-          <div class="text-danger small mt-1">{% for e in form.payment_form.errors %}{{ e }}<br>{% endfor %}</div>
-        {% endif %}
-      </div>
-
-      <div class="form-group col-md-2">
-        <label>Moneda</label>
-        {{ form.currency|add_class:"form-control form-control-sm" }}
-        {% if form.currency.errors %}
-          <div class="text-danger small mt-1">{% for e in form.currency.errors %}{{ e }}<br>{% endfor %}</div>
-        {% endif %}
-      </div>
-
-      <div class="form-group col-md-2">
-        <label>Tipo</label>
-        {{ form.type|add_class:"form-control form-control-sm" }}
-        {% if form.type.errors %}
-          <div class="text-danger small mt-1">{% for e in form.type.errors %}{{ e }}<br>{% endfor %}</div>
-        {% endif %}
-      </div>
-
-       <div class="form-group col-md-2">
-        <label>Uso CFDI</label>
-        {{ form.uso_cfdi|add_class:"form-control form-control-sm" }}
-        {% if form.uso_cfdi.errors %}
-          <div class="text-danger small mt-1">{% for e in form.uso_cfdi.errors %}{{ e }}<br>{% endfor %}</div>
-        {% endif %}
-      </div>
-
-      <div class="form-group col-md-4">
-        <label>Observaciones</label>
-        {{ form.observations|add_class:"form-control form-control-sm" }}
-        {% if form.observations.errors %}
-          <div class="text-danger small mt-1">{% for e in form.observations.errors %}{{ e }}<br>{% endfor %}</div>
-        {% endif %}
-      </div>
-
+    <div class="goods-scroll-ctrl my-2" id="goods-scroll-ctrl" aria-label="Scroll horizontal mercancías">
+      <div class="goods-scroll-ctrl-inner"></div>
     </div>
-  </div>
-</div>
 
-<hr class="my-2">
+    <hr>
+    <h6 class="text-primary mb-2">
+      <i class="fas fa-file-invoice mr-1"></i> Complemento Carta de Porte
+    </h6>
 
-<div class="d-flex justify-content-between align-items-center mb-2">
-  <h6 class="text-primary mb-0">
-    <i class="fas fa-list mr-1"></i> Conceptos
-  </h6>
-  <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-item">
-    <i class="fas fa-plus"></i> Agregar item
-  </button>
-</div>
+    <div class="row cp-compact">
+      <div class="col-md-12">
+        <div class="form-row">
 
-{{ fs_items.management_form }}
+          <div class="form-group col-md-3">
+            <label>Método de pago</label>
+            {{ form.payment_method|add_class:"form-control form-control-sm" }}
+            {% if form.payment_method.errors %}
+              <div class="text-danger small mt-1">{% for e in form.payment_method.errors %}{{ e }}<br>{% endfor %}</div>
+            {% endif %}
+          </div>
 
-<div class="table-responsive" id="cpitems-scroll-wrap">
-  <table class="table table-sm table-bordered mb-0" id="cpitems-table">
-    <thead class="thead-light">
-      <tr>
-        <th style="min-width:90px;">Cantidad</th>
-        <th style="min-width:130px;">Unidad</th>
-        <th style="min-width:160px;">Producto</th>
-        <th style="min-width:220px;">Descripción</th>
-        <th style="min-width:110px;">Precio</th>
-        <th style="min-width:110px;">Descuento</th>
-        <th style="min-width:120px;">Subtotal</th>
-        <th style="min-width:90px;">IVA %</th>
-        <th style="min-width:120px;">IVA monto</th>
-        <th style="min-width:120px;">Ret IVA %</th>
-        <th style="min-width:150px;">Ret IVA monto</th>
-        <th style="min-width:120px;">Importe</th>
-        <th style="min-width:60px;"></th>
-      </tr>
-    </thead>
+          <div class="form-group col-md-3">
+            <label>Forma de pago</label>
+            {{ form.payment_form|add_class:"form-control form-control-sm" }}
+            {% if form.payment_form.errors %}
+              <div class="text-danger small mt-1">{% for e in form.payment_form.errors %}{{ e }}<br>{% endfor %}</div>
+            {% endif %}
+          </div>
 
-    <tbody id="cpitems-rows">
-      {% for f in fs_items.forms %}
+          <div class="form-group col-md-2">
+            <label>Moneda</label>
+            {{ form.currency|add_class:"form-control form-control-sm" }}
+            {% if form.currency.errors %}
+              <div class="text-danger small mt-1">{% for e in form.currency.errors %}{{ e }}<br>{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-group col-md-2">
+            <label>Tipo</label>
+            {{ form.type|add_class:"form-control form-control-sm" }}
+            {% if form.type.errors %}
+              <div class="text-danger small mt-1">{% for e in form.type.errors %}{{ e }}<br>{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-group col-md-2">
+            <label>Uso CFDI</label>
+            {{ form.uso_cfdi|add_class:"form-control form-control-sm" }}
+            {% if form.uso_cfdi.errors %}
+              <div class="text-danger small mt-1">{% for e in form.uso_cfdi.errors %}{{ e }}<br>{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-group col-md-4">
+            <label>Observaciones</label>
+            {{ form.observations|add_class:"form-control form-control-sm" }}
+            {% if form.observations.errors %}
+              <div class="text-danger small mt-1">{% for e in form.observations.errors %}{{ e }}<br>{% endfor %}</div>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-2">
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="text-primary mb-0">
+        <i class="fas fa-list mr-1"></i> Conceptos
+      </h6>
+      <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-item">
+        <i class="fas fa-plus"></i> Agregar item
+      </button>
+    </div>
+
+    {{ fs_items.management_form }}
+
+    <div class="table-responsive" id="cpitems-scroll-wrap">
+      <table class="table table-sm table-bordered mb-0" id="cpitems-table">
+        <thead class="thead-light">
+          <tr>
+            <th style="min-width:90px;">Cantidad</th>
+            <th style="min-width:130px;">Unidad</th>
+            <th style="min-width:160px;">Producto</th>
+            <th style="min-width:220px;">Descripción</th>
+            <th style="min-width:110px;">Precio</th>
+            <th style="min-width:110px;">Descuento</th>
+            <th style="min-width:120px;">Subtotal</th>
+            <th style="min-width:90px;">IVA %</th>
+            <th style="min-width:120px;">IVA monto</th>
+            <th style="min-width:120px;">Ret IVA %</th>
+            <th style="min-width:150px;">Ret IVA monto</th>
+            <th style="min-width:120px;">Importe</th>
+            <th style="min-width:60px;"></th>
+          </tr>
+        </thead>
+
+        <tbody id="cpitems-rows">
+          {% for f in fs_items.forms %}
+          <tr class="cpitem-row">
+            <td>{{ f.cantidad }}</td>
+            <td>{{ f.unidad }}</td>
+            <td>{{ f.producto }}</td>
+            <td>{{ f.descripcion }}</td>
+            <td>{{ f.precio }}</td>
+            <td>{{ f.descuento }}</td>
+
+            {# display-only calculados en server #}
+            <td><input class="form-control form-control-sm text-right" value="{{ f.instance.subtotal|default_if_none:'0.00' }}" readonly></td>
+            <td>{{ f.iva_pct }}</td>
+            <td><input class="form-control form-control-sm text-right" value="{{ f.instance.iva_monto|default_if_none:'0.00' }}" readonly></td>
+            <td>{{ f.ret_iva_pct }}</td>
+            <td><input class="form-control form-control-sm text-right" value="{{ f.instance.ret_iva_monto|default_if_none:'0.00' }}" readonly></td>
+            <td><input class="form-control form-control-sm text-right" value="{{ f.instance.importe|default_if_none:'0.00' }}" readonly></td>
+
+            <td class="text-center">
+              {{ f.id }}
+              {% if f.DELETE %}<div class="d-none">{{ f.DELETE }}</div>{% endif %}
+              <button type="button" class="btn btn-link text-danger p-0 js-remove-item" title="Quitar item">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <template id="cpitems-empty-row">
       <tr class="cpitem-row">
-        <td>{{ f.cantidad }}</td>
-        <td>{{ f.unidad }}</td>
-        <td>{{ f.producto }}</td>
-        <td>{{ f.descripcion }}</td>
-        <td>{{ f.precio }}</td>
-        <td>{{ f.descuento }}</td>
-
-        {# display-only calculados en server #}
-        <td><input class="form-control form-control-sm text-right" value="{{ f.instance.subtotal|default_if_none:'0.00' }}" readonly></td>
-        <td>{{ f.iva_pct }}</td>
-        <td><input class="form-control form-control-sm text-right" value="{{ f.instance.iva_monto|default_if_none:'0.00' }}" readonly></td>
-        <td>{{ f.ret_iva_pct }}</td>
-        <td><input class="form-control form-control-sm text-right" value="{{ f.instance.ret_iva_monto|default_if_none:'0.00' }}" readonly></td>
-        <td><input class="form-control form-control-sm text-right" value="{{ f.instance.importe|default_if_none:'0.00' }}" readonly></td>
-
+        <td>__CANT__</td>
+        <td>__UNIDAD__</td>
+        <td>__PROD__</td>
+        <td>__DESC__</td>
+        <td>__PRECIO__</td>
+        <td>__DESCUENTO__</td>
+        <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
+        <td>__IVA_PCT__</td>
+        <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
+        <td>__RETIVA_PCT__</td>
+        <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
+        <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
         <td class="text-center">
-          {{ f.id }}
-          {% if f.DELETE %}<div class="d-none">{{ f.DELETE }}</div>{% endif %}
+          <div class="d-none">__DELETE__</div>
           <button type="button" class="btn btn-link text-danger p-0 js-remove-item" title="Quitar item">
             <i class="fas fa-trash-alt"></i>
           </button>
         </td>
       </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+    </template>
 
-<template id="cpitems-empty-row">
-  <tr class="cpitem-row">
-    <td>__CANT__</td>
-    <td>__UNIDAD__</td>
-    <td>__PROD__</td>
-    <td>__DESC__</td>
-    <td>__PRECIO__</td>
-    <td>__DESCUENTO__</td>
-    <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
-    <td>__IVA_PCT__</td>
-    <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
-    <td>__RETIVA_PCT__</td>
-    <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
-    <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
-    <td class="text-center">
-      <div class="d-none">__DELETE__</div>
-      <button type="button" class="btn btn-link text-danger p-0 js-remove-item" title="Quitar item">
-        <i class="fas fa-trash-alt"></i>
-      </button>
-    </td>
-  </tr>
-</template>
+    <hr>
 
-<hr>
+    <div class="row">
+      <div class="col-md-9"></div>
+      <div class="col-md-3 cp-totals">
+        <div class="form-group mb-0">
 
-{# ✅ Totales fuera del scroll #}
-<div class="row">
-  <div class="col-md-9"></div>
-  <div class="col-md-3 cp-totals">
-    <div class="form-group mb-0">
+          <label class="mb-1">Totales</label>
 
-      <label class="mb-1">Totales</label>
+          <div class="input-group input-group-sm mb-1">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Subtotal $</span>
+            </div>
 
-      {# UI (con comas) + hidden real #}
-      <div class="input-group input-group-sm mb-1">
-        <div class="input-group-prepend">
-          <span class="input-group-text">Subtotal $</span>
+            <input type="text"
+                   class="form-control form-control-sm js-subtotal-ui text-right"
+                   value="{{ form.subtotal.value|default_if_none:'0.00' }}"
+                   readonly>
+
+            <input type="hidden"
+                   name="subtotal"
+                   class="js-subtotal">
+          </div>
+
+          <div class="custom-control custom-checkbox mb-2">
+            <input type="checkbox" class="custom-control-input" id="chk-iva16">
+            <label class="custom-control-label small" for="chk-iva16">Aplicar 16% IVA</label>
+          </div>
+
+          <div class="input-group input-group-sm mb-1">
+            <div class="input-group-prepend">
+              <span class="input-group-text">IVA $</span>
+            </div>
+
+            <input type="text"
+                   class="form-control form-control-sm js-iva-ui text-right"
+                   value="{{ form.iva.value|default_if_none:'0.00' }}"
+                   inputmode="decimal">
+
+            <input type="hidden"
+                   name="iva"
+                   class="js-iva">
+          </div>
+
+          <div class="input-group input-group-sm mb-1">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Ret $</span>
+            </div>
+
+            <input type="text"
+                   class="form-control form-control-sm js-retencion-ui text-right"
+                   value="{{ form.retencion.value|default_if_none:'0.00' }}"
+                   inputmode="decimal">
+
+            <input type="hidden"
+                   name="retencion"
+                   class="js-retencion">
+          </div>
+
+          <div class="input-group input-group-sm">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Total $</span>
+            </div>
+
+            <input type="text"
+                   class="form-control form-control-sm js-total-ui text-right"
+                   value="{{ form.total.value|default_if_none:'0.00' }}"
+                   readonly>
+
+            <input type="hidden"
+                   name="total"
+                   class="js-total">
+          </div>
+
+          {% if form.iva.errors or form.retencion.errors %}
+            <div class="text-danger small mt-1">
+              {% for e in form.iva.errors %}{{ e }}<br>{% endfor %}
+              {% for e in form.retencion.errors %}{{ e }}<br>{% endfor %}
+            </div>
+          {% endif %}
         </div>
-
-        <input type="text"
-               class="form-control form-control-sm js-subtotal-ui text-right"
-               value="{{ form.subtotal.value|default_if_none:'0.00' }}"
-               readonly>
-
-        <input type="hidden"
-               name="subtotal"
-               class="js-subtotal">
       </div>
-
-      <div class="custom-control custom-checkbox mb-2">
-        <input type="checkbox" class="custom-control-input" id="chk-iva16">
-        <label class="custom-control-label small" for="chk-iva16">Aplicar 16% IVA</label>
-      </div>
-
-      <div class="input-group input-group-sm mb-1">
-        <div class="input-group-prepend">
-          <span class="input-group-text">IVA $</span>
-        </div>
-
-        <input type="text"
-               class="form-control form-control-sm js-iva-ui text-right"
-               value="{{ form.iva.value|default_if_none:'0.00' }}"
-               inputmode="decimal">
-
-        <input type="hidden"
-               name="iva"
-               class="js-iva">
-      </div>
-
-      <div class="input-group input-group-sm mb-1">
-        <div class="input-group-prepend">
-          <span class="input-group-text">Ret $</span>
-        </div>
-
-        <input type="text"
-               class="form-control form-control-sm js-retencion-ui text-right"
-               value="{{ form.retencion.value|default_if_none:'0.00' }}"
-               inputmode="decimal">
-
-        <input type="hidden"
-               name="retencion"
-               class="js-retencion">
-      </div>
-
-      <div class="input-group input-group-sm">
-        <div class="input-group-prepend">
-          <span class="input-group-text">Total $</span>
-        </div>
-
-        <input type="text"
-               class="form-control form-control-sm js-total-ui text-right"
-               value="{{ form.total.value|default_if_none:'0.00' }}"
-               readonly>
-
-        <input type="hidden"
-               name="total"
-               class="js-total">
-      </div>
-
-      {% if form.iva.errors or form.retencion.errors %}
-        <div class="text-danger small mt-1">
-          {% for e in form.iva.errors %}{{ e }}<br>{% endfor %}
-          {% for e in form.retencion.errors %}{{ e }}<br>{% endfor %}
-        </div>
-      {% endif %}
     </div>
-  </div>
-</div>
 
   </div>
 
@@ -926,6 +932,19 @@
     }
 
     bindGoodsScrollSync();
+    // ✅ recalcula varias veces (porque el layout termina después)
+    function hardSyncGoodsCtrl() {
+      syncGoodsCtrlWidth();
+      // alinea posiciones por si ya hay scroll
+      if (goodsCtrl && goodsWrap) goodsCtrl.scrollLeft = goodsWrap.scrollLeft;
+    }
+
+    hardSyncGoodsCtrl();
+    requestAnimationFrame(hardSyncGoodsCtrl);
+    setTimeout(hardSyncGoodsCtrl, 50);
+    setTimeout(hardSyncGoodsCtrl, 250);
+    window.addEventListener("load", hardSyncGoodsCtrl);
+    window.addEventListener("resize", hardSyncGoodsCtrl);
     syncGoodsCtrlWidth();
     window.addEventListener("resize", syncGoodsCtrlWidth);
 
@@ -934,6 +953,7 @@
     // ==========================
     function bumpTotal(prefix) {
       const totalInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+      if (!totalInput) return 0;
       const current = parseInt(totalInput.value || "0", 10);
       totalInput.value = String(current + 1);
       return current;
@@ -945,14 +965,28 @@
       return out;
     }
 
-    function fieldOuterHTMLFromEmpty(emptyHtml, fieldName) {
+    // ✅ IMPORTANTE:
+    // En empty_form.as_p, algunos campos (ej. DELETE) vienen en el mismo <p>
+    // junto con hidden inputs (id, carta_porte, etc.).
+    // Esta función regresa SOLO los controles (input/select/textarea) de ese <p>,
+    // para que no se pierdan los hidden.
+    function fieldControlsHTMLFromEmpty(emptyHtml, fieldName) {
       const wrapper = document.createElement("div");
       wrapper.innerHTML = emptyHtml;
+
       const el = wrapper.querySelector(`[name="${fieldName}"]`);
-      return el ? el.outerHTML : "";
+      if (!el) return "";
+
+      const p = el.closest("p");
+      if (p) {
+        return Array.from(p.querySelectorAll("input,select,textarea"))
+          .map(x => x.outerHTML)
+          .join("");
+      }
+      return el.outerHTML;
     }
 
-    const cartaCurrency = "{{ carta.currency|default_if_none:'' }}";
+    const cartaCurrency = "{{ form.currency.value|default_if_none:'' }}";
 
     function fillDiv(divEl, value) {
       if (!divEl) return;
@@ -1015,13 +1049,38 @@
     }
 
     // ==========================
+    // ✅ Remove items (cpitems)
+    // ==========================
+    function bindRemoveItemButtons(scopeEl) {
+      const root = scopeEl || document;
+      root.querySelectorAll(".js-remove-item").forEach(btn => {
+        if (btn.dataset.removeBound === "1") return;
+        btn.dataset.removeBound = "1";
+
+        btn.addEventListener("click", function () {
+          const tr = btn.closest("tr");
+          if (!tr) return;
+
+          const del = tr.querySelector('input[type="checkbox"][name$="-DELETE"]');
+          if (del) {
+            del.checked = true;
+            tr.style.display = "none";
+          } else {
+            tr.remove();
+          }
+        });
+      });
+    }
+
+    // ==========================
     // Bind inicial
     // ==========================
     bindMercanciaAutofill(document);
     bindRemoveButtons(document);
+    bindRemoveItemButtons(document);
 
     // ==========================
-    // Agregar mercancía
+    // Agregar mercancía (prefix = goods)
     // ==========================
     const btnAddGood = document.getElementById("btn-add-good");
     const goodsBody = document.getElementById("goods-rows");
@@ -1033,7 +1092,7 @@
 
       function field(shortName) {
         const name = `goods-__prefix__-${shortName}`;
-        return fieldOuterHTMLFromEmpty(empty, name).replaceAll("__prefix__", String(idx));
+        return fieldControlsHTMLFromEmpty(empty, name).replaceAll("__prefix__", String(idx));
       }
 
       let html = goodsTpl.innerHTML;
@@ -1054,11 +1113,66 @@
       tr.innerHTML = html;
       goodsBody.appendChild(tr);
 
+      /* 🔥 AQUÍ VA EL FIX DEL CHECKBOX 🔥 */
+      const del = tr.querySelector('input[type="checkbox"][name$="-DELETE"]');
+      if (del) {
+        // elimina el label "Eliminar:" si existe
+        const lbl = tr.querySelector(`label[for="${del.id}"]`);
+        if (lbl) lbl.remove();
+
+        // oculta el checkbox
+        del.classList.add("d-none");
+        del.tabIndex = -1;
+        del.setAttribute("aria-hidden", "true");
+
+        // por si viene envuelto en <p>
+        const p = del.closest("p");
+        if (p) p.classList.add("d-none");
+      }
+
+      /* bindings normales */
       bindMercanciaAutofill(tr);
       bindRemoveButtons(tr);
       syncGoodsCtrlWidth();
 
       recomputeTotal();
+    });
+
+    // ==========================
+    // Agregar item (prefix REAL = cpitem)
+    // ==========================
+    const btnAddItem = document.getElementById("btn-add-item");
+    const itemsBody = document.getElementById("cpitems-rows");
+    const itemsTpl = document.getElementById("cpitems-empty-row");
+
+    btnAddItem?.addEventListener("click", function () {
+      // ✅ aquí estaba el bug: usabas "items" pero el management_form es "cpitem"
+      const idx = bumpTotal("cpitem");
+      const empty = `{{ fs_items.empty_form.as_p|escapejs }}`;
+
+      function field(shortName) {
+        const name = `cpitem-__prefix__-${shortName}`;
+        return fieldControlsHTMLFromEmpty(empty, name).replaceAll("__prefix__", String(idx));
+      }
+
+      let html = itemsTpl.innerHTML;
+      html = replaceAll(html, {
+        "__CANT__": field("cantidad"),
+        "__UNIDAD__": field("unidad"),
+        "__PROD__": field("producto"),
+        "__DESC__": field("descripcion"),
+        "__PRECIO__": field("precio"),
+        "__DESCUENTO__": field("descuento"),
+        "__IVA_PCT__": field("iva_pct"),
+        "__RETIVA_PCT__": field("ret_iva_pct"),
+        "__DELETE__": field("DELETE"),
+      });
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = html;
+      itemsBody.appendChild(tr);
+
+      bindRemoveItemButtons(tr);
     });
 
     // Inicial

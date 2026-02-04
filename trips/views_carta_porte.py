@@ -250,7 +250,23 @@ class CartaPorteEditView(TemplateView):
         carta.save()
 
         fs_locations.save()
-        fs_goods.save()
+        goods = fs_goods.save(commit=False)
+
+        # borrar los marcados
+        for obj in fs_goods.deleted_objects:
+            obj.delete()
+
+        # guardar solo los válidos
+        for g in goods:
+            # 👇 evita guardar filas vacías
+            if not g.mercancia_id:
+                if g.pk:
+                    g.delete()
+                continue
+
+            g.carta_porte = carta
+            g.save()
+
 
         items = fs_items.save(commit=False)
         for obj in fs_items.deleted_objects:
