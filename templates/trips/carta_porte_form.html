@@ -118,6 +118,13 @@
       </div>
     {% endif %}
 
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        <strong>Errores:</strong>
+        <pre class="mb-0">{{ form.errors }}</pre>
+      </div>
+    {% endif %}
+
     <h6 class="text-primary mb-2">
       <i class="fas fa-file-invoice mr-1"></i> Datos generales
     </h6>
@@ -127,7 +134,7 @@
         <div class="form-row">
 
           <div class="form-group col-md-4">
-            <label>Cliente (Receptor)</label>
+            <label>Cliente (Paga)</label>
             {{ form.customer|add_class:"form-control form-control-sm" }}
             <small class="text-muted">
               Por default es el cliente de origen, pero puedes cambiarlo.
@@ -140,21 +147,21 @@
           </div>
 
           <div class="form-group col-md-2">
-            <label>Fecha</label>
-            {{ form.fecha|add_class:"form-control form-control-sm" }}
-            {% if form.fecha.errors %}
+            <label>Fecha salida</label>
+            {{ form.fecha_salida|add_class:"form-control form-control-sm" }}
+            {% if form.fecha_salida.errors %}
               <div class="text-danger small mt-1">
-                {% for e in form.fecha.errors %}{{ e }}<br>{% endfor %}
+                {% for e in form.fecha_salida.errors %}{{ e }}<br>{% endfor %}
               </div>
             {% endif %}
           </div>
 
           <div class="form-group col-md-2">
-            <label>Orden</label>
-            {{ form.orden|add_class:"form-control form-control-sm cp-w-ord" }}
-            {% if form.orden.errors %}
+            <label>Fecha llegada</label>
+            {{ form.fecha_llegada|add_class:"form-control form-control-sm" }}
+            {% if form.fecha_llegadfa.errors %}
               <div class="text-danger small mt-1">
-                {% for e in form.orden.errors %}{{ e }}<br>{% endfor %}
+                {% for e in form.fecha_llegada.errors %}{{ e }}<br>{% endfor %}
               </div>
             {% endif %}
           </div>
@@ -189,10 +196,6 @@
     </h6>
 
     <div class="form-row">
-      <div class="form-group col-md-3">
-        <label>Cliente</label>
-        <input class="form-control form-control-sm" value="{{ trip.client.nombre }}" readonly>
-      </div>
       <div class="form-group col-md-3">
         <label>Ruta</label>
         <input class="form-control form-control-sm" value="{{ trip.route }}" readonly>
@@ -336,59 +339,61 @@
 </div>
 
 {{ fs_goods.management_form }}
+
+{# ✅ SOLO LA TABLA VA DENTRO DEL SCROLL #}
 <div class="table-responsive" id="goods-scroll-wrap">
- <table class="table table-sm table-bordered mb-0" id="goods-table">
-  <thead class="thead-light">
-    <tr>
-      <th class="w-merc">Mercancía</th>
-      <th class="w-clv">Clave</th>
-      <th class="w-frac">Fracción arancelaria</th>
-      <th class="w-uuid">UUID comercio exterior</th>
-      <th class="w-cant">Cantidad</th>
-      <th class="w-und">Unidad</th>
-      <th class="w-peso">Peso</th>
-      <th class="w-val">Valor</th>
-      <th class="w-mon">Moneda</th>
-      <th class="w-emb">Embalaje</th>
-      <th class="w-ped">Pedimento</th>
-      <th style="min-width:60px;"></th>
-    </tr>
-  </thead>
+  <table class="table table-sm table-bordered mb-0" id="goods-table">
+    <thead class="thead-light">
+      <tr>
+        <th class="w-merc">Mercancía</th>
+        <th class="w-clv">Clave</th>
+        <th class="w-frac">Fracción arancelaria</th>
+        <th class="w-uuid">UUID comercio exterior</th>
+        <th class="w-cant">Cantidad</th>
+        <th class="w-und">Unidad</th>
+        <th class="w-peso">Peso</th>
+        <th class="w-val">Valor</th>
+        <th class="w-mon">Moneda</th>
+        <th class="w-emb">Embalaje</th>
+        <th class="w-ped">Pedimento</th>
+        <th style="min-width:60px;"></th>
+      </tr>
+    </thead>
 
-  <tbody id="goods-rows">
-    {% for f in fs_goods.forms %}
-    <tr class="goods-row">
-      <td class="w-merc goods-mercancia">
-        {{ f.mercancia|add_class:"form-control form-control-sm js-mercancia" }}
-        {{ f.id }}
-      </td>
+    <tbody id="goods-rows">
+      {% for f in fs_goods.forms %}
+      <tr class="goods-row">
+        <td class="w-merc goods-mercancia">
+          {{ f.mercancia|add_class:"form-control form-control-sm js-mercancia" }}
+          {{ f.id }}
+        </td>
 
-      <td class="w-clv"><div class="cp-ro js-clave"></div></td>
-      <td class="w-frac"><div class="cp-ro js-fraccion"></div></td>
-      <td class="w-uuid"><div class="cp-ro js-uuidce"></div></td>
-      <td class="w-cant">{{ f.cantidad|add_class:"form-control form-control-sm" }}</td>
-      <td class="w-und">{{ f.unidad|add_class:"form-control form-control-sm" }}</td>
-      <td class="w-peso">{{ f.peso_en_kg|add_class:"form-control form-control-sm" }}</td>
-      <td class="w-val">{{ f.valor_mercancia|add_class:"form-control form-control-sm" }}</td>
-      <td class="w-mon">{{ f.moneda|add_class:"form-control form-control-sm js-moneda" }}</td>
-      <td class="w-emb">{{ f.embalaje|add_class:"form-control form-control-sm" }}</td>
+        <td class="w-clv"><div class="cp-ro js-clave"></div></td>
+        <td class="w-frac"><div class="cp-ro js-fraccion"></div></td>
+        <td class="w-uuid"><div class="cp-ro js-uuidce"></div></td>
+        <td class="w-cant">{{ f.cantidad|add_class:"form-control form-control-sm" }}</td>
+        <td class="w-und">{{ f.unidad|add_class:"form-control form-control-sm" }}</td>
+        <td class="w-peso">{{ f.peso_en_kg|add_class:"form-control form-control-sm" }}</td>
+        <td class="w-val">{{ f.valor_mercancia|add_class:"form-control form-control-sm" }}</td>
+        <td class="w-mon">{{ f.moneda|add_class:"form-control form-control-sm js-moneda" }}</td>
+        <td class="w-emb">{{ f.embalaje|add_class:"form-control form-control-sm" }}</td>
+        <td class="w-ped">{{ f.pedimento|add_class:"form-control form-control-sm" }}</td>
 
-      <td class="w-ped">{{ f.pedimento|add_class:"form-control form-control-sm" }}</td>
-
-      <td class="text-center">
-      {% if f.DELETE %}
-        <div class="d-none">{{ f.DELETE }}</div>
-      {% endif %}
-      <button type="button"
-                class="btn btn-link text-danger p-0 js-remove-good"
-                title="Quitar mercancía">
-          <i class="fas fa-trash-alt"></i>
-        </button>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+        <td class="text-center">
+          {% if f.DELETE %}
+            <div class="d-none">{{ f.DELETE }}</div>
+          {% endif %}
+          <button type="button"
+                  class="btn btn-link text-danger p-0 js-remove-good"
+                  title="Quitar mercancía">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div> {# ✅ CIERRA goods-scroll-wrap AQUÍ #}
 
 <template id="goods-empty-row">
   <tr class="goods-row">
@@ -421,91 +426,91 @@
   <div class="goods-scroll-ctrl-inner"></div>
 </div>
 
-    <hr>
+<hr>
 
-    {# ✅ Totales al final (columna derecha compacta) #}
-    <div class="row">
-      <div class="col-md-9"></div>
-      <div class="col-md-3 cp-totals">
-        <div class="form-group mb-0">
+{# ✅ Totales fuera del scroll #}
+<div class="row">
+  <div class="col-md-9"></div>
+  <div class="col-md-3 cp-totals">
+    <div class="form-group mb-0">
 
-          <label class="mb-1">Totales</label>
+      <label class="mb-1">Totales</label>
 
-          {# ✅ UI text (con comas) + hidden (valor real) #}
-          <div class="input-group input-group-sm mb-1">
-            <div class="input-group-prepend">
-              <span class="input-group-text">Subtotal $</span>
-            </div>
-
-            <input type="text"
-                   class="form-control form-control-sm js-subtotal-ui text-right"
-                   value="{{ form.subtotal.value|default_if_none:'0.00' }}"
-                   readonly>
-
-            <input type="hidden"
-                   name="subtotal"
-                   class="js-subtotal">
-          </div>
-
-          <div class="custom-control custom-checkbox mb-2">
-            <input type="checkbox" class="custom-control-input" id="chk-iva16">
-            <label class="custom-control-label small" for="chk-iva16">Aplicar 16% IVA</label>
-          </div>
-
-          <div class="input-group input-group-sm mb-1">
-            <div class="input-group-prepend">
-              <span class="input-group-text">IVA $</span>
-            </div>
-
-            <input type="text"
-                   class="form-control form-control-sm js-iva-ui text-right"
-                   value="{{ form.iva.value|default_if_none:'0.00' }}"
-                   inputmode="decimal">
-
-            <input type="hidden"
-                   name="iva"
-                   class="js-iva">
-          </div>
-
-          <div class="input-group input-group-sm mb-1">
-            <div class="input-group-prepend">
-              <span class="input-group-text">Ret $</span>
-            </div>
-
-            <input type="text"
-                   class="form-control form-control-sm js-retencion-ui text-right"
-                   value="{{ form.retencion.value|default_if_none:'0.00' }}"
-                   inputmode="decimal">
-
-            <input type="hidden"
-                   name="retencion"
-                   class="js-retencion">
-          </div>
-
-          <div class="input-group input-group-sm">
-            <div class="input-group-prepend">
-              <span class="input-group-text">Total $</span>
-            </div>
-
-            <input type="text"
-                   class="form-control form-control-sm js-total-ui text-right"
-                   value="{{ form.total.value|default_if_none:'0.00' }}"
-                   readonly>
-
-            <input type="hidden"
-                   name="total"
-                   class="js-total">
-          </div>
-
-          {% if form.iva.errors or form.retencion.errors %}
-            <div class="text-danger small mt-1">
-              {% for e in form.iva.errors %}{{ e }}<br>{% endfor %}
-              {% for e in form.retencion.errors %}{{ e }}<br>{% endfor %}
-            </div>
-          {% endif %}
+      {# UI (con comas) + hidden real #}
+      <div class="input-group input-group-sm mb-1">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Subtotal $</span>
         </div>
+
+        <input type="text"
+               class="form-control form-control-sm js-subtotal-ui text-right"
+               value="{{ form.subtotal.value|default_if_none:'0.00' }}"
+               readonly>
+
+        <input type="hidden"
+               name="subtotal"
+               class="js-subtotal">
       </div>
+
+      <div class="custom-control custom-checkbox mb-2">
+        <input type="checkbox" class="custom-control-input" id="chk-iva16">
+        <label class="custom-control-label small" for="chk-iva16">Aplicar 16% IVA</label>
+      </div>
+
+      <div class="input-group input-group-sm mb-1">
+        <div class="input-group-prepend">
+          <span class="input-group-text">IVA $</span>
+        </div>
+
+        <input type="text"
+               class="form-control form-control-sm js-iva-ui text-right"
+               value="{{ form.iva.value|default_if_none:'0.00' }}"
+               inputmode="decimal">
+
+        <input type="hidden"
+               name="iva"
+               class="js-iva">
+      </div>
+
+      <div class="input-group input-group-sm mb-1">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Ret $</span>
+        </div>
+
+        <input type="text"
+               class="form-control form-control-sm js-retencion-ui text-right"
+               value="{{ form.retencion.value|default_if_none:'0.00' }}"
+               inputmode="decimal">
+
+        <input type="hidden"
+               name="retencion"
+               class="js-retencion">
+      </div>
+
+      <div class="input-group input-group-sm">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Total $</span>
+        </div>
+
+        <input type="text"
+               class="form-control form-control-sm js-total-ui text-right"
+               value="{{ form.total.value|default_if_none:'0.00' }}"
+               readonly>
+
+        <input type="hidden"
+               name="total"
+               class="js-total">
+      </div>
+
+      {% if form.iva.errors or form.retencion.errors %}
+        <div class="text-danger small mt-1">
+          {% for e in form.iva.errors %}{{ e }}<br>{% endfor %}
+          {% for e in form.retencion.errors %}{{ e }}<br>{% endfor %}
+        </div>
+      {% endif %}
     </div>
+  </div>
+</div>
 
   </div>
 
@@ -602,12 +607,12 @@
 
     function setHidden(hiddenEl, n) {
       if (!hiddenEl) return;
-      hiddenEl.value = round2(n).toFixed(2); // "1234.56"
+      hiddenEl.value = round2(n).toFixed(2);
     }
 
     function setUI(uiEl, n) {
       if (!uiEl) return;
-      uiEl.value = uiFmt.format(round2(n)); // "1,234.56"
+      uiEl.value = uiFmt.format(round2(n));
     }
 
     function syncFromUI(uiEl, hiddenEl) {
@@ -621,10 +626,10 @@
     const elRetUI      = document.querySelector(".js-retencion-ui");
     const elTotalUI    = document.querySelector(".js-total-ui");
 
-    const elSubtotal = document.querySelector(".js-subtotal");     // hidden
-    const elIVA      = document.querySelector(".js-iva");          // hidden
-    const elRet      = document.querySelector(".js-retencion");    // hidden
-    const elTotal    = document.querySelector(".js-total");        // hidden
+    const elSubtotal = document.querySelector(".js-subtotal");
+    const elIVA      = document.querySelector(".js-iva");
+    const elRet      = document.querySelector(".js-retencion");
+    const elTotal    = document.querySelector(".js-total");
 
     function recomputeTotal() {
       const subtotal = parseMoney(elSubtotal?.value);
@@ -637,7 +642,7 @@
       setUI(elTotalUI, total);
     }
 
-    // init: toma lo que venga en UI y lo pasa a hidden
+    // init: UI -> hidden
     setHidden(elSubtotal, parseMoney(elSubtotalUI?.value || "0"));
     setHidden(elIVA,      parseMoney(elIvaUI?.value || "0"));
     setHidden(elRet,      parseMoney(elRetUI?.value || "0"));
@@ -647,12 +652,10 @@
     setUI(elIvaUI,      parseMoney(elIVA.value));
     setUI(elRetUI,      parseMoney(elRet.value));
 
-    // bind edición IVA/Ret
     function bindEditable(uiEl, hiddenEl, onChange) {
       if (!uiEl || !hiddenEl) return;
 
       uiEl.addEventListener("focus", () => {
-        // sin comas para editar
         uiEl.value = parseMoney(uiEl.value).toFixed(2);
       });
 
@@ -701,7 +704,7 @@
     }
 
     // ==========================
-    // ✅ Control horizontal antes de Totales (sync)
+    // ✅ Control horizontal (sync)
     // ==========================
     const goodsWrap = document.getElementById("goods-scroll-wrap");
     const goodsCtrl = document.getElementById("goods-scroll-ctrl");
@@ -868,14 +871,11 @@
       recomputeTotal();
     });
 
-    // ==========================
     // Inicial
-    // ==========================
-    // Total inicial desde backend
     if (chkIVA16?.checked) recomputeIVAFromToggle();
     else recomputeTotal();
 
-    // antes de enviar: asegura hidden (importante)
+    // antes de enviar: asegura hidden
     const formEl = document.querySelector("form");
     formEl?.addEventListener("submit", function () {
       setHidden(elSubtotal, parseMoney(elSubtotalUI?.value || elSubtotal.value || "0"));

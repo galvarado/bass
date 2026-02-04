@@ -247,8 +247,14 @@ class CartaPorteCFDIForm(forms.ModelForm):
             "payment_method": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
 
             # ✅ Encabezado Carta Porte
-            "fecha": forms.DateInput(attrs={"class": "form-control form-control-sm", "type": "date"}),
-            "orden": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "fecha_salida": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-control form-control-sm"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "fecha_llegada": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-control form-control-sm"},
+                format="%Y-%m-%dT%H:%M",
+            ),
             "itrn_us_entry": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "pedimento": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
 
@@ -265,6 +271,11 @@ class CartaPorteCFDIForm(forms.ModelForm):
         qs = Client.objects.all().order_by("nombre")
         self.fields["customer"].queryset = qs
         self.fields["customer"].label_from_instance = lambda o: o.nombre
+
+        # Para que al editar se vea bien en el input
+        for f in ("fecha_salida", "fecha_llegada"):
+            if self.instance and getattr(self.instance, f, None):
+                self.initial[f] = getattr(self.instance, f).strftime("%Y-%m-%dT%H:%M")
 
         if self.instance and self.instance.pk and getattr(self.instance, "customer_id", None):
             self.fields["customer"].initial = self.instance.customer
@@ -321,14 +332,14 @@ CURRENCY_CHOICES = (
 
 UNIDAD_CHOICES = (
     ("", "—"),
-    ("H87", "Pieza"),
-    ("KGM", "Kilogramo"),
-    ("LTR", "Litro"),
-    ("TNE", "Tonelada"),
-    ("MTR", "Metro"),
-    ("XBX", "Caja"),
-    ("XPK", "Paquete"),
-    ("XBG", "Bolsa"),
+    ("H87", "Pieza (H87)"),
+    ("KGM", "Kilogramo (KGM)"),
+    ("LTR", "Litro (LTR)"),
+    ("TNE", "Tonelada (TNE)"),
+    ("MTR", "Metro (MTR)"),
+    ("XBX", "Caja (XBX)"),
+    ("XPK", "Paquete (XPK)"),
+    ("XBG", "Bolsa (XBG)"),
 )
 class CartaPorteGoodsForm(forms.ModelForm):
     mercancia = forms.ModelChoiceField(

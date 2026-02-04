@@ -237,7 +237,8 @@ class CartaPorteCFDI(models.Model):
     )
 
     # --- Encabezado Carta Porte (operativo) ---
-    fecha = models.DateField(default=timezone.now)
+    fecha_salida = models.DateTimeField(default=timezone.now)
+    fecha_llegada = models.DateTimeField(default=timezone.now)
     orden = models.CharField(max_length=50, blank=True)
 
     itrn_us_entry = models.CharField("ITRN US entry", max_length=80, blank=True)
@@ -250,6 +251,10 @@ class CartaPorteCFDI(models.Model):
     iva = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     retencion = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    observations = models.TextField(
+        blank=True,
+        verbose_name="Observaciones",
+    )
 
     # --- Datos del timbrado ---
     uuid = models.CharField(max_length=100, blank=True, null=True)
@@ -346,7 +351,7 @@ class CartaPorteGoods(models.Model):
         on_delete=models.PROTECT,   # o SET_NULL si prefieres permitir borrado lógico
         related_name="carta_porte_goods",
     )
-    cantidad = models.DecimalField(max_digits=14, decimal_places=3, default=Decimal("0.000"))
+    cantidad = models.DecimalField(max_digits=14, decimal_places=3, default=Decimal("0"))
     unidad = models.CharField(max_length=50, blank=True, null=True)
     embalaje = models.CharField(max_length=10, blank=True, null=True)
     peso_en_kg = models.DecimalField(max_digits=14, decimal_places=3, blank=True, null=True)
