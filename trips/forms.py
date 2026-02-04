@@ -210,27 +210,76 @@ CURRENCY_CHOICES = (
     ("USD", "USD"),
 )
 
+# =========================
+# MÉTODO DE PAGO (MétodoPago SAT)
+# =========================
 PAYMENT_METHOD_CHOICES = (
-    ("PUE", "PUE - Pago en una sola exhibición"),
-    ("PPD", "PPD - Pago en parcialidades o diferido"),
+    ('PUE', 'PUE - Pago en una sola exhibición'),
+    ('PPD', 'PPD - Pago en parcialidades o diferido'),
 )
 
+# =========================
+# FORMA DE PAGO (FormaPago SAT)
+# =========================
 PAYMENT_FORM_CHOICES = (
-    ("01", "01 - Efectivo"),
-    ("02", "02 - Cheque nominativo"),
-    ("03", "03 - Transferencia electrónica"),
-    ("04", "04 - Tarjeta de crédito"),
-    ("28", "28 - Tarjeta de débito"),
-    ("99", "99 - Por definir"),
+    ('01', '01 - Efectivo'),
+    ('02', '02 - Cheque'),
+    ('03', '03 - Transferencia'),
+    ('04', '04 - Tarjetas de crédito'),
+    ('05', '05 - Monederos electrónicos'),
+    ('06', '06 - Dinero electrónico'),
+    ('07', '07 - Tarjetas digitales'),
+    ('08', '08 - Vales de despensa'),
+    ('09', '09 - Bienes'),
+    ('10', '10 - Servicio'),
+    ('11', '11 - Por cuenta de tercero'),
+    ('12', '12 - Dación en pago'),
+    ('13', '13 - Pago por subrogación'),
+    ('14', '14 - Pago por consignación'),
+    ('15', '15 - Condenación'),
+    ('16', '16 - Cancelación'),
+    ('17', '17 - Compensación'),
+    ('98', '98 - N/A'),
+    ('99', '99 - Por definir'),
 )
 
+# =========================
+# USO CFDI (UsoCFDI SAT)
+# =========================
 USO_CFDI_CHOICES = (
-    ("S01", "S01 - Sin efectos fiscales"),
-    ("G01", "G01 - Adquisición de mercancías"),
-    ("G03", "G03 - Gastos en general"),
-    ("I01", "I01 - Construcciones"),
-    ("I04", "I04 - Equipo de cómputo y accesorios"),
+    # ===== GASTOS =====
+    ('G01', 'G01 - Adquisición de mercancías'),
+    ('G02', 'G02 - Devoluciones, descuentos o bonificaciones'),
+    ('G03', 'G03 - Gastos en general'),
+
+    # ===== INVERSIONES =====
+    ('I01', 'I01 - Construcciones'),
+    ('I02', 'I02 - Mobiliario y equipo de oficina por inversiones'),
+    ('I03', 'I03 - Equipo de transporte'),
+    ('I04', 'I04 - Equipo de cómputo y accesorios'),
+    ('I05', 'I05 - Dados, troqueles, moldes, matrices y herramental'),
+    ('I06', 'I06 - Comunicaciones telefónicas'),
+    ('I07', 'I07 - Comunicaciones satelitales'),
+    ('I08', 'I08 - Otra maquinaria y equipo'),
+
+    # ===== DEDUCCIONES PERSONALES =====
+    ('D01', 'D01 - Honorarios médicos, dentales y hospitalarios'),
+    ('D02', 'D02 - Gastos médicos por incapacidad o discapacidad'),
+    ('D03', 'D03 - Gastos funerales'),
+    ('D04', 'D04 - Donativos'),
+    ('D05', 'D05 - Intereses reales pagados por créditos hipotecarios'),
+    ('D06', 'D06 - Aportaciones voluntarias al SAR'),
+    ('D07', 'D07 - Primas por seguros de gastos médicos'),
+    ('D08', 'D08 - Gastos de transportación escolar obligatoria'),
+    ('D09', 'D09 - Depósitos en cuentas para el ahorro / planes de pensiones'),
+    ('D10', 'D10 - Pagos por servicios educativos (colegiaturas)'),
+
+    # ===== OTROS =====
+    ('S01', 'S01 - Sin efectos fiscales'),
+    ('CP01', 'CP01 - Pagos'),
+    ('CN01', 'CN01 - Nómina'),
 )
+
 
 CFDI_TYPE_CHOICES = (
     ("I", "Ingreso"),
