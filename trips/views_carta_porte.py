@@ -13,6 +13,7 @@ from .forms import (
     get_carta_porte_location_formset,
     get_carta_porte_goods_formset,
 )
+from decimal import Decimal
 
 
 class CartaPorteEditView(TemplateView):
@@ -28,10 +29,31 @@ class CartaPorteEditView(TemplateView):
     def get_success_url(self, trip: Trip):
         return reverse("trips:detail", kwargs={"pk": trip.id})
 
+    def ensure_subtotal_from_trip(self, trip: Trip, carta: CartaPorteCFDI):
+        """
+        Subtotal = snapshot del viaje (preferido).
+        Fallback = tarifa de la ruta.
+        Solo setea si no existe o está en 0.00
+        """
+        current = getattr(carta, "subtotal", None)
+
+        if current is not None and current != Decimal("0.00"):
+            return
+
+        subtotal = Decimal("0.00")
+
+        # preferido: snapshot del trip
+        if getattr(trip, "tarifa_cliente_snapshot", None):
+          subtotal = trip.tarifa_cliente_snapshot or Decimal("0.00")
+
+        # fallback: route.tarifa_cliente
+        if subtotal == Decimal("0.00") and trip.route:
+          subtotal = getattr(trip.route, "tarifa_cliente", None) or Decimal("0.00")
+
+        carta.subtotal = subtotal
+        carta.save(update_fields=["subtotal"])
+
     def build_forms(self, *, request, carta: CartaPorteCFDI, trip: Trip, bound: bool):
-        """
-        customer por default = cliente del origen (pero NO readonly).
-        """
         LocationFS = get_carta_porte_location_formset()
         GoodsFS = get_carta_porte_goods_formset()
 
@@ -39,18 +61,31 @@ class CartaPorteEditView(TemplateView):
             form = CartaPorteCFDIForm(request.POST, instance=carta)
             fs_locations = LocationFS(request.POST, instance=carta, prefix="loc")
             fs_goods = GoodsFS(request.POST, instance=carta, prefix="goods")
-        else:
-            form = CartaPorteCFDIForm(instance=carta)
-            fs_locations = LocationFS(instance=carta, prefix="loc")
-            fs_goods = GoodsFS(instance=carta, prefix="goods")
+            return form, fs_locations, fs_goods
 
-            # default sugerido: receptor = mismo cliente del ORIGEN
-            try:
-                if trip.route and trip.route.origen and trip.route.origen.client_id:
-                    if not getattr(carta, "customer_id", None):
-                        form.fields["customer"].initial = trip.route.origen.client_id
-            except Exception:
-                pass
+        # GET
+        initial = {}
+
+        # customer default
+        try:
+            if trip.route and trip.route.origen and trip.route.origen.client_id:
+                if not getattr(carta, "customer_id", None):
+                    initial["customer"] = trip.route.origen.client_id
+        except Exception:
+            pass
+
+        # subtotal default (tarifa_cliente)
+        try:
+            current = getattr(carta, "subtotal", None)
+            is_empty = (current is None) or (Decimal(str(current)) == Decimal("0.00"))
+            if is_empty and trip.route_id:
+                initial["subtotal"] = trip.route.tarifa_cliente or Decimal("0.00")
+        except Exception:
+            pass
+
+        form = CartaPorteCFDIForm(instance=carta, initial=initial)
+        fs_locations = LocationFS(instance=carta, prefix="loc")
+        fs_goods = GoodsFS(instance=carta, prefix="goods")
 
         return form, fs_locations, fs_goods
 
@@ -146,6 +181,9 @@ class CartaPorteEditView(TemplateView):
 
         # ✅ autogenera Origen/Destino al entrar
         self.ensure_locations_from_route(trip, carta)
+
+        # ✅ subtotal desde ruta/viaje
+        self.ensure_subtotal_from_trip(trip, carta)
 
         form, fs_locations, fs_goods = self.build_forms(
             request=self.request, carta=carta, trip=trip, bound=False

@@ -18,6 +18,7 @@ from .models import (
     CartaPorteGoods,
     CartaPorteTransportFigure,
 )
+from django.forms.widgets import Select
 
 
 class TripForm(forms.ModelForm):
@@ -197,12 +198,25 @@ class TripSearchForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
     )
 
+class MercanciaSelectWithData(Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex=subindex, attrs=attrs)
+
+        # value puede ser ModelChoiceIteratorValue con .instance
+        inst = getattr(value, "instance", None)
+        if inst is not None:
+            option["attrs"]["data-clave"] = inst.clave or ""
+            option["attrs"]["data-fraccion"] = inst.fraccion_arancelaria or ""
+            option["attrs"]["data-uuidce"] = str(inst.comercio_exterior_uuid) if inst.comercio_exterior_uuid else ""
+
+        return option
+        
 
 class CartaPorteCFDIForm(forms.ModelForm):
     customer = forms.ModelChoiceField(
         queryset=None,
         required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(attrs={"class": "form-control form-control-sm"}),
         label="Cliente (Receptor)"
     )
 
@@ -222,18 +236,31 @@ class CartaPorteCFDIForm(forms.ModelForm):
             "customer",
         ]
         widgets = {
-            "type": forms.Select(attrs={"class": "form-control"}),
-            "series": forms.TextInput(attrs={"class": "form-control"}),
-            "folio": forms.TextInput(attrs={"class": "form-control"}),
-            "uso_cfdi": forms.TextInput(attrs={"class": "form-control"}),
-            "currency": forms.TextInput(attrs={"class": "form-control"}),
-            "exchange_rate": forms.NumberInput(attrs={"class": "form-control", "step": "0.0001"}),
-            "payment_form": forms.TextInput(attrs={"class": "form-control"}),
-            "payment_method": forms.TextInput(attrs={"class": "form-control"}),
+            # CFDI base
+            "type": forms.Select(attrs={"class": "form-control form-control-sm"}),
+            "series": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "folio": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "uso_cfdi": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "currency": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "exchange_rate": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.0001"}),
+            "payment_form": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "payment_method": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+
+            # ✅ Encabezado Carta Porte
+            "fecha": forms.DateInput(attrs={"class": "form-control form-control-sm", "type": "date"}),
+            "orden": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "itrn_us_entry": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "pedimento": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+
+            "subtotal": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
+            "iva": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
+            "retencion": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
+            "total": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         Client = apps.get_model("customers", "Client")
         qs = Client.objects.all().order_by("nombre")
         self.fields["customer"].queryset = qs
@@ -242,6 +269,19 @@ class CartaPorteCFDIForm(forms.ModelForm):
         if self.instance and self.instance.pk and getattr(self.instance, "customer_id", None):
             self.fields["customer"].initial = self.instance.customer
 
+        # ✅ subtotal y total readonly (subtotal viene del trip, total se calcula)
+        if "subtotal" in self.fields:
+            self.fields["subtotal"].disabled = True  # evita que se postee/edite
+        if "total" in self.fields:
+            self.fields["total"].disabled = True
+
+    def clean(self):
+        cleaned = super().clean()
+        # Normaliza None -> 0
+        for k in ["iva", "retencion"]:
+            if k in cleaned and cleaned[k] is None:
+                cleaned[k] = 0
+        return cleaned
 
 class CartaPorteLocationForm(forms.ModelForm):
     class Meta:
@@ -274,29 +314,60 @@ class CartaPorteLocationForm(forms.ModelForm):
         }
 
 
+CURRENCY_CHOICES = (
+    ("MXN", "MXN"),
+    ("USD", "USD"),
+)
+
+UNIDAD_CHOICES = (
+    ("", "—"),
+    ("H87", "Pieza"),
+    ("KGM", "Kilogramo"),
+    ("LTR", "Litro"),
+    ("TNE", "Tonelada"),
+    ("MTR", "Metro"),
+    ("XBX", "Caja"),
+    ("XPK", "Paquete"),
+    ("XBG", "Bolsa"),
+)
 class CartaPorteGoodsForm(forms.ModelForm):
     mercancia = forms.ModelChoiceField(
         queryset=None,
         required=False,
-        label="Mercancía (Catálogo)",
-        widget=forms.Select(attrs={"class": "form-control form-control-sm js-mercancia"})
+        label="Mercancía",
+        widget=MercanciaSelectWithData(attrs={"class": "form-control form-control-sm js-mercancia"})
     )
 
     class Meta:
         model = CartaPorteGoods
-        exclude = ["carta_porte", "mercancia"]
+        exclude = [
+            "carta_porte",
+            "mercancia",
+
+            # ❌ ya no los usas en UI (si todavía existen en el modelo)
+            "bienes_transp",
+            "descripcion",
+            "clave_unidad",
+            "material_peligroso",
+            "clave_material_peligroso",
+        ]
         widgets = {
-            "bienes_transp": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "descripcion": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "clave_unidad": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-            "unidad": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
-
+            # ✅ orden/control lo haces en HTML, aquí solo widgets
             "cantidad": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.001"}),
-            "peso_en_kg": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.001"}),
-
-            "material_peligroso": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "clave_material_peligroso": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "unidad": forms.Select(
+                choices=UNIDAD_CHOICES,
+                attrs={
+                    "class": "form-control form-control-sm",
+                }
+            ),
             "embalaje": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "peso_en_kg": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.001"}),
+            "valor_mercancia": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
+            "moneda": forms.Select(
+                choices=CURRENCY_CHOICES,
+                attrs={"class": "form-control form-control-sm js-moneda"}
+            ),
+            "pedimento": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -316,16 +387,23 @@ class CartaPorteGoodsForm(forms.ModelForm):
 
         merc = instance.mercancia
         if merc:
-            if not (instance.bienes_transp or "").strip():
-                instance.bienes_transp = merc.clave
-            if not (instance.descripcion or "").strip():
-                instance.descripcion = merc.nombre
+            # ✅ autollenado SOLO si está vacío (no pisa lo que el user ya puso)
+            if not (instance.clave or "").strip():
+                instance.clave = merc.clave
+
+            if not (instance.fraccion_arancelaria or "").strip():
+                instance.fraccion_arancelaria = merc.fraccion_arancelaria or ""
+
+            if not (instance.uuid_comercio_exterior or "").strip():
+                instance.uuid_comercio_exterior = str(merc.comercio_exterior_uuid) if merc.comercio_exterior_uuid else ""
+
+            # moneda por default desde carta si existe
+            if not (instance.moneda or "").strip() and getattr(instance.carta_porte, "currency", None):
+                instance.moneda = instance.carta_porte.currency
 
         if commit:
             instance.save()
         return instance
-
-
 class CartaPorteTransportFigureForm(forms.ModelForm):
     class Meta:
         model = CartaPorteTransportFigure
@@ -370,3 +448,4 @@ def get_carta_porte_transport_figure_formset():
         extra=1,
         can_delete=True,
     )
+

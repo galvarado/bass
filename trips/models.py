@@ -4,8 +4,8 @@ from customers.models import Client
 from trucks.models import Truck, ReeferBox
 from operators.models import Operator
 from locations.models import Location, Route
+from django.utils import timezone
 from decimal import Decimal
-
 
 class TransferType(models.TextChoices):
     NINGUNO = "NINGUNO", "Ninguno"
@@ -236,6 +236,21 @@ class CartaPorteCFDI(models.Model):
         related_name="cartas_porte",
     )
 
+    # --- Encabezado Carta Porte (operativo) ---
+    fecha = models.DateField(default=timezone.now)
+    orden = models.CharField(max_length=50, blank=True)
+
+    itrn_us_entry = models.CharField("ITRN US entry", max_length=80, blank=True)
+    pedimento = models.CharField(max_length=50, blank=True)
+
+    # subtotal viene del viaje/ruta (snapshot); se guarda para dejar evidencia
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+
+    # editables
+    iva = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    retencion = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+
     # --- Datos del timbrado ---
     uuid = models.CharField(max_length=100, blank=True, null=True)
     pdf_url = models.URLField(blank=True, null=True)
@@ -256,6 +271,26 @@ class CartaPorteCFDI(models.Model):
 
     def __str__(self):
         return f"CFDI Carta Porte del viaje {self.trip_id} - {self.uuid or self.status}"
+
+    def sync_subtotal_from_trip(self):
+        """
+        Snapshot: el subtotal debe venir del viaje (tarifa_cliente_snapshot).
+        """
+        if self.trip_id:
+            self.subtotal = self.trip.total_cobro_cliente or Decimal("0.00")
+
+    def compute_total(self):
+        """
+        Regla sugerida: total = subtotal + iva - retencion
+        """
+        self.total = (self.subtotal or 0) + (self.iva or 0) - (self.retencion or 0)
+
+    def save(self, *args, **kwargs):
+        # fuerza subtotal (snapshot)
+        self.sync_subtotal_from_trip()
+        # recalcula total (si quieres que sea siempre consistente)
+        self.compute_total()
+        super().save(*args, **kwargs)
 
 
 class CartaPorteLocation(models.Model):
@@ -311,18 +346,16 @@ class CartaPorteGoods(models.Model):
         on_delete=models.PROTECT,   # o SET_NULL si prefieres permitir borrado lógico
         related_name="carta_porte_goods",
     )
-    bienes_transp = models.CharField(max_length=8)   # clave producto SAT para CP
-    descripcion = models.CharField(max_length=255)
-    clave_unidad = models.CharField(max_length=5)   # clave unidad SAT
+    cantidad = models.DecimalField(max_digits=14, decimal_places=3, default=Decimal("0.000"))
     unidad = models.CharField(max_length=50, blank=True, null=True)
-
-    cantidad = models.DecimalField(max_digits=14, decimal_places=3)
+    embalaje = models.CharField(max_length=10, blank=True, null=True)
     peso_en_kg = models.DecimalField(max_digits=14, decimal_places=3, blank=True, null=True)
 
-    # opcionales
-    material_peligroso = models.BooleanField(default=False)
-    clave_material_peligroso = models.CharField(max_length=4, blank=True, null=True)
-    embalaje = models.CharField(max_length=3, blank=True, null=True)
+    valor_mercancia = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
+    moneda = models.CharField(max_length=3, blank=True, null=True)  # ej: MXN, USD
+
+    pedimento = models.CharField(max_length=40, blank=True, null=True)
+
 
 class CartaPorteTransportFigure(models.Model):
     ROLE_CHOICES = [

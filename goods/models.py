@@ -58,6 +58,13 @@ class Mercancia(models.Model):
         verbose_name="UUID Comercio Exterior",
         help_text="UUID asociado a comercio exterior (si aplica).",
     )
+    # captura por partida
+    valor_mercancia = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
+
+    # Solo si varía por partida; si no, usa CartaPorteCFDI.currency
+    moneda = models.CharField(max_length=3, default="MXN", blank=True)
+
+    pedimento = models.CharField(max_length=50, blank=True)
 
     # --- Soft delete ---
     deleted = models.BooleanField(default=False, db_index=True)
@@ -84,3 +91,21 @@ class Mercancia(models.Model):
         if not self.deleted:
             self.deleted = True
             self.save(update_fields=["deleted"])
+
+    def save(self, *args, **kwargs):
+        """
+        Copia snapshots desde el catálogo mercancias.Mercancia si están vacíos.
+        """
+        if self.mercancia_id:
+            m = self.mercancia
+
+            if not self.clave:
+                self.clave = m.clave
+
+            if not self.fraccion_arancelaria and m.fraccion_arancelaria:
+                self.fraccion_arancelaria = m.fraccion_arancelaria
+
+            if not self.uuid_comercio_exterior and m.comercio_exterior_uuid:
+                self.uuid_comercio_exterior = str(m.comercio_exterior_uuid)
+
+        super().save(*args, **kwargs)

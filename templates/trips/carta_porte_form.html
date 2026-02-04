@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% load form_extras %}
 
@@ -15,6 +14,84 @@
 
   /* Dropdown de mercancía un poco más ancho */
   .goods-mercancia select { min-width: 260px; }
+
+  /* Compact */
+  .cp-compact label { margin-bottom: .15rem; }
+  .cp-compact .form-group { margin-bottom: .35rem; }
+  .cp-compact input.form-control-sm,
+  .cp-compact select.form-control-sm {
+    padding-top: .15rem;
+    padding-bottom: .15rem;
+    height: calc(1.2em + .5rem + 2px);
+  }
+
+  .cp-totals .input-group-text {
+    min-width: 90px;
+    justify-content: flex-end;
+  }
+
+  /* Inputs cortos */
+  .cp-w-itrn { max-width: 170px; }
+  .cp-w-ped { max-width: 170px; }
+  .cp-w-ord { max-width: 160px; }
+
+  /* fila compacta */
+  #goods-table td { padding: .25rem .35rem; vertical-align: middle; }
+  #goods-table input.form-control-sm,
+  #goods-table select.form-control-sm {
+    height: 26px;
+    padding: .10rem .35rem;
+    font-size: .82rem;
+    line-height: 1.1;
+  }
+
+  /* widths por columna */
+  .w-merc { min-width: 150px; }
+  .w-clv  { width: 100px; min-width:100px; }
+  .w-cant { width: 90px;  min-width:90px;  }
+  .w-und  { width: 120px; min-width:120px; }
+  .w-emb  { width: 90px;  min-width:90px;  }
+  .w-peso { width: 90px;  min-width:90px;  }
+  .w-val  { width: 110px; min-width:110px; }
+  .w-mon  { width: 70px;  min-width:70px;  text-transform: uppercase; }
+  .w-frac { width: 130px; min-width:130px; }
+  .w-uuid { width: 180px; min-width:180px; }
+  .w-ped  { width: 100px; min-width:100px; }
+
+  /* display-only */
+  .cp-ro {
+    background: #f6f7fb;
+    border: 1px solid #dfe3ee;
+    border-radius: 4px;
+    padding: .20rem .35rem;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    font-size: .82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .js-remove-good { line-height: 1; }
+  .js-remove-good i { font-size: .95rem; }
+  .js-remove-good:hover { text-decoration: none; color: #c82333; }
+
+  /* ✅ Control horizontal antes de Totales */
+  .goods-scroll-ctrl{
+    overflow-x:auto;
+    overflow-y:hidden;
+    height:14px;
+    border:1px solid #e6e8ef;
+    border-radius:6px;
+    background:#fff;
+  }
+  .goods-scroll-ctrl-inner{ height:1px; }
+
+  /* (Opcional) oculta el scrollbar nativo del table-responsive
+     para no tener doble barra */
+  #goods-scroll-wrap { scrollbar-width: none; }
+  #goods-scroll-wrap::-webkit-scrollbar { height: 0; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -45,18 +122,64 @@
       <i class="fas fa-file-invoice mr-1"></i> Datos generales
     </h6>
 
-    <div class="form-row">
-      <div class="form-group col-md-4">
-        <label>Cliente (Receptor)</label>
-        {{ form.customer|add_class:"form-control form-control-sm" }}
-        <small class="text-muted">
-          Por default es el cliente de origen, pero puedes cambiarlo.
-        </small>
-        {% if form.customer.errors %}
-          <div class="text-danger small mt-1">
-            {% for e in form.customer.errors %}{{ e }}<br>{% endfor %}
+    <div class="row cp-compact">
+      <div class="col-md-12">
+        <div class="form-row">
+
+          <div class="form-group col-md-4">
+            <label>Cliente (Receptor)</label>
+            {{ form.customer|add_class:"form-control form-control-sm" }}
+            <small class="text-muted">
+              Por default es el cliente de origen, pero puedes cambiarlo.
+            </small>
+            {% if form.customer.errors %}
+              <div class="text-danger small mt-1">
+                {% for e in form.customer.errors %}{{ e }}<br>{% endfor %}
+              </div>
+            {% endif %}
           </div>
-        {% endif %}
+
+          <div class="form-group col-md-2">
+            <label>Fecha</label>
+            {{ form.fecha|add_class:"form-control form-control-sm" }}
+            {% if form.fecha.errors %}
+              <div class="text-danger small mt-1">
+                {% for e in form.fecha.errors %}{{ e }}<br>{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group col-md-2">
+            <label>Orden</label>
+            {{ form.orden|add_class:"form-control form-control-sm cp-w-ord" }}
+            {% if form.orden.errors %}
+              <div class="text-danger small mt-1">
+                {% for e in form.orden.errors %}{{ e }}<br>{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group col-md-2">
+            <label>ITRN US entry</label>
+            {{ form.itrn_us_entry|add_class:"form-control form-control-sm cp-w-itrn" }}
+            {% if form.itrn_us_entry.errors %}
+              <div class="text-danger small mt-1">
+                {% for e in form.itrn_us_entry.errors %}{{ e }}<br>{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="form-group col-md-2">
+            <label>Pedimento</label>
+            {{ form.pedimento|add_class:"form-control form-control-sm cp-w-ped" }}
+            {% if form.pedimento.errors %}
+              <div class="text-danger small mt-1">
+                {% for e in form.pedimento.errors %}{{ e }}<br>{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+        </div>
       </div>
     </div>
 
@@ -79,14 +202,14 @@
         <input class="form-control form-control-sm" value="{{ trip.operator }}" readonly>
       </div>
       <div class="form-group col-md-3">
-        <label>Unidad</label>
-        <input class="form-control form-control-sm" value="{{ trip.truck }}" readonly>
+        <label>Unidad - Caja</label>
+        <input class="form-control form-control-sm" value="{{ trip.truck }} - {{ trip.reefer_box }}" readonly>
       </div>
     </div>
 
     <hr>
     <h6 class="text-primary mb-2">
-      <i class="fas fa-map-marker-alt mr-1"></i> Ubicaciones (Origen / Destino)
+      <i class="fas fa-map-marker-alt mr-1"></i> Origen / Destino
     </h6>
 
     {{ fs_locations.management_form }}
@@ -96,7 +219,6 @@
         <div class="border rounded mb-2 loc-form">
           {{ f.id }}
 
-          {# ocultos mínimos para guardar #}
           <div class="d-none">
             {{ f.tipo_ubicacion }}
             {{ f.orden }}
@@ -203,76 +325,187 @@
       {% endfor %}
     </div>
 
-    <hr>
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="text-primary mb-0">
-        <i class="fas fa-boxes mr-1"></i> Mercancías
-      </h6>
-      <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-good">
-        <i class="fas fa-plus"></i> Agregar mercancía
+   <hr>
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h6 class="text-primary mb-0">
+    <i class="fas fa-boxes mr-1"></i> Mercancías
+  </h6>
+  <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-good">
+    <i class="fas fa-plus"></i> Agregar mercancía
+  </button>
+</div>
+
+{{ fs_goods.management_form }}
+<div class="table-responsive" id="goods-scroll-wrap">
+ <table class="table table-sm table-bordered mb-0" id="goods-table">
+  <thead class="thead-light">
+    <tr>
+      <th class="w-merc">Mercancía</th>
+      <th class="w-clv">Clave</th>
+      <th class="w-frac">Fracción arancelaria</th>
+      <th class="w-uuid">UUID comercio exterior</th>
+      <th class="w-cant">Cantidad</th>
+      <th class="w-und">Unidad</th>
+      <th class="w-peso">Peso</th>
+      <th class="w-val">Valor</th>
+      <th class="w-mon">Moneda</th>
+      <th class="w-emb">Embalaje</th>
+      <th class="w-ped">Pedimento</th>
+      <th style="min-width:60px;"></th>
+    </tr>
+  </thead>
+
+  <tbody id="goods-rows">
+    {% for f in fs_goods.forms %}
+    <tr class="goods-row">
+      <td class="w-merc goods-mercancia">
+        {{ f.mercancia|add_class:"form-control form-control-sm js-mercancia" }}
+        {{ f.id }}
+      </td>
+
+      <td class="w-clv"><div class="cp-ro js-clave"></div></td>
+      <td class="w-frac"><div class="cp-ro js-fraccion"></div></td>
+      <td class="w-uuid"><div class="cp-ro js-uuidce"></div></td>
+      <td class="w-cant">{{ f.cantidad|add_class:"form-control form-control-sm" }}</td>
+      <td class="w-und">{{ f.unidad|add_class:"form-control form-control-sm" }}</td>
+      <td class="w-peso">{{ f.peso_en_kg|add_class:"form-control form-control-sm" }}</td>
+      <td class="w-val">{{ f.valor_mercancia|add_class:"form-control form-control-sm" }}</td>
+      <td class="w-mon">{{ f.moneda|add_class:"form-control form-control-sm js-moneda" }}</td>
+      <td class="w-emb">{{ f.embalaje|add_class:"form-control form-control-sm" }}</td>
+
+      <td class="w-ped">{{ f.pedimento|add_class:"form-control form-control-sm" }}</td>
+
+      <td class="text-center">
+      {% if f.DELETE %}
+        <div class="d-none">{{ f.DELETE }}</div>
+      {% endif %}
+      <button type="button"
+                class="btn btn-link text-danger p-0 js-remove-good"
+                title="Quitar mercancía">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<template id="goods-empty-row">
+  <tr class="goods-row">
+    <td class="w-merc goods-mercancia">__MERCANCIA____ID__</td>
+    <td class="w-clv"><div class="cp-ro js-clave"></div></td>
+    <td class="w-frac"><div class="cp-ro js-fraccion"></div></td>
+    <td class="w-uuid"><div class="cp-ro js-uuidce"></div></td>
+
+    <td class="w-cant">__CANT__</td>
+    <td class="w-und">__UNIDAD__</td>
+    <td class="w-peso">__PESO__</td>
+    <td class="w-val">__VALOR__</td>
+    <td class="w-mon">__MONEDA__</td>
+    <td class="w-emb">__EMB__</td>
+
+    <td class="w-ped">__PEDIMENTO__</td>
+    <td class="text-center">
+      <div class="d-none">__DELETE__</div>
+      <button type="button"
+        class="btn btn-link text-danger p-0 js-remove-good"
+        title="Quitar mercancía">
+        <i class="fas fa-trash-alt"></i>
       </button>
-    </div>
+    </td>
+  </tr>
+</template>
 
-    {{ fs_goods.management_form }}
-    <div class="table-responsive">
-      <table class="table table-sm table-bordered mb-0" id="goods-table">
-        <thead class="thead-light">
-          <tr>
-            <th style="min-width:260px;">Mercancía</th>
-            <th style="min-width:120px;">BienesTransp</th>
-            <th style="min-width:220px;">Descripción</th>
-            <th style="min-width:110px;">Cantidad</th>
-            <th style="min-width:110px;">Clave unidad</th>
-            <th style="min-width:140px;">Unidad</th>
-            <th style="min-width:110px;">Peso (kg)</th>
-            <th style="min-width:110px;">Peligroso</th>
-            <th style="min-width:110px;">Clave Mat.</th>
-            <th style="min-width:90px;">Embalaje</th>
-            <th style="min-width:80px;">Del</th>
-          </tr>
-        </thead>
-        <tbody id="goods-rows">
-          {% for f in fs_goods.forms %}
-          <tr class="goods-row">
-            <td class="goods-mercancia">
-              {{ f.mercancia|add_class:"form-control form-control-sm js-mercancia" }}
-              {{ f.id }}
-            </td>
-            <td>{{ f.bienes_transp|add_class:"form-control form-control-sm" }}</td>
-            <td>{{ f.descripcion|add_class:"form-control form-control-sm" }}</td>
-            <td>{{ f.cantidad|add_class:"form-control form-control-sm" }}</td>
-            <td>{{ f.clave_unidad|add_class:"form-control form-control-sm" }}</td>
-            <td>{{ f.unidad|add_class:"form-control form-control-sm" }}</td>
-            <td>{{ f.peso_en_kg|add_class:"form-control form-control-sm" }}</td>
-            <td class="text-center">{{ f.material_peligroso|add_class:"form-check-input" }}</td>
-            <td>{{ f.clave_material_peligroso|add_class:"form-control form-control-sm" }}</td>
-            <td>{{ f.embalaje|add_class:"form-control form-control-sm" }}</td>
-            <td class="text-center">
-              {% if f.DELETE %}
-                {{ f.DELETE|add_class:"form-check-input" }}
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+<!-- ✅ CONTROL HORIZONTAL (antes de Totales) -->
+<div class="goods-scroll-ctrl my-2" id="goods-scroll-ctrl" aria-label="Scroll horizontal mercancías">
+  <div class="goods-scroll-ctrl-inner"></div>
+</div>
 
-    <template id="goods-empty-row">
-      <tr class="goods-row">
-        <td class="goods-mercancia">__MERCANCIA____ID__</td>
-        <td>__BIENESTRANSP__</td>
-        <td>__DESC__</td>
-        <td>__CANT__</td>
-        <td>__CLAVEU__</td>
-        <td>__UNIDAD__</td>
-        <td>__PESO__</td>
-        <td class="text-center">__PELIG__</td>
-        <td>__CLAVEMAT__</td>
-        <td>__EMB__</td>
-        <td class="text-center">__DELETE__</td>
-      </tr>
-    </template>
+    <hr>
+
+    {# ✅ Totales al final (columna derecha compacta) #}
+    <div class="row">
+      <div class="col-md-9"></div>
+      <div class="col-md-3 cp-totals">
+        <div class="form-group mb-0">
+
+          <label class="mb-1">Totales</label>
+
+          {# ✅ UI text (con comas) + hidden (valor real) #}
+          <div class="input-group input-group-sm mb-1">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Subtotal $</span>
+            </div>
+
+            <input type="text"
+                   class="form-control form-control-sm js-subtotal-ui text-right"
+                   value="{{ form.subtotal.value|default_if_none:'0.00' }}"
+                   readonly>
+
+            <input type="hidden"
+                   name="subtotal"
+                   class="js-subtotal">
+          </div>
+
+          <div class="custom-control custom-checkbox mb-2">
+            <input type="checkbox" class="custom-control-input" id="chk-iva16">
+            <label class="custom-control-label small" for="chk-iva16">Aplicar 16% IVA</label>
+          </div>
+
+          <div class="input-group input-group-sm mb-1">
+            <div class="input-group-prepend">
+              <span class="input-group-text">IVA $</span>
+            </div>
+
+            <input type="text"
+                   class="form-control form-control-sm js-iva-ui text-right"
+                   value="{{ form.iva.value|default_if_none:'0.00' }}"
+                   inputmode="decimal">
+
+            <input type="hidden"
+                   name="iva"
+                   class="js-iva">
+          </div>
+
+          <div class="input-group input-group-sm mb-1">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Ret $</span>
+            </div>
+
+            <input type="text"
+                   class="form-control form-control-sm js-retencion-ui text-right"
+                   value="{{ form.retencion.value|default_if_none:'0.00' }}"
+                   inputmode="decimal">
+
+            <input type="hidden"
+                   name="retencion"
+                   class="js-retencion">
+          </div>
+
+          <div class="input-group input-group-sm">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Total $</span>
+            </div>
+
+            <input type="text"
+                   class="form-control form-control-sm js-total-ui text-right"
+                   value="{{ form.total.value|default_if_none:'0.00' }}"
+                   readonly>
+
+            <input type="hidden"
+                   name="total"
+                   class="js-total">
+          </div>
+
+          {% if form.iva.errors or form.retencion.errors %}
+            <div class="text-danger small mt-1">
+              {% for e in form.iva.errors %}{{ e }}<br>{% endfor %}
+              {% for e in form.retencion.errors %}{{ e }}<br>{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
 
   </div>
 
@@ -289,13 +522,17 @@
 
   ready(function () {
 
-    // readonly
+    // ==========================
+    // Readonly ubicaciones
+    // ==========================
     document.querySelectorAll(".loc-ro").forEach(el => {
       if (el.tagName === "SELECT") el.disabled = true;
       else el.readOnly = true;
     });
 
-    // collapse sin bootstrap
+    // ==========================
+    // Collapse Origen/Destino (sin bootstrap)
+    // ==========================
     function togglePanel(btn) {
       let targetSel = (btn.getAttribute("data-target") || "").trim();
       if (!targetSel) return;
@@ -321,7 +558,187 @@
       });
     });
 
-    // goods add (sin regex)
+    // ==========================
+    // Totales (UI con comas + hidden numérico)
+    // - miles con coma, decimales con punto
+    // ==========================
+    function parseMoney(raw) {
+      if (raw === null || raw === undefined) return 0;
+      let s = String(raw).trim();
+      if (!s) return 0;
+
+      s = s.replace(/\u00A0/g, " ").replace(/\s/g, "").replace(/\$/g, "");
+      s = s.replace(/[^\d.,-]/g, "");
+
+      const lastComma = s.lastIndexOf(",");
+      const lastDot = s.lastIndexOf(".");
+
+      if (lastComma !== -1 && lastDot !== -1) {
+        const decSep = lastComma > lastDot ? "," : ".";
+        const thouSep = decSep === "," ? "." : ",";
+        s = s.split(thouSep).join("");
+        if (decSep === ",") s = s.replace(",", ".");
+      } else if (lastComma !== -1 && lastDot === -1) {
+        const parts = s.split(",");
+        if (parts.length === 2 && parts[1].length <= 2) s = parts[0] + "." + parts[1];
+        else s = s.replace(/,/g, "");
+      } else {
+        s = s.replace(/,/g, "");
+      }
+
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function round2(n) {
+      return Math.round((n + Number.EPSILON) * 100) / 100;
+    }
+
+    // en-US => coma miles + punto decimales: 56,401.00
+    const uiFmt = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    function setHidden(hiddenEl, n) {
+      if (!hiddenEl) return;
+      hiddenEl.value = round2(n).toFixed(2); // "1234.56"
+    }
+
+    function setUI(uiEl, n) {
+      if (!uiEl) return;
+      uiEl.value = uiFmt.format(round2(n)); // "1,234.56"
+    }
+
+    function syncFromUI(uiEl, hiddenEl) {
+      const n = parseMoney(uiEl.value);
+      setHidden(hiddenEl, n);
+      return n;
+    }
+
+    const elSubtotalUI = document.querySelector(".js-subtotal-ui");
+    const elIvaUI      = document.querySelector(".js-iva-ui");
+    const elRetUI      = document.querySelector(".js-retencion-ui");
+    const elTotalUI    = document.querySelector(".js-total-ui");
+
+    const elSubtotal = document.querySelector(".js-subtotal");     // hidden
+    const elIVA      = document.querySelector(".js-iva");          // hidden
+    const elRet      = document.querySelector(".js-retencion");    // hidden
+    const elTotal    = document.querySelector(".js-total");        // hidden
+
+    function recomputeTotal() {
+      const subtotal = parseMoney(elSubtotal?.value);
+      const iva      = parseMoney(elIVA?.value);
+      const ret      = parseMoney(elRet?.value);
+
+      const total = subtotal + iva - ret;
+
+      setHidden(elTotal, total);
+      setUI(elTotalUI, total);
+    }
+
+    // init: toma lo que venga en UI y lo pasa a hidden
+    setHidden(elSubtotal, parseMoney(elSubtotalUI?.value || "0"));
+    setHidden(elIVA,      parseMoney(elIvaUI?.value || "0"));
+    setHidden(elRet,      parseMoney(elRetUI?.value || "0"));
+
+    // formatea UI
+    setUI(elSubtotalUI, parseMoney(elSubtotal.value));
+    setUI(elIvaUI,      parseMoney(elIVA.value));
+    setUI(elRetUI,      parseMoney(elRet.value));
+
+    // bind edición IVA/Ret
+    function bindEditable(uiEl, hiddenEl, onChange) {
+      if (!uiEl || !hiddenEl) return;
+
+      uiEl.addEventListener("focus", () => {
+        // sin comas para editar
+        uiEl.value = parseMoney(uiEl.value).toFixed(2);
+      });
+
+      uiEl.addEventListener("input", () => {
+        syncFromUI(uiEl, hiddenEl);
+        onChange?.();
+      });
+
+      uiEl.addEventListener("blur", () => {
+        const n = syncFromUI(uiEl, hiddenEl);
+        setUI(uiEl, n);
+        onChange?.();
+      });
+    }
+
+    bindEditable(elIvaUI, elIVA, recomputeTotal);
+    bindEditable(elRetUI, elRet, recomputeTotal);
+
+    // ==========================
+    // ✅ IVA 16% toggle
+    // ==========================
+    const chkIVA16 = document.getElementById("chk-iva16");
+
+    function recomputeIVAFromToggle() {
+      if (!chkIVA16) return;
+
+      const subtotal = parseMoney(elSubtotal?.value);
+
+      if (chkIVA16.checked) {
+        const iva = round2(subtotal * 0.16);
+        setHidden(elIVA, iva);
+        setUI(elIvaUI, iva);
+        if (elIvaUI) elIvaUI.readOnly = true;
+      } else {
+        if (elIvaUI) elIvaUI.readOnly = false;
+        setHidden(elIVA, 0);
+        setUI(elIvaUI, 0);
+      }
+      recomputeTotal();
+    }
+
+    if (chkIVA16 && elIVA) {
+      chkIVA16.checked = parseMoney(elIVA.value) > 0;
+      if (elIvaUI) elIvaUI.readOnly = chkIVA16.checked;
+      chkIVA16.addEventListener("change", recomputeIVAFromToggle);
+    }
+
+    // ==========================
+    // ✅ Control horizontal antes de Totales (sync)
+    // ==========================
+    const goodsWrap = document.getElementById("goods-scroll-wrap");
+    const goodsCtrl = document.getElementById("goods-scroll-ctrl");
+    const goodsCtrlInner = goodsCtrl?.querySelector(".goods-scroll-ctrl-inner");
+    const goodsTable = document.getElementById("goods-table");
+
+    function syncGoodsCtrlWidth() {
+      if (!goodsCtrlInner || !goodsTable) return;
+      goodsCtrlInner.style.width = goodsTable.scrollWidth + "px";
+    }
+
+    let syncingScroll = false;
+    function bindGoodsScrollSync() {
+      if (!goodsWrap || !goodsCtrl) return;
+
+      goodsCtrl.addEventListener("scroll", () => {
+        if (syncingScroll) return;
+        syncingScroll = true;
+        goodsWrap.scrollLeft = goodsCtrl.scrollLeft;
+        syncingScroll = false;
+      });
+
+      goodsWrap.addEventListener("scroll", () => {
+        if (syncingScroll) return;
+        syncingScroll = true;
+        goodsCtrl.scrollLeft = goodsWrap.scrollLeft;
+        syncingScroll = false;
+      });
+    }
+
+    bindGoodsScrollSync();
+    syncGoodsCtrlWidth();
+    window.addEventListener("resize", syncGoodsCtrlWidth);
+
+    // ==========================
+    // Formset helpers
+    // ==========================
     function bumpTotal(prefix) {
       const totalInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
       const current = parseInt(totalInput.value || "0", 10);
@@ -342,6 +759,77 @@
       return el ? el.outerHTML : "";
     }
 
+    const cartaCurrency = "{{ carta.currency|default_if_none:'' }}";
+
+    function fillDiv(divEl, value) {
+      if (!divEl) return;
+      divEl.textContent = (value || "").trim();
+      divEl.title = divEl.textContent || "";
+    }
+
+    function bindMercanciaAutofill(scopeEl) {
+      const root = scopeEl || document;
+      root.querySelectorAll("select.js-mercancia").forEach(sel => {
+        if (sel.dataset.autofillBound === "1") return;
+        sel.dataset.autofillBound = "1";
+
+        sel.addEventListener("change", function () {
+          const opt = sel.options[sel.selectedIndex];
+          if (!opt) return;
+
+          const tr = sel.closest("tr");
+          if (!tr) return;
+
+          const vClave = opt.getAttribute("data-clave") || "";
+          const vFrac  = opt.getAttribute("data-fraccion") || "";
+          const vUUID  = opt.getAttribute("data-uuidce") || "";
+
+          fillDiv(tr.querySelector(".js-clave"), vClave);
+          fillDiv(tr.querySelector(".js-fraccion"), vFrac);
+          fillDiv(tr.querySelector(".js-uuidce"), vUUID);
+
+          const elMoneda = tr.querySelector("select.js-moneda");
+          if (elMoneda && !String(elMoneda.value || "").trim() && cartaCurrency) {
+            elMoneda.value = cartaCurrency;
+          }
+        });
+
+        if (sel.value) sel.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    }
+
+    function bindRemoveButtons(scopeEl) {
+      const root = scopeEl || document;
+      root.querySelectorAll(".js-remove-good").forEach(btn => {
+        if (btn.dataset.removeBound === "1") return;
+        btn.dataset.removeBound = "1";
+
+        btn.addEventListener("click", function () {
+          const tr = btn.closest("tr");
+          if (!tr) return;
+
+          const del = tr.querySelector('input[type="checkbox"][name$="-DELETE"]');
+          if (del) {
+            del.checked = true;
+            tr.style.display = "none";
+          } else {
+            tr.remove();
+          }
+
+          syncGoodsCtrlWidth();
+        });
+      });
+    }
+
+    // ==========================
+    // Bind inicial
+    // ==========================
+    bindMercanciaAutofill(document);
+    bindRemoveButtons(document);
+
+    // ==========================
+    // Agregar mercancía
+    // ==========================
     const btnAddGood = document.getElementById("btn-add-good");
     const goodsBody = document.getElementById("goods-rows");
     const goodsTpl = document.getElementById("goods-empty-row");
@@ -358,15 +846,13 @@
       let html = goodsTpl.innerHTML;
       html = replaceAll(html, {
         "__MERCANCIA__": field("mercancia"),
-        "__BIENESTRANSP__": field("bienes_transp"),
-        "__DESC__": field("descripcion"),
         "__CANT__": field("cantidad"),
-        "__CLAVEU__": field("clave_unidad"),
         "__UNIDAD__": field("unidad"),
-        "__PESO__": field("peso_en_kg"),
-        "__PELIG__": field("material_peligroso"),
-        "__CLAVEMAT__": field("clave_material_peligroso"),
         "__EMB__": field("embalaje"),
+        "__PESO__": field("peso_en_kg"),
+        "__VALOR__": field("valor_mercancia"),
+        "__MONEDA__": field("moneda"),
+        "__PEDIMENTO__": field("pedimento"),
         "__DELETE__": field("DELETE"),
         "__ID__": field("id"),
       });
@@ -374,6 +860,28 @@
       const tr = document.createElement("tr");
       tr.innerHTML = html;
       goodsBody.appendChild(tr);
+
+      bindMercanciaAutofill(tr);
+      bindRemoveButtons(tr);
+      syncGoodsCtrlWidth();
+
+      recomputeTotal();
+    });
+
+    // ==========================
+    // Inicial
+    // ==========================
+    // Total inicial desde backend
+    if (chkIVA16?.checked) recomputeIVAFromToggle();
+    else recomputeTotal();
+
+    // antes de enviar: asegura hidden (importante)
+    const formEl = document.querySelector("form");
+    formEl?.addEventListener("submit", function () {
+      setHidden(elSubtotal, parseMoney(elSubtotalUI?.value || elSubtotal.value || "0"));
+      syncFromUI(elIvaUI, elIVA);
+      syncFromUI(elRetUI, elRet);
+      recomputeTotal();
     });
 
   });
@@ -381,4 +889,3 @@
 </script>
 
 {% endblock %}
-
