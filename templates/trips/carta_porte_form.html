@@ -1,4 +1,4 @@
-{# templates/trips/carta_porte_form.html (o el nombre que estés usando) #}
+{# templates/trips/carta_porte_form.html #}
 {% extends "base.html" %}
 {% load form_extras %}
 
@@ -14,10 +14,8 @@
   .loc-chevron { transition: transform .15s ease-in-out; }
   .loc-chevron.rotate-180 { transform: rotate(180deg); }
 
-  /* Dropdown de mercancía un poco más ancho */
-  .goods-mercancia select { min-width: 260px; }
+  .goods-mercancia select { min-width: 180px; }
 
-  /* Compact */
   .cp-compact label { margin-bottom: .15rem; }
   .cp-compact .form-group { margin-bottom: .35rem; }
   .cp-compact input.form-control-sm,
@@ -32,12 +30,10 @@
     justify-content: flex-end;
   }
 
-  /* Inputs cortos */
   .cp-w-itrn { max-width: 170px; }
   .cp-w-ped { max-width: 170px; }
   .cp-w-ord { max-width: 160px; }
 
-  /* fila compacta */
   #goods-table td { padding: .25rem .35rem; vertical-align: middle; }
   #goods-table input.form-control-sm,
   #goods-table select.form-control-sm {
@@ -47,7 +43,6 @@
     line-height: 1.1;
   }
 
-  /* widths por columna */
   .w-merc { min-width: 150px; }
   .w-clv  { width: 100px; min-width:100px; }
   .w-cant { width: 90px;  min-width:90px;  }
@@ -59,11 +54,8 @@
   .w-frac { width: 130px; min-width:130px; }
   .w-uuid { width: 180px; min-width:180px; }
   .w-ped  { width: 100px; min-width:100px; }
-
-  /* ✅ columna eliminar fija y siempre visible */
   .w-del { width: 48px; min-width: 48px; }
 
-  /* display-only */
   .cp-ro {
     background: #f6f7fb;
     border: 1px solid #dfe3ee;
@@ -87,7 +79,6 @@
     padding:0;
   }
 
-  /* ✅ Control horizontal antes de Totales */
   .goods-scroll-ctrl{
     overflow-x:auto;
     overflow-y:hidden;
@@ -98,9 +89,14 @@
   }
   .goods-scroll-ctrl-inner{ height:1px; }
 
-  /* (Opcional) oculta el scrollbar nativo del table-responsive para no tener doble barra */
   #goods-scroll-wrap { scrollbar-width: none; }
   #goods-scroll-wrap::-webkit-scrollbar { height: 0; }
+
+  /* ✅ barra de controles del concepto */
+  .cpitem-taxbar { display:flex; gap:14px; align-items:center; flex-wrap: wrap; }
+  .cpitem-taxbar .custom-control { margin-bottom: 0; }
+
+  .form-control[readonly] { background: #f6f7fb; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -109,48 +105,6 @@
     <i class="fas fa-arrow-left"></i> Volver
   </a>
 </div>
-
-{% if form.errors or form.non_field_errors %}
-  <div class="alert alert-danger">
-    <strong>Errores CFDI</strong>
-    <pre>{{ form.errors }}</pre>
-    {% if form.non_field_errors %}
-      <pre>{{ form.non_field_errors }}</pre>
-    {% endif %}
-  </div>
-{% endif %}
-
-{% if fs_locations.errors or fs_locations.non_form_errors %}
-  <div class="alert alert-danger">
-    <strong>Errores Ubicaciones</strong>
-    <pre>{{ fs_locations.errors }}</pre>
-    {% if fs_locations.non_form_errors %}
-      <pre>{{ fs_locations.non_form_errors }}</pre>
-    {% endif %}
-  </div>
-{% endif %}
-
-{% if fs_goods.errors or fs_goods.non_form_errors %}
-  <div class="alert alert-danger">
-    <strong>Errores Mercancías</strong>
-    <pre>{{ fs_goods.errors }}</pre>
-    {% if fs_goods.non_form_errors %}
-      <pre>{{ fs_goods.non_form_errors }}</pre>
-    {% endif %}
-  </div>
-{% endif %}
-
-{% if fs_items %}
-  {% if fs_items.errors or fs_items.non_form_errors %}
-    <div class="alert alert-danger">
-      <strong>Errores Items</strong>
-      <pre>{{ fs_items.errors }}</pre>
-      {% if fs_items.non_form_errors %}
-        <pre>{{ fs_items.non_form_errors }}</pre>
-      {% endif %}
-    </div>
-  {% endif %}
-{% endif %}
 
 <form method="post" class="card shadow-sm">
   {% csrf_token %}
@@ -161,19 +115,6 @@
       {% for m in messages %}
         <div class="alert alert-{{ m.tags }}">{{ m }}</div>
       {% endfor %}
-    {% endif %}
-
-    {% if form.non_field_errors %}
-      <div class="alert alert-danger">
-        {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
-      </div>
-    {% endif %}
-
-    {% if form.errors %}
-      <div class="alert alert-danger">
-        <strong>Errores:</strong>
-        <pre class="mb-0">{{ form.errors }}</pre>
-      </div>
     {% endif %}
 
     <h6 class="text-primary mb-2">
@@ -187,54 +128,26 @@
           <div class="form-group col-md-4">
             <label>Cliente (Paga)</label>
             {{ form.customer|add_class:"form-control form-control-sm" }}
-            <small class="text-muted">
-              Por default es el cliente de origen, pero puedes cambiarlo.
-            </small>
-            {% if form.customer.errors %}
-              <div class="text-danger small mt-1">
-                {% for e in form.customer.errors %}{{ e }}<br>{% endfor %}
-              </div>
-            {% endif %}
           </div>
 
           <div class="form-group col-md-2">
             <label>Fecha salida</label>
             {{ form.fecha_salida|add_class:"form-control form-control-sm" }}
-            {% if form.fecha_salida.errors %}
-              <div class="text-danger small mt-1">
-                {% for e in form.fecha_salida.errors %}{{ e }}<br>{% endfor %}
-              </div>
-            {% endif %}
           </div>
 
           <div class="form-group col-md-2">
             <label>Fecha llegada</label>
             {{ form.fecha_llegada|add_class:"form-control form-control-sm" }}
-            {% if form.fecha_llegada.errors %}
-              <div class="text-danger small mt-1">
-                {% for e in form.fecha_llegada.errors %}{{ e }}<br>{% endfor %}
-              </div>
-            {% endif %}
           </div>
 
           <div class="form-group col-md-2">
-            <label>ITRN US entry</label>
+            <label>US entry</label>
             {{ form.itrn_us_entry|add_class:"form-control form-control-sm cp-w-itrn" }}
-            {% if form.itrn_us_entry.errors %}
-              <div class="text-danger small mt-1">
-                {% for e in form.itrn_us_entry.errors %}{{ e }}<br>{% endfor %}
-              </div>
-            {% endif %}
           </div>
 
           <div class="form-group col-md-2">
             <label>Pedimento</label>
             {{ form.pedimento|add_class:"form-control form-control-sm cp-w-ped" }}
-            {% if form.pedimento.errors %}
-              <div class="text-danger small mt-1">
-                {% for e in form.pedimento.errors %}{{ e }}<br>{% endfor %}
-              </div>
-            {% endif %}
           </div>
 
         </div>
@@ -369,11 +282,6 @@
               </div>
             </div>
 
-            {% if f.non_field_errors %}
-              <div class="alert alert-danger py-1 mb-0">
-                {% for e in f.non_field_errors %}{{ e }}<br>{% endfor %}
-              </div>
-            {% endif %}
           </div>
         </div>
       {% endfor %}
@@ -484,68 +392,60 @@
     <div class="row cp-compact">
       <div class="col-md-12">
         <div class="form-row">
-
           <div class="form-group col-md-3">
             <label>Método de pago</label>
             {{ form.payment_method|add_class:"form-control form-control-sm" }}
-            {% if form.payment_method.errors %}
-              <div class="text-danger small mt-1">{% for e in form.payment_method.errors %}{{ e }}<br>{% endfor %}</div>
-            {% endif %}
           </div>
-
           <div class="form-group col-md-3">
             <label>Forma de pago</label>
             {{ form.payment_form|add_class:"form-control form-control-sm" }}
-            {% if form.payment_form.errors %}
-              <div class="text-danger small mt-1">{% for e in form.payment_form.errors %}{{ e }}<br>{% endfor %}</div>
-            {% endif %}
           </div>
-
           <div class="form-group col-md-2">
             <label>Moneda</label>
             {{ form.currency|add_class:"form-control form-control-sm" }}
-            {% if form.currency.errors %}
-              <div class="text-danger small mt-1">{% for e in form.currency.errors %}{{ e }}<br>{% endfor %}</div>
-            {% endif %}
           </div>
-
           <div class="form-group col-md-2">
             <label>Tipo</label>
             {{ form.type|add_class:"form-control form-control-sm" }}
-            {% if form.type.errors %}
-              <div class="text-danger small mt-1">{% for e in form.type.errors %}{{ e }}<br>{% endfor %}</div>
-            {% endif %}
           </div>
-
           <div class="form-group col-md-2">
             <label>Uso CFDI</label>
             {{ form.uso_cfdi|add_class:"form-control form-control-sm" }}
-            {% if form.uso_cfdi.errors %}
-              <div class="text-danger small mt-1">{% for e in form.uso_cfdi.errors %}{{ e }}<br>{% endfor %}</div>
-            {% endif %}
           </div>
-
           <div class="form-group col-md-4">
             <label>Observaciones</label>
             {{ form.observations|add_class:"form-control form-control-sm" }}
-            {% if form.observations.errors %}
-              <div class="text-danger small mt-1">{% for e in form.observations.errors %}{{ e }}<br>{% endfor %}</div>
-            {% endif %}
           </div>
-
         </div>
       </div>
     </div>
 
     <hr class="my-2">
 
+    {# ========================================= #}
+    {# ✅ CONCEPTO + checkboxes (default OFF)      #}
+    {# ========================================= #}
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="text-primary mb-0">
-        <i class="fas fa-list mr-1"></i> Conceptos
+        <i class="fas fa-list mr-1"></i> Concepto
       </h6>
-      <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-item">
-        <i class="fas fa-plus"></i> Agregar item
-      </button>
+
+      <div class="cpitem-taxbar">
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" class="custom-control-input" id="chk-item-iva16">
+          <label class="custom-control-label small" for="chk-item-iva16">Aplicar 16% IVA</label>
+        </div>
+
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" class="custom-control-input" id="chk-item-retiva">
+          <label class="custom-control-label small" for="chk-item-retiva">Aplicar retención IVA (4%)</label>
+        </div>
+
+        <div class="custom-control custom-checkbox">
+          <input type="checkbox" class="custom-control-input" id="chk-item-desc">
+          <label class="custom-control-label small" for="chk-item-desc">Aplicar descuento</label>
+        </div>
+      </div>
     </div>
 
     {{ fs_items.management_form }}
@@ -563,10 +463,9 @@
             <th style="min-width:120px;">Subtotal</th>
             <th style="min-width:90px;">IVA %</th>
             <th style="min-width:120px;">IVA monto</th>
-            <th style="min-width:120px;">Ret IVA %</th>
+            <th style="min-width:90px;">Ret IVA %</th>
             <th style="min-width:150px;">Ret IVA monto</th>
             <th style="min-width:120px;">Importe</th>
-            <th style="min-width:60px;"></th>
           </tr>
         </thead>
 
@@ -580,49 +479,17 @@
             <td>{{ f.precio }}</td>
             <td>{{ f.descuento }}</td>
 
-            {# display-only calculados en server #}
-            <td><input class="form-control form-control-sm text-right" value="{{ f.instance.subtotal|default_if_none:'0.00' }}" readonly></td>
+            <td><input class="form-control form-control-sm text-right js-item-subtotal-ui" value="{{ f.instance.subtotal|default_if_none:'0.00' }}" readonly></td>
             <td>{{ f.iva_pct }}</td>
-            <td><input class="form-control form-control-sm text-right" value="{{ f.instance.iva_monto|default_if_none:'0.00' }}" readonly></td>
+            <td><input class="form-control form-control-sm text-right js-item-iva-ui" value="{{ f.instance.iva_monto|default_if_none:'0.00' }}" readonly></td>
             <td>{{ f.ret_iva_pct }}</td>
-            <td><input class="form-control form-control-sm text-right" value="{{ f.instance.ret_iva_monto|default_if_none:'0.00' }}" readonly></td>
-            <td><input class="form-control form-control-sm text-right" value="{{ f.instance.importe|default_if_none:'0.00' }}" readonly></td>
-
-            <td class="text-center">
-              {{ f.id }}
-              {% if f.DELETE %}<div class="d-none">{{ f.DELETE }}</div>{% endif %}
-              <button type="button" class="btn btn-link text-danger p-0 js-remove-item" title="Quitar item">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </td>
+            <td><input class="form-control form-control-sm text-right js-item-ret-ui" value="{{ f.instance.ret_iva_monto|default_if_none:'0.00' }}" readonly></td>
+            <td><input class="form-control form-control-sm text-right js-item-imp-ui" value="{{ f.instance.importe|default_if_none:'0.00' }}" readonly></td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-
-    <template id="cpitems-empty-row">
-      <tr class="cpitem-row">
-        <td>__CANT__</td>
-        <td>__UNIDAD__</td>
-        <td>__PROD__</td>
-        <td>__DESC__</td>
-        <td>__PRECIO__</td>
-        <td>__DESCUENTO__</td>
-        <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
-        <td>__IVA_PCT__</td>
-        <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
-        <td>__RETIVA_PCT__</td>
-        <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
-        <td><input class="form-control form-control-sm text-right" value="0.00" readonly></td>
-        <td class="text-center">
-          <div class="d-none">__DELETE__</div>
-          <button type="button" class="btn btn-link text-danger p-0 js-remove-item" title="Quitar item">
-            <i class="fas fa-trash-alt"></i>
-          </button>
-        </td>
-      </tr>
-    </template>
 
     <hr>
 
@@ -630,7 +497,6 @@
       <div class="col-md-9"></div>
       <div class="col-md-3 cp-totals">
         <div class="form-group mb-0">
-
           <label class="mb-1">Totales</label>
 
           <div class="input-group input-group-sm mb-1">
@@ -643,14 +509,7 @@
                    value="{{ form.subtotal.value|default_if_none:'0.00' }}"
                    readonly>
 
-            <input type="hidden"
-                   name="subtotal"
-                   class="js-subtotal">
-          </div>
-
-          <div class="custom-control custom-checkbox mb-2">
-            <input type="checkbox" class="custom-control-input" id="chk-iva16">
-            <label class="custom-control-label small" for="chk-iva16">Aplicar 16% IVA</label>
+            <input type="hidden" name="subtotal" class="js-subtotal">
           </div>
 
           <div class="input-group input-group-sm mb-1">
@@ -661,11 +520,9 @@
             <input type="text"
                    class="form-control form-control-sm js-iva-ui text-right"
                    value="{{ form.iva.value|default_if_none:'0.00' }}"
-                   inputmode="decimal">
+                   readonly>
 
-            <input type="hidden"
-                   name="iva"
-                   class="js-iva">
+            <input type="hidden" name="iva" class="js-iva">
           </div>
 
           <div class="input-group input-group-sm mb-1">
@@ -676,11 +533,9 @@
             <input type="text"
                    class="form-control form-control-sm js-retencion-ui text-right"
                    value="{{ form.retencion.value|default_if_none:'0.00' }}"
-                   inputmode="decimal">
+                   readonly>
 
-            <input type="hidden"
-                   name="retencion"
-                   class="js-retencion">
+            <input type="hidden" name="retencion" class="js-retencion">
           </div>
 
           <div class="input-group input-group-sm">
@@ -693,33 +548,31 @@
                    value="{{ form.total.value|default_if_none:'0.00' }}"
                    readonly>
 
-            <input type="hidden"
-                   name="total"
-                   class="js-total">
+            <input type="hidden" name="total" class="js-total">
           </div>
-
-          {% if form.iva.errors or form.retencion.errors %}
-            <div class="text-danger small mt-1">
-              {% for e in form.iva.errors %}{{ e }}<br>{% endfor %}
-              {% for e in form.retencion.errors %}{{ e }}<br>{% endfor %}
-            </div>
-          {% endif %}
         </div>
       </div>
     </div>
 
   </div>
 
-  <div class="card-footer text-right py-2">
-    <button class="btn btn-primary btn-sm" type="submit">
-      <i class="fas fa-save"></i> Guardar
-    </button>
-  </div>
+<div class="card-footer d-flex justify-content-end gap-2 py-2">
+  <button class="btn btn-primary btn-sm" type="submit" name="action" value="save">
+    <i class="fas fa-save"></i> Guardar
+  </button>
+&nbsp;
+  <button class="btn btn-success btn-sm" type="submit" name="action" value="generate_cfdi">
+    <i class="fas fa-file-invoice"></i> Generar CFDI
+  </button>
+</div>
 </form>
 
 <script>
 (function () {
-  function ready(fn){ if(document.readyState !== "loading") fn(); else document.addEventListener("DOMContentLoaded", fn); }
+  function ready(fn){
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
 
   ready(function () {
 
@@ -760,8 +613,7 @@
     });
 
     // ==========================
-    // Totales (UI con comas + hidden numérico)
-    // - miles con coma, decimales con punto
+    // Utils dinero
     // ==========================
     function parseMoney(raw) {
       if (raw === null || raw === undefined) return 0;
@@ -795,7 +647,6 @@
       return Math.round((n + Number.EPSILON) * 100) / 100;
     }
 
-    // en-US => coma miles + punto decimales: 56,401.00
     const uiFmt = new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -811,12 +662,9 @@
       uiEl.value = uiFmt.format(round2(n));
     }
 
-    function syncFromUI(uiEl, hiddenEl) {
-      const n = parseMoney(uiEl.value);
-      setHidden(hiddenEl, n);
-      return n;
-    }
-
+    // ==========================
+    // Totales (NO editables)
+    // ==========================
     const elSubtotalUI = document.querySelector(".js-subtotal-ui");
     const elIvaUI      = document.querySelector(".js-iva-ui");
     const elRetUI      = document.querySelector(".js-retencion-ui");
@@ -827,80 +675,240 @@
     const elRet      = document.querySelector(".js-retencion");
     const elTotal    = document.querySelector(".js-total");
 
-    function recomputeTotal() {
-      const subtotal = parseMoney(elSubtotal?.value);
-      const iva      = parseMoney(elIVA?.value);
-      const ret      = parseMoney(elRet?.value);
+    // ✅ forzar totales readonly
+    [elSubtotalUI, elIvaUI, elRetUI, elTotalUI].forEach(x => { if (x) x.readOnly = true; });
+
+    function recomputeTotalFromHidden() {
+      const subtotal = parseMoney(elSubtotal?.value || "0");
+      const iva      = parseMoney(elIVA?.value || "0");
+      const ret      = parseMoney(elRet?.value || "0");
 
       const total = subtotal + iva - ret;
 
       setHidden(elTotal, total);
       setUI(elTotalUI, total);
+
+      // UI de subtotal/iva/ret desde hidden (por consistencia)
+      setUI(elSubtotalUI, subtotal);
+      setUI(elIvaUI, iva);
+      setUI(elRetUI, ret);
     }
 
-    // init: UI -> hidden
+    // init hidden desde UI inicial
     setHidden(elSubtotal, parseMoney(elSubtotalUI?.value || "0"));
     setHidden(elIVA,      parseMoney(elIvaUI?.value || "0"));
     setHidden(elRet,      parseMoney(elRetUI?.value || "0"));
+    recomputeTotalFromHidden();
 
-    // formatea UI
-    setUI(elSubtotalUI, parseMoney(elSubtotal.value));
-    setUI(elIvaUI,      parseMoney(elIVA.value));
-    setUI(elRetUI,      parseMoney(elRet.value));
-
-    function bindEditable(uiEl, hiddenEl, onChange) {
-      if (!uiEl || !hiddenEl) return;
-
-      uiEl.addEventListener("focus", () => {
-        uiEl.value = parseMoney(uiEl.value).toFixed(2);
-      });
-
-      uiEl.addEventListener("input", () => {
-        syncFromUI(uiEl, hiddenEl);
-        onChange?.();
-      });
-
-      uiEl.addEventListener("blur", () => {
-        const n = syncFromUI(uiEl, hiddenEl);
-        setUI(uiEl, n);
-        onChange?.();
-      });
+    // ==========================
+    // Helpers 1 concepto
+    // ==========================
+    function firstRow() {
+      return document.querySelector("#cpitems-rows .cpitem-row");
     }
 
-    bindEditable(elIvaUI, elIVA, recomputeTotal);
-    bindEditable(elRetUI, elRet, recomputeTotal);
+    function getFieldBySuffix(suffix) {
+      const tr = firstRow();
+      if (!tr) return null;
+      return tr.querySelector(`[name$="-${suffix}"]`) || null;
+    }
+
+    function getReadonlyCellInputByIndex(idx) {
+      const tr = firstRow();
+      if (!tr) return null;
+      const tds = tr.querySelectorAll("td");
+      if (!tds || !tds[idx]) return null;
+      return tds[idx].querySelector("input") || null;
+    }
+
+    // Campos editables (del item)
+    const elCant    = () => getFieldBySuffix("cantidad");
+    const elPrecio  = () => getFieldBySuffix("precio");
+    const elDesc    = () => getFieldBySuffix("descuento");
+    const elIvaPct  = () => getFieldBySuffix("iva_pct");
+    const elRetPct  = () => getFieldBySuffix("ret_iva_pct");
+
+    // Display-only (por indices según tu tabla)
+    const elSubUI    = () => getReadonlyCellInputByIndex(6);
+    const elIvaMonto = () => getReadonlyCellInputByIndex(8);
+    const elRetMonto = () => getReadonlyCellInputByIndex(10);
+    const elImpUI    = () => getReadonlyCellInputByIndex(11);
+
+    function setField(el, v) {
+      if (!el) return;
+      el.value = v;
+    }
+
+    function valNum(el) {
+      if (!el) return 0;
+      return parseMoney(el.value);
+    }
+
+    function clamp0(n){ return n < 0 ? 0 : n; }
 
     // ==========================
-    // ✅ IVA 16% toggle
+    // ✅ Checkboxes (IDs reales en tu HTML)
+    // - chk-item-iva16
+    // - chk-item-retiva   <-- OJO: en tu HTML es "chk-item-retiva" (no retiva4)
+    // - chk-item-desc
     // ==========================
-    const chkIVA16 = document.getElementById("chk-iva16");
+    const chkIVA16  = document.getElementById("chk-item-iva16");
+    const chkRET4   = document.getElementById("chk-item-retiva"); // ✅ corregido
+    const chkDESC   = document.getElementById("chk-item-desc");
 
-    function recomputeIVAFromToggle() {
-      if (!chkIVA16) return;
+    // defaults OFF
+    if (chkIVA16) chkIVA16.checked = false;
+    if (chkRET4) chkRET4.checked = false;
+    if (chkDESC) chkDESC.checked = false;
 
-      const subtotal = parseMoney(elSubtotal?.value);
-
-      if (chkIVA16.checked) {
-        const iva = round2(subtotal * 0.16);
-        setHidden(elIVA, iva);
-        setUI(elIvaUI, iva);
-        if (elIvaUI) elIvaUI.readOnly = true;
-      } else {
-        if (elIvaUI) elIvaUI.readOnly = false;
-        setHidden(elIVA, 0);
-        setUI(elIvaUI, 0);
+    // ==========================
+    // ✅ Reglas UI:
+    // - precio readonly SIEMPRE
+    // - totales abajo readonly SIEMPRE
+    // - IVA: checkbox pone iva_pct=16 o 0 y recalcula iva_monto y totales
+    // - RET: checkbox pone ret_pct=4 o 0; ret_pct editable SOLO si checkbox ON
+    //        ret_monto recalcula al teclear ret_pct
+    // - DESCUENTO: checkbox habilita input descuento (si OFF => 0 y readonly)
+    // ==========================
+    function enforceLocks() {
+      // precio siempre bloqueado (pero se manda en POST)
+      const p = elPrecio();
+      if (p) {
+        p.readOnly = true;
+        p.tabIndex = -1;
       }
-      recomputeTotal();
+
+      // inputs calculados siempre readonly
+      [elSubUI(), elIvaMonto(), elRetMonto(), elImpUI()].forEach(x => { if (x) x.readOnly = true; });
+
+      // iva_pct: se controla por checkbox
+      const ip = elIvaPct();
+      if (ip) ip.readOnly = true;
+
+      // ret_pct: editable SOLO si checkbox ON
+      // ⚠️ usamos disabled para bloquear input, pero cuando está ON lo habilitamos para que sí se mande en POST
+      const rp = elRetPct();
+      if (rp) {
+        const on = (chkRET4 && chkRET4.checked);
+        rp.readOnly = !on;
+        rp.disabled = !on;
+      }
+
+      // descuento: editable SOLO si checkbox ON
+      const d = elDesc();
+      if (d) {
+        const on = (chkDESC && chkDESC.checked);
+        d.readOnly = !on;
+        d.disabled = !on;
+      }
     }
 
-    if (chkIVA16 && elIVA) {
-      chkIVA16.checked = parseMoney(elIVA.value) > 0;
-      if (elIvaUI) elIvaUI.readOnly = chkIVA16.checked;
-      chkIVA16.addEventListener("change", recomputeIVAFromToggle);
+    function recomputeItemUI() {
+      const qty = valNum(elCant());
+      const price = valNum(elPrecio());
+      const disc = clamp0(valNum(elDesc()));
+
+      const base = round2(qty * price);
+      const sub = round2(clamp0(base - disc));
+
+      // IVA: depende del checkbox (no del value previo)
+      const ivaPct = (chkIVA16 && chkIVA16.checked) ? 16.0 : 0.0;
+      if (elIvaPct()) setField(elIvaPct(), ivaPct.toFixed(2));
+
+      // RET: depende del checkbox (si OFF => 0 aunque el input tenga algo)
+      const retPct = (chkRET4 && chkRET4.checked) ? valNum(elRetPct()) : 0.0;
+
+      const ivaMonto = round2(sub * (ivaPct / 100));
+      const retMonto = round2(sub * (retPct / 100));
+      const importe  = round2(sub + ivaMonto - retMonto);
+
+      // pinta display-only
+      if (elSubUI()) setUI(elSubUI(), sub);
+      if (elIvaMonto()) setUI(elIvaMonto(), ivaMonto);
+      if (elRetMonto()) setUI(elRetMonto(), retMonto);
+      if (elImpUI()) setUI(elImpUI(), importe);
+
+      // sincroniza totales hidden (1 concepto => totals = item)
+      setHidden(elSubtotal, sub);
+      setHidden(elIVA, ivaMonto);
+      setHidden(elRet, retMonto);
+      recomputeTotalFromHidden();
+    }
+
+    function enforceDefaultsOff() {
+      if (elIvaPct()) setField(elIvaPct(), "0.00");
+      if (elRetPct()) setField(elRetPct(), "0.00");
+      if (elDesc()) setField(elDesc(), "0.00");
+      enforceLocks();
+      recomputeItemUI();
+    }
+
+    enforceDefaultsOff();
+
+    // ==========================
+    // Bind cambios de checkboxes
+    // ==========================
+    if (chkIVA16) {
+      chkIVA16.addEventListener("change", function () {
+        // iva_pct se fuerza dentro de recomputeItemUI
+        enforceLocks();
+        recomputeItemUI();
+      });
+    }
+
+    if (chkRET4) {
+      chkRET4.addEventListener("change", function () {
+        const rp = elRetPct();
+        if (rp) {
+          if (chkRET4.checked) {
+            rp.disabled = false;
+            rp.readOnly = false;
+            rp.value = "4.00"; // default 4%
+          } else {
+            rp.value = "0.00";
+            rp.readOnly = true;
+            rp.disabled = true;
+          }
+        }
+        enforceLocks();
+        recomputeItemUI();
+      });
+    }
+
+    if (chkDESC) {
+      chkDESC.addEventListener("change", function () {
+        const d = elDesc();
+        if (d) {
+          if (chkDESC.checked) {
+            d.disabled = false;
+            d.readOnly = false;
+            // no tocamos el valor
+          } else {
+            d.value = "0.00";
+            d.readOnly = true;
+            d.disabled = true;
+          }
+        }
+        enforceLocks();
+        recomputeItemUI();
+      });
     }
 
     // ==========================
-    // ✅ Control horizontal (sync)
+    // Bind inputs que sí cambian cálculos
+    // ==========================
+    function bindRecalc(el) {
+      if (!el) return;
+      el.addEventListener("input", () => recomputeItemUI());
+      el.addEventListener("blur",  () => recomputeItemUI());
+    }
+
+    bindRecalc(elCant());
+    bindRecalc(elDesc());
+    bindRecalc(elRetPct()); // solo funciona cuando checkbox ON (porque entonces está habilitado)
+
+    // ==========================
+    // ✅ Control horizontal mercancías (sync)
     // ==========================
     const goodsWrap = document.getElementById("goods-scroll-wrap");
     const goodsCtrl = document.getElementById("goods-scroll-ctrl");
@@ -932,10 +940,9 @@
     }
 
     bindGoodsScrollSync();
-    // ✅ recalcula varias veces (porque el layout termina después)
+
     function hardSyncGoodsCtrl() {
       syncGoodsCtrlWidth();
-      // alinea posiciones por si ya hay scroll
       if (goodsCtrl && goodsWrap) goodsCtrl.scrollLeft = goodsWrap.scrollLeft;
     }
 
@@ -949,7 +956,7 @@
     window.addEventListener("resize", syncGoodsCtrlWidth);
 
     // ==========================
-    // Formset helpers
+    // Formset helpers (mercancías)
     // ==========================
     function bumpTotal(prefix) {
       const totalInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
@@ -965,11 +972,6 @@
       return out;
     }
 
-    // ✅ IMPORTANTE:
-    // En empty_form.as_p, algunos campos (ej. DELETE) vienen en el mismo <p>
-    // junto con hidden inputs (id, carta_porte, etc.).
-    // Esta función regresa SOLO los controles (input/select/textarea) de ese <p>,
-    // para que no se pierdan los hidden.
     function fieldControlsHTMLFromEmpty(emptyHtml, fieldName) {
       const wrapper = document.createElement("div");
       wrapper.innerHTML = emptyHtml;
@@ -1048,36 +1050,9 @@
       });
     }
 
-    // ==========================
-    // ✅ Remove items (cpitems)
-    // ==========================
-    function bindRemoveItemButtons(scopeEl) {
-      const root = scopeEl || document;
-      root.querySelectorAll(".js-remove-item").forEach(btn => {
-        if (btn.dataset.removeBound === "1") return;
-        btn.dataset.removeBound = "1";
-
-        btn.addEventListener("click", function () {
-          const tr = btn.closest("tr");
-          if (!tr) return;
-
-          const del = tr.querySelector('input[type="checkbox"][name$="-DELETE"]');
-          if (del) {
-            del.checked = true;
-            tr.style.display = "none";
-          } else {
-            tr.remove();
-          }
-        });
-      });
-    }
-
-    // ==========================
-    // Bind inicial
-    // ==========================
+    // Bind inicial mercancías
     bindMercanciaAutofill(document);
     bindRemoveButtons(document);
-    bindRemoveItemButtons(document);
 
     // ==========================
     // Agregar mercancía (prefix = goods)
@@ -1113,83 +1088,36 @@
       tr.innerHTML = html;
       goodsBody.appendChild(tr);
 
-      /* 🔥 AQUÍ VA EL FIX DEL CHECKBOX 🔥 */
+      // fix checkbox delete
       const del = tr.querySelector('input[type="checkbox"][name$="-DELETE"]');
       if (del) {
-        // elimina el label "Eliminar:" si existe
         const lbl = tr.querySelector(`label[for="${del.id}"]`);
         if (lbl) lbl.remove();
-
-        // oculta el checkbox
         del.classList.add("d-none");
         del.tabIndex = -1;
         del.setAttribute("aria-hidden", "true");
-
-        // por si viene envuelto en <p>
         const p = del.closest("p");
         if (p) p.classList.add("d-none");
       }
 
-      /* bindings normales */
       bindMercanciaAutofill(tr);
       bindRemoveButtons(tr);
       syncGoodsCtrlWidth();
-
-      recomputeTotal();
     });
 
     // ==========================
-    // Agregar item (prefix REAL = cpitem)
+    // Submit: asegurar hidden totales van bien
     // ==========================
-    const btnAddItem = document.getElementById("btn-add-item");
-    const itemsBody = document.getElementById("cpitems-rows");
-    const itemsTpl = document.getElementById("cpitems-empty-row");
-
-    btnAddItem?.addEventListener("click", function () {
-      // ✅ aquí estaba el bug: usabas "items" pero el management_form es "cpitem"
-      const idx = bumpTotal("cpitem");
-      const empty = `{{ fs_items.empty_form.as_p|escapejs }}`;
-
-      function field(shortName) {
-        const name = `cpitem-__prefix__-${shortName}`;
-        return fieldControlsHTMLFromEmpty(empty, name).replaceAll("__prefix__", String(idx));
-      }
-
-      let html = itemsTpl.innerHTML;
-      html = replaceAll(html, {
-        "__CANT__": field("cantidad"),
-        "__UNIDAD__": field("unidad"),
-        "__PROD__": field("producto"),
-        "__DESC__": field("descripcion"),
-        "__PRECIO__": field("precio"),
-        "__DESCUENTO__": field("descuento"),
-        "__IVA_PCT__": field("iva_pct"),
-        "__RETIVA_PCT__": field("ret_iva_pct"),
-        "__DELETE__": field("DELETE"),
-      });
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = html;
-      itemsBody.appendChild(tr);
-
-      bindRemoveItemButtons(tr);
-    });
-
-    // Inicial
-    if (chkIVA16?.checked) recomputeIVAFromToggle();
-    else recomputeTotal();
-
-    // antes de enviar: asegura hidden
     const formEl = document.querySelector("form");
     formEl?.addEventListener("submit", function () {
-      setHidden(elSubtotal, parseMoney(elSubtotalUI?.value || elSubtotal.value || "0"));
-      syncFromUI(elIvaUI, elIVA);
-      syncFromUI(elRetUI, elRet);
-      recomputeTotal();
+      recomputeItemUI();          // 1 concepto => hidden totales correctos
+      recomputeTotalFromHidden(); // refresca UI totales
     });
 
   });
 })();
 </script>
+
+
 
 {% endblock %}

@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import TemplateView
 
-from .models import Trip, CartaPorteCFDI, CartaPorteLocation
+from .models import Trip, CartaPorteCFDI, CartaPorteLocation, CartaPorteItem
 from .forms import (
     CartaPorteCFDIForm,
     get_carta_porte_location_formset,
@@ -80,7 +80,7 @@ class CartaPorteEditView(TemplateView):
         return reverse("trips:detail", kwargs={"pk": trip.id})
 
     # ======================================================
-    # Subtotal snapshot
+    # Subtotal snapshot (del viaje)
     # ======================================================
     def ensure_subtotal_from_trip(self, trip: Trip, carta: CartaPorteCFDI):
         current = getattr(carta, "subtotal", None)
@@ -97,6 +97,68 @@ class CartaPorteEditView(TemplateView):
 
         carta.subtotal = subtotal
         carta.save(update_fields=["subtotal"])
+
+    # ======================================================
+    # ✅ EXACTAMENTE 1 CONCEPTO
+    # - precio = subtotal
+    # - si hay 2+, borra extras
+    # ======================================================
+    def ensure_single_item_from_subtotal(self, trip: Trip, carta: CartaPorteCFDI):
+        subtotal = (carta.subtotal or Decimal("0.00")).quantize(Decimal("0.01"))
+
+        # texto por default
+        route_str = str(trip.route) if trip.route_id else "Servicio de transporte"
+        default_desc = f"Flete {route_str}"[:255]
+
+        qs = carta.items.order_by("orden", "id")
+        first = qs.first()
+
+        if not first:
+            # crea 1
+            CartaPorteItem.objects.create(
+                carta_porte=carta,
+                orden=0,
+                cantidad=Decimal("1.000"),
+                unidad="E48",          # mejor solo clave (evita texto largo)
+                producto="FLETE",
+                descripcion=default_desc,
+                precio=subtotal,
+                descuento=Decimal("0.00"),
+                iva_pct=Decimal("16.00"),
+                ret_iva_pct=Decimal("0.00"),
+            )
+            return
+
+        # borra extras (si existían)
+        qs.exclude(id=first.id).delete()
+
+        changed = False
+
+        # normaliza cantidad
+        if (first.cantidad is None) or (first.cantidad <= Decimal("0")):
+            first.cantidad = Decimal("1.000")
+            changed = True
+
+        # fuerza precio = subtotal si viene vacío/0
+        if subtotal > Decimal("0.00") and ((first.precio is None) or (first.precio <= Decimal("0.00"))):
+            first.precio = subtotal
+            changed = True
+
+        if not (first.descripcion or "").strip():
+            first.descripcion = default_desc
+            changed = True
+
+        if (first.unidad or "").strip() == "":
+            first.unidad = "E48"
+            changed = True
+
+        if (first.producto or "").strip() == "":
+            first.producto = "FLETE"
+            changed = True
+
+        if changed:
+            first.orden = 0
+            first.save()
 
     # ======================================================
     # Forms
@@ -181,7 +243,6 @@ class CartaPorteEditView(TemplateView):
             o.rfc = o.rfc or client_rfc(r.origen)
             o.estado = o.estado or self.estado_sat(r.origen.estado)
             o.pais = "MX"
-
             o.save()
 
         d = carta.locations.filter(tipo_ubicacion="Destino").first()
@@ -207,6 +268,9 @@ class CartaPorteEditView(TemplateView):
 
         self.ensure_locations_from_route(trip, carta)
         self.ensure_subtotal_from_trip(trip, carta)
+
+        # ✅ asegura 1 concepto antes de construir formset
+        self.ensure_single_item_from_subtotal(trip, carta)
 
         form, fs_locations, fs_goods, fs_items = self.build_forms(
             request=self.request, carta=carta, trip=trip, bound=False
@@ -249,42 +313,84 @@ class CartaPorteEditView(TemplateView):
         carta.customer = form.cleaned_data.get("customer")
         carta.save()
 
+        # ---- Locations
         fs_locations.save()
+
+        # ---- Goods
         goods = fs_goods.save(commit=False)
 
-        # borrar los marcados
         for obj in fs_goods.deleted_objects:
             obj.delete()
 
-        # guardar solo los válidos
         for g in goods:
-            # 👇 evita guardar filas vacías
             if not g.mercancia_id:
                 if g.pk:
                     g.delete()
                 continue
-
             g.carta_porte = carta
             g.save()
 
+        # ======================================================
+        # ✅ ITEMS: forzar EXACTAMENTE 1
+        # ======================================================
+        # Limpia cualquier cosa previa para que no se acumulen
+        carta.items.all().delete()
 
         items = fs_items.save(commit=False)
+        # (por si llega algo en deleted_objects)
         for obj in fs_items.deleted_objects:
             obj.delete()
 
-        for idx, it in enumerate(items):
+        it = items[0] if items else None
+
+        subtotal = (carta.subtotal or Decimal("0.00")).quantize(Decimal("0.01"))
+        route_str = str(trip.route) if trip.route_id else "Servicio de transporte"
+        default_desc = f"Flete {route_str}"[:255]
+
+        if it is None:
+            CartaPorteItem.objects.create(
+                carta_porte=carta,
+                orden=0,
+                cantidad=Decimal("1.000"),
+                unidad="E48",
+                producto="FLETE",
+                descripcion=default_desc,
+                precio=subtotal,
+                descuento=Decimal("0.00"),
+                iva_pct=Decimal("16.00"),
+                ret_iva_pct=Decimal("0.00"),
+            )
+        else:
             it.carta_porte = carta
-            it.orden = idx
+            it.orden = 0
+
+            if (it.cantidad is None) or (it.cantidad <= Decimal("0")):
+                it.cantidad = Decimal("1.000")
+
+            if subtotal > Decimal("0.00") and ((it.precio is None) or (it.precio <= Decimal("0.00"))):
+                it.precio = subtotal
+
+            if not (it.descripcion or "").strip():
+                it.descripcion = default_desc
+
+            if not (it.unidad or "").strip():
+                it.unidad = "E48"
+
+            if not (it.producto or "").strip():
+                it.producto = "FLETE"
+
             it.save()
 
-        qs = carta.items.all()
-        if qs.exists():
-            carta.subtotal = sum((i.subtotal or Decimal("0.00")) for i in qs)
-            carta.iva = sum((i.iva_monto or Decimal("0.00")) for i in qs)
-            carta.retencion = sum((i.ret_iva_monto or Decimal("0.00")) for i in qs)
-            carta.compute_total()
-            carta.save(update_fields=["subtotal", "iva", "retencion", "total"])
+        # ======================================================
+        # Totales:
+        # - subtotal VIENE DEL VIAJE (snapshot)
+        # - total = subtotal + iva - ret
+        # (NO recalculamos subtotal desde items)
+        # ======================================================
+        carta.compute_total()
+        carta.save(update_fields=["total"])
 
+        # por si cambió ruta/locs
         self.ensure_locations_from_route(trip, carta)
 
         messages.success(request, "Carta Porte guardada.")

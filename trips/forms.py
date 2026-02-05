@@ -522,9 +522,9 @@ class CartaPorteItemForm(forms.ModelForm):
         model = CartaPorteItem
         exclude = ["carta_porte", "subtotal", "iva_monto", "ret_iva_monto", "importe", "orden"]
         widgets = {
-            "cantidad": forms.NumberInput(attrs={"class": "form-control form-control-sm js-itm-cant", "step": "0.001"}),
-            "unidad": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Ej. H87"}),
-            "producto": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "SKU / Producto"}),
+            "cantidad": forms.NumberInput(attrs={"class": "form-control form-control-sm js-itm-cant", "step": "1"}),
+            "unidad": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "[E48] SERVICIO"}),
+            "producto": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Viaje de exportación"}),
             "descripcion": forms.TextInput(attrs={"class": "form-control form-control-sm", "placeholder": "Descripción"}),
             "precio": forms.NumberInput(attrs={"class": "form-control form-control-sm js-itm-precio text-right", "step": "0.01"}),
             "descuento": forms.NumberInput(attrs={"class": "form-control form-control-sm js-itm-desc text-right", "step": "0.01"}),
@@ -566,6 +566,8 @@ def get_carta_porte_item_formset():
         CartaPorteCFDI,
         CartaPorteItem,
         form=CartaPorteItemForm,
-        extra=1,
-        can_delete=True,
+        extra=0,              # 👈 no agregues filas “vacías”
+        can_delete=False,     # 👈 no necesitas borrar si siempre habrá 1
+        max_num=1,            # 👈 máximo 1
+        validate_max=True,    # 👈 valida
     )
