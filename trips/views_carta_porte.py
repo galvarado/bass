@@ -16,6 +16,9 @@ from .forms import (
     get_carta_porte_item_formset,
 )
 
+# ✅ Facturapi service
+from .services.facturapi import create_invoice_in_facturapi, FacturapiError
+
 
 class CartaPorteEditView(TemplateView):
     template_name = "trips/carta_porte_form.html"
@@ -119,7 +122,7 @@ class CartaPorteEditView(TemplateView):
                 carta_porte=carta,
                 orden=0,
                 cantidad=Decimal("1.000"),
-                unidad="E48",          # mejor solo clave (evita texto largo)
+                unidad="E48",  # mejor solo clave (evita texto largo)
                 producto="FLETE",
                 descripcion=default_desc,
                 precio=subtotal,
@@ -283,6 +286,8 @@ class CartaPorteEditView(TemplateView):
             "fs_locations": fs_locations,
             "fs_goods": fs_goods,
             "fs_items": fs_items,
+            # ✅ UX: solo mostrar botón "Generar CFDI" después de guardar (flag en sesión)
+            "can_generate_cfdi": self.request.session.get(f"cp_saved_{trip.id}", False),
         })
         return ctx
 
@@ -307,11 +312,21 @@ class CartaPorteEditView(TemplateView):
                 "fs_locations": fs_locations,
                 "fs_goods": fs_goods,
                 "fs_items": fs_items,
+                "can_generate_cfdi": request.session.get(f"cp_saved_{trip.id}", False),
             })
+
+        # Acción (guardar o generar)
+        action = (request.POST.get("action") or "save").strip()
 
         carta = form.save(commit=False)
         carta.customer = form.cleaned_data.get("customer")
-        carta.save()
+        carta.save()  # ✅ guarda cambios del form (incluye timestamps)
+
+        # Si fue un guardado normal y aún está draft => listo para generar
+        if carta.status == "draft":
+            carta.status = "ready"
+            carta.last_error = ""
+            carta.save(update_fields=["status", "last_error", "updated_at"])
 
         # ---- Locations
         fs_locations.save()
@@ -333,11 +348,9 @@ class CartaPorteEditView(TemplateView):
         # ======================================================
         # ✅ ITEMS: forzar EXACTAMENTE 1
         # ======================================================
-        # Limpia cualquier cosa previa para que no se acumulen
         carta.items.all().delete()
 
         items = fs_items.save(commit=False)
-        # (por si llega algo en deleted_objects)
         for obj in fs_items.deleted_objects:
             obj.delete()
 
@@ -388,10 +401,59 @@ class CartaPorteEditView(TemplateView):
         # (NO recalculamos subtotal desde items)
         # ======================================================
         carta.compute_total()
-        carta.save(update_fields=["total"])
+        carta.save(update_fields=["total", "updated_at"])
 
         # por si cambió ruta/locs
         self.ensure_locations_from_route(trip, carta)
+
+        # ✅ Marca que ya se guardó (para mostrar botón "Generar CFDI")
+        request.session[f"cp_saved_{trip.id}"] = True
+
+        # ======================================================
+        # Generar CFDI (Facturapi)
+        # ======================================================
+        if action == "generate_cfdi":
+            if carta.status == "stamped" and carta.uuid:
+                messages.info(request, f"Este CFDI ya fue generado (UUID: {carta.uuid}).")
+                return redirect(self.get_success_url(trip))
+
+            if carta.status == "canceled":
+                messages.error(request, "Este CFDI está cancelado y no puede generarse de nuevo desde aquí.")
+                return redirect(self.get_success_url(trip))
+
+            try:
+                result = create_invoice_in_facturapi(carta=carta, trip=trip)
+
+                carta.payload_snapshot = result.get("payload")
+                carta.response_snapshot = result.get("response")
+
+                resp = result.get("response") or {}
+                carta.uuid = resp.get("uuid") or carta.uuid
+                carta.pdf_url = resp.get("pdf_url") or resp.get("pdf") or carta.pdf_url
+                carta.xml_url = resp.get("xml_url") or resp.get("xml") or carta.xml_url
+
+                carta.status = resp.get("status") or "ready"
+                carta.last_error = ""
+                carta.save(update_fields=[
+                    "payload_snapshot",
+                    "response_snapshot",
+                    "uuid",
+                    "pdf_url",
+                    "xml_url",
+                    "status",
+                    "last_error",
+                    "updated_at",
+                ])
+
+                messages.success(request, "CFDI enviado a Facturapi correctamente.")
+                return redirect(self.get_success_url(trip))
+
+            except FacturapiError as e:
+                carta.status = "error"
+                carta.last_error = str(e)
+                carta.save(update_fields=["status", "last_error", "updated_at"])
+                messages.error(request, f"No se pudo generar CFDI: {e}")
+                return redirect(self.get_success_url(trip))
 
         messages.success(request, "Carta Porte guardada.")
         return redirect(self.get_success_url(trip))

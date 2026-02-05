@@ -219,3 +219,14 @@ LOGGING = {
         "level": "INFO",
     },
 }
+
+FACTURAPI_SECRET_KEY = os.getenv("FACTURAPI_SECRET_KEY", "")
+FACTURAPI_BASE_URL = os.getenv("FACTURAPI_BASE_URL", "https://www.facturapi.io")
+FACTURAPI_TIMEOUT_SECONDS = int(os.getenv("FACTURAPI_TIMEOUT_SECONDS", "30"))
+
+# Defaults para “producto/servicio” si aún no guardas claves SAT en tu modelo Item
+FACTURAPI_DEFAULT_PRODUCT_KEY = os.getenv("FACTURAPI_DEFAULT_PRODUCT_KEY", "78101800")  # transporte/flete (ajústalo)
+FACTURAPI_DEFAULT_UNIT_KEY = os.getenv("FACTURAPI_DEFAULT_UNIT_KEY", "E48")             # servicio :contentReference[oaicite:1]{index=1}
+
+# Recomendación: crear como draft para evitar timbrar “por accidente”
+FACTURAPI_CREATE_AS_DRAFT = os.getenv("FACTURAPI_CREATE_AS_DRAFT", "true").lower() == "true"

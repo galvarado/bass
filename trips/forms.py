@@ -566,7 +566,7 @@ def get_carta_porte_item_formset():
         CartaPorteCFDI,
         CartaPorteItem,
         form=CartaPorteItemForm,
-        extra=0,              # 👈 no agregues filas “vacías”
+        extra=1,              # 👈 no agregues filas “vacías”
         can_delete=False,     # 👈 no necesitas borrar si siempre habrá 1
         max_num=1,            # 👈 máximo 1
         validate_max=True,    # 👈 valida

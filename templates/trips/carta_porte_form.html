@@ -7,6 +7,25 @@
 {% block content %}
 
 <style>
+  /* ✅ Estado arriba a la derecha, sobre los botones */
+  .cp-footer-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .cp-statusbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .cp-statusbar .badge { font-size: .78rem; }
+
   .loc-collapse { display: none; }
   .loc-collapse.show { display: block; }
 
@@ -97,6 +116,11 @@
   .cpitem-taxbar .custom-control { margin-bottom: 0; }
 
   .form-control[readonly] { background: #f6f7fb; }
+
+  /* ✅ UX: bloque compacto de acciones */
+  .cp-actions { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  .cp-actions .cp-actions-right { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .cp-hint { font-size:.82rem; color:#6c757d; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -115,6 +139,50 @@
       {% for m in messages %}
         <div class="alert alert-{{ m.tags }}">{{ m }}</div>
       {% endfor %}
+    {% endif %}
+
+    {% if form.errors or fs_locations.non_form_errors or fs_goods.non_form_errors or fs_items.non_form_errors %}
+      <div class="alert alert-danger">
+        <div class="font-weight-bold mb-1">Errores detectados</div>
+
+        {% if form.non_field_errors %}
+          <div class="mb-2">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        {% for field in form %}
+          {% if field.errors %}
+            <div><strong>{{ field.label }}:</strong> {{ field.errors|striptags }}</div>
+          {% endif %}
+        {% endfor %}
+
+        {% if fs_locations.non_form_errors %}
+          <div class="mt-2"><strong>Ubicaciones:</strong> {{ fs_locations.non_form_errors }}</div>
+        {% endif %}
+        {% if fs_goods.non_form_errors %}
+          <div class="mt-2"><strong>Mercancías:</strong> {{ fs_goods.non_form_errors }}</div>
+        {% endif %}
+        {% if fs_items.non_form_errors %}
+          <div class="mt-2"><strong>Concepto:</strong> {{ fs_items.non_form_errors }}</div>
+        {% endif %}
+
+        {% for f in fs_locations.forms %}
+          {% if f.errors %}
+            <div class="mt-2"><strong>Ubicación #{{ forloop.counter }}:</strong> {{ f.errors }}</div>
+          {% endif %}
+        {% endfor %}
+
+        {% for f in fs_goods.forms %}
+          {% if f.errors %}
+            <div class="mt-2"><strong>Mercancía #{{ forloop.counter }}:</strong> {{ f.errors }}</div>
+          {% endif %}
+        {% endfor %}
+
+        {% for f in fs_items.forms %}
+          {% if f.errors %}
+            <div class="mt-2"><strong>Concepto #{{ forloop.counter }}:</strong> {{ f.errors }}</div>
+          {% endif %}
+        {% endfor %}
+      </div>
     {% endif %}
 
     <h6 class="text-primary mb-2">
@@ -184,7 +252,9 @@
     <div id="loc-forms">
       {% for f in fs_locations.forms %}
         <div class="border rounded mb-2 loc-form">
-          {{ f.id }}
+
+          {# ✅ CRÍTICO: hidden fields completos (id, carta_porte, etc.) #}
+          {% for h in f.hidden_fields %}{{ h }}{% endfor %}
 
           <div class="d-none">
             {{ f.tipo_ubicacion }}
@@ -323,8 +393,9 @@
           {% for f in fs_goods.forms %}
           <tr class="goods-row">
             <td class="w-merc goods-mercancia">
+              {# ✅ CRÍTICO: hidden fields completos (id, carta_porte, etc.) #}
+              {% for h in f.hidden_fields %}{{ h }}{% endfor %}
               {{ f.mercancia|add_class:"form-control form-control-sm js-mercancia" }}
-              {{ f.id }}
             </td>
 
             <td class="w-clv"><div class="cp-ro js-clave"></div></td>
@@ -353,6 +424,8 @@
         </tbody>
       </table>
     </div>
+
+
 
     <template id="goods-empty-row">
       <tr class="goods-row">
@@ -564,7 +637,7 @@
   <button class="btn btn-success btn-sm" type="submit" name="action" value="generate_cfdi">
     <i class="fas fa-file-invoice"></i> Generar CFDI
   </button>
-</div>
+  </div>
 </form>
 
 <script>
@@ -580,8 +653,13 @@
     // Readonly ubicaciones
     // ==========================
     document.querySelectorAll(".loc-ro").forEach(el => {
-      if (el.tagName === "SELECT") el.disabled = true;
-      else el.readOnly = true;
+      if (el.tagName === "SELECT") {
+        el.style.pointerEvents = "none";
+        el.tabIndex = -1;
+      } else {
+        el.readOnly = true;
+        el.tabIndex = -1;
+      }
     });
 
     // ==========================
@@ -675,7 +753,6 @@
     const elRet      = document.querySelector(".js-retencion");
     const elTotal    = document.querySelector(".js-total");
 
-    // ✅ forzar totales readonly
     [elSubtotalUI, elIvaUI, elRetUI, elTotalUI].forEach(x => { if (x) x.readOnly = true; });
 
     function recomputeTotalFromHidden() {
@@ -688,16 +765,11 @@
       setHidden(elTotal, total);
       setUI(elTotalUI, total);
 
-      // UI de subtotal/iva/ret desde hidden (por consistencia)
       setUI(elSubtotalUI, subtotal);
       setUI(elIvaUI, iva);
       setUI(elRetUI, ret);
     }
 
-    // init hidden desde UI inicial
-    setHidden(elSubtotal, parseMoney(elSubtotalUI?.value || "0"));
-    setHidden(elIVA,      parseMoney(elIvaUI?.value || "0"));
-    setHidden(elRet,      parseMoney(elRetUI?.value || "0"));
     recomputeTotalFromHidden();
 
     // ==========================
@@ -721,85 +793,50 @@
       return tds[idx].querySelector("input") || null;
     }
 
-    // Campos editables (del item)
     const elCant    = () => getFieldBySuffix("cantidad");
     const elPrecio  = () => getFieldBySuffix("precio");
     const elDesc    = () => getFieldBySuffix("descuento");
     const elIvaPct  = () => getFieldBySuffix("iva_pct");
     const elRetPct  = () => getFieldBySuffix("ret_iva_pct");
 
-    // Display-only (por indices según tu tabla)
     const elSubUI    = () => getReadonlyCellInputByIndex(6);
     const elIvaMonto = () => getReadonlyCellInputByIndex(8);
     const elRetMonto = () => getReadonlyCellInputByIndex(10);
     const elImpUI    = () => getReadonlyCellInputByIndex(11);
 
-    function setField(el, v) {
-      if (!el) return;
-      el.value = v;
-    }
-
-    function valNum(el) {
-      if (!el) return 0;
-      return parseMoney(el.value);
-    }
-
+    function setField(el, v) { if (el) el.value = v; }
+    function valNum(el) { return el ? parseMoney(el.value) : 0; }
     function clamp0(n){ return n < 0 ? 0 : n; }
 
-    // ==========================
-    // ✅ Checkboxes (IDs reales en tu HTML)
-    // - chk-item-iva16
-    // - chk-item-retiva   <-- OJO: en tu HTML es "chk-item-retiva" (no retiva4)
-    // - chk-item-desc
-    // ==========================
     const chkIVA16  = document.getElementById("chk-item-iva16");
-    const chkRET4   = document.getElementById("chk-item-retiva"); // ✅ corregido
+    const chkRET4   = document.getElementById("chk-item-retiva");
     const chkDESC   = document.getElementById("chk-item-desc");
 
-    // defaults OFF
     if (chkIVA16) chkIVA16.checked = false;
     if (chkRET4) chkRET4.checked = false;
     if (chkDESC) chkDESC.checked = false;
 
-    // ==========================
-    // ✅ Reglas UI:
-    // - precio readonly SIEMPRE
-    // - totales abajo readonly SIEMPRE
-    // - IVA: checkbox pone iva_pct=16 o 0 y recalcula iva_monto y totales
-    // - RET: checkbox pone ret_pct=4 o 0; ret_pct editable SOLO si checkbox ON
-    //        ret_monto recalcula al teclear ret_pct
-    // - DESCUENTO: checkbox habilita input descuento (si OFF => 0 y readonly)
-    // ==========================
     function enforceLocks() {
-      // precio siempre bloqueado (pero se manda en POST)
       const p = elPrecio();
-      if (p) {
-        p.readOnly = true;
-        p.tabIndex = -1;
-      }
+      if (p) { p.readOnly = true; p.tabIndex = -1; }
 
-      // inputs calculados siempre readonly
       [elSubUI(), elIvaMonto(), elRetMonto(), elImpUI()].forEach(x => { if (x) x.readOnly = true; });
 
-      // iva_pct: se controla por checkbox
       const ip = elIvaPct();
       if (ip) ip.readOnly = true;
 
-      // ret_pct: editable SOLO si checkbox ON
-      // ⚠️ usamos disabled para bloquear input, pero cuando está ON lo habilitamos para que sí se mande en POST
       const rp = elRetPct();
       if (rp) {
         const on = (chkRET4 && chkRET4.checked);
         rp.readOnly = !on;
-        rp.disabled = !on;
+        rp.tabIndex = on ? 0 : -1;
       }
 
-      // descuento: editable SOLO si checkbox ON
       const d = elDesc();
       if (d) {
         const on = (chkDESC && chkDESC.checked);
         d.readOnly = !on;
-        d.disabled = !on;
+        d.tabIndex = on ? 0 : -1;
       }
     }
 
@@ -811,24 +848,20 @@
       const base = round2(qty * price);
       const sub = round2(clamp0(base - disc));
 
-      // IVA: depende del checkbox (no del value previo)
       const ivaPct = (chkIVA16 && chkIVA16.checked) ? 16.0 : 0.0;
       if (elIvaPct()) setField(elIvaPct(), ivaPct.toFixed(2));
 
-      // RET: depende del checkbox (si OFF => 0 aunque el input tenga algo)
       const retPct = (chkRET4 && chkRET4.checked) ? valNum(elRetPct()) : 0.0;
 
       const ivaMonto = round2(sub * (ivaPct / 100));
       const retMonto = round2(sub * (retPct / 100));
       const importe  = round2(sub + ivaMonto - retMonto);
 
-      // pinta display-only
       if (elSubUI()) setUI(elSubUI(), sub);
       if (elIvaMonto()) setUI(elIvaMonto(), ivaMonto);
       if (elRetMonto()) setUI(elRetMonto(), retMonto);
       if (elImpUI()) setUI(elImpUI(), importe);
 
-      // sincroniza totales hidden (1 concepto => totals = item)
       setHidden(elSubtotal, sub);
       setHidden(elIVA, ivaMonto);
       setHidden(elRet, retMonto);
@@ -845,58 +878,36 @@
 
     enforceDefaultsOff();
 
-    // ==========================
-    // Bind cambios de checkboxes
-    // ==========================
-    if (chkIVA16) {
-      chkIVA16.addEventListener("change", function () {
-        // iva_pct se fuerza dentro de recomputeItemUI
-        enforceLocks();
-        recomputeItemUI();
-      });
-    }
+    chkIVA16?.addEventListener("change", function () {
+      enforceLocks();
+      recomputeItemUI();
+    });
 
-    if (chkRET4) {
-      chkRET4.addEventListener("change", function () {
-        const rp = elRetPct();
-        if (rp) {
-          if (chkRET4.checked) {
-            rp.disabled = false;
-            rp.readOnly = false;
-            rp.value = "4.00"; // default 4%
-          } else {
-            rp.value = "0.00";
-            rp.readOnly = true;
-            rp.disabled = true;
-          }
+    chkRET4?.addEventListener("change", function () {
+      const rp = elRetPct();
+      if (rp) {
+        if (chkRET4.checked) {
+          rp.readOnly = false;
+          rp.value = "4.00";
+        } else {
+          rp.value = "0.00";
+          rp.readOnly = true;
         }
-        enforceLocks();
-        recomputeItemUI();
-      });
-    }
+      }
+      enforceLocks();
+      recomputeItemUI();
+    });
 
-    if (chkDESC) {
-      chkDESC.addEventListener("change", function () {
-        const d = elDesc();
-        if (d) {
-          if (chkDESC.checked) {
-            d.disabled = false;
-            d.readOnly = false;
-            // no tocamos el valor
-          } else {
-            d.value = "0.00";
-            d.readOnly = true;
-            d.disabled = true;
-          }
-        }
-        enforceLocks();
-        recomputeItemUI();
-      });
-    }
+    chkDESC?.addEventListener("change", function () {
+      const d = elDesc();
+      if (d) {
+        if (chkDESC.checked) d.readOnly = false;
+        else { d.value = "0.00"; d.readOnly = true; }
+      }
+      enforceLocks();
+      recomputeItemUI();
+    });
 
-    // ==========================
-    // Bind inputs que sí cambian cálculos
-    // ==========================
     function bindRecalc(el) {
       if (!el) return;
       el.addEventListener("input", () => recomputeItemUI());
@@ -905,7 +916,7 @@
 
     bindRecalc(elCant());
     bindRecalc(elDesc());
-    bindRecalc(elRetPct()); // solo funciona cuando checkbox ON (porque entonces está habilitado)
+    bindRecalc(elRetPct());
 
     // ==========================
     // ✅ Control horizontal mercancías (sync)
@@ -956,38 +967,8 @@
     window.addEventListener("resize", syncGoodsCtrlWidth);
 
     // ==========================
-    // Formset helpers (mercancías)
+    // Mercancías: autofill + remove
     // ==========================
-    function bumpTotal(prefix) {
-      const totalInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
-      if (!totalInput) return 0;
-      const current = parseInt(totalInput.value || "0", 10);
-      totalInput.value = String(current + 1);
-      return current;
-    }
-
-    function replaceAll(html, repls) {
-      let out = html;
-      for (const [k, v] of Object.entries(repls)) out = out.split(k).join(v);
-      return out;
-    }
-
-    function fieldControlsHTMLFromEmpty(emptyHtml, fieldName) {
-      const wrapper = document.createElement("div");
-      wrapper.innerHTML = emptyHtml;
-
-      const el = wrapper.querySelector(`[name="${fieldName}"]`);
-      if (!el) return "";
-
-      const p = el.closest("p");
-      if (p) {
-        return Array.from(p.querySelectorAll("input,select,textarea"))
-          .map(x => x.outerHTML)
-          .join("");
-      }
-      return el.outerHTML;
-    }
-
     const cartaCurrency = "{{ form.currency.value|default_if_none:'' }}";
 
     function fillDiv(divEl, value) {
@@ -1027,6 +1008,17 @@
       });
     }
 
+    function markDeletedRow(tr) {
+      const del = tr.querySelector('input[type="checkbox"][name$="-DELETE"]');
+      if (del) {
+        del.checked = true;
+        tr.style.display = "none";
+      } else {
+        tr.remove();
+      }
+      syncGoodsCtrlWidth();
+    }
+
     function bindRemoveButtons(scopeEl) {
       const root = scopeEl || document;
       root.querySelectorAll(".js-remove-good").forEach(btn => {
@@ -1036,88 +1028,75 @@
         btn.addEventListener("click", function () {
           const tr = btn.closest("tr");
           if (!tr) return;
-
-          const del = tr.querySelector('input[type="checkbox"][name$="-DELETE"]');
-          if (del) {
-            del.checked = true;
-            tr.style.display = "none";
-          } else {
-            tr.remove();
-          }
-
-          syncGoodsCtrlWidth();
+          markDeletedRow(tr);
         });
       });
     }
 
-    // Bind inicial mercancías
     bindMercanciaAutofill(document);
     bindRemoveButtons(document);
 
     // ==========================
-    // Agregar mercancía (prefix = goods)
+    // ✅ Agregar mercancía (prefix = goods)
     // ==========================
     const btnAddGood = document.getElementById("btn-add-good");
     const goodsBody = document.getElementById("goods-rows");
     const goodsTpl = document.getElementById("goods-empty-row");
 
+    function bumpTotal(prefix) {
+      const totalInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+      if (!totalInput) return 0;
+      const current = parseInt(totalInput.value || "0", 10);
+      totalInput.value = String(current + 1);
+      return current;
+    }
+
     btnAddGood?.addEventListener("click", function () {
       const idx = bumpTotal("goods");
-      const empty = `{{ fs_goods.empty_form.as_p|escapejs }}`;
 
-      function field(shortName) {
-        const name = `goods-__prefix__-${shortName}`;
-        return fieldControlsHTMLFromEmpty(empty, name).replaceAll("__prefix__", String(idx));
+      const emptyHidden = `{{ fs_goods.empty_form.hidden_fields|join:"" | escapejs }}`;
+      const emptyMerc   = `{{ fs_goods.empty_form.mercancia | escapejs }}`;
+      const emptyCant   = `{{ fs_goods.empty_form.cantidad  | escapejs }}`;
+      const emptyUni    = `{{ fs_goods.empty_form.unidad    | escapejs }}`;
+      const emptyPeso   = `{{ fs_goods.empty_form.peso_en_kg| escapejs }}`;
+      const emptyVal    = `{{ fs_goods.empty_form.valor_mercancia| escapejs }}`;
+      const emptyMon    = `{{ fs_goods.empty_form.moneda    | escapejs }}`;
+      const emptyEmb    = `{{ fs_goods.empty_form.embalaje  | escapejs }}`;
+      const emptyPed    = `{{ fs_goods.empty_form.pedimento | escapejs }}`;
+
+      function repl(s) {
+        return (s || "").replaceAll("__prefix__", String(idx));
       }
 
       let html = goodsTpl.innerHTML;
-      html = replaceAll(html, {
-        "__MERCANCIA__": field("mercancia"),
-        "__CANT__": field("cantidad"),
-        "__UNIDAD__": field("unidad"),
-        "__EMB__": field("embalaje"),
-        "__PESO__": field("peso_en_kg"),
-        "__VALOR__": field("valor_mercancia"),
-        "__MONEDA__": field("moneda"),
-        "__PEDIMENTO__": field("pedimento"),
-        "__DELETE__": field("DELETE"),
-        "__ID__": field("id"),
-      });
+      html = html
+        .replaceAll("__HIDDEN__",   repl(emptyHidden))
+        .replaceAll("__MERCANCIA__",repl(emptyMerc))
+        .replaceAll("__CANT__",     repl(emptyCant))
+        .replaceAll("__UNIDAD__",   repl(emptyUni))
+        .replaceAll("__PESO__",     repl(emptyPeso))
+        .replaceAll("__VALOR__",    repl(emptyVal))
+        .replaceAll("__MONEDA__",   repl(emptyMon))
+        .replaceAll("__EMB__",      repl(emptyEmb))
+        .replaceAll("__PEDIMENTO__",repl(emptyPed));
 
       const tr = document.createElement("tr");
       tr.innerHTML = html;
       goodsBody.appendChild(tr);
-
-      // fix checkbox delete
-      const del = tr.querySelector('input[type="checkbox"][name$="-DELETE"]');
-      if (del) {
-        const lbl = tr.querySelector(`label[for="${del.id}"]`);
-        if (lbl) lbl.remove();
-        del.classList.add("d-none");
-        del.tabIndex = -1;
-        del.setAttribute("aria-hidden", "true");
-        const p = del.closest("p");
-        if (p) p.classList.add("d-none");
-      }
 
       bindMercanciaAutofill(tr);
       bindRemoveButtons(tr);
       syncGoodsCtrlWidth();
     });
 
-    // ==========================
-    // Submit: asegurar hidden totales van bien
-    // ==========================
     const formEl = document.querySelector("form");
     formEl?.addEventListener("submit", function () {
-      recomputeItemUI();          // 1 concepto => hidden totales correctos
-      recomputeTotalFromHidden(); // refresca UI totales
+      recomputeItemUI();
+      recomputeTotalFromHidden();
     });
 
   });
 })();
 </script>
-
-
 
 {% endblock %}

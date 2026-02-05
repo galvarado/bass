@@ -93,11 +93,17 @@ def audit_pre_save(sender, instance, **kwargs):
         return
     if not _should_track(instance):
         return
+
     if instance.pk:
         include = _include_fields(instance)
         exclude = _exclude_fields(instance)
-        prev = instance.__class__.objects.get(pk=instance.pk)
-        instance._audit_before = model_snapshot(prev, include, exclude)
+
+        try:
+            prev = instance.__class__._base_manager.get(pk=instance.pk)
+        except ObjectDoesNotExist:
+            prev = None
+
+        instance._audit_before = model_snapshot(prev, include, exclude) if prev else None
     else:
         instance._audit_before = None
 
