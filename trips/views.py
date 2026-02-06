@@ -27,6 +27,7 @@ from common.mixins import (
     OperacionRequiredMixin,
     OperadorRequiredMixin,
     OnlyMyTripsMixin,
+    LockIfStampedMixin
 )
 
 FIELDS_AUDIT = [
@@ -136,7 +137,7 @@ class TripCreateView(OperacionRequiredMixin, CreateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class TripUpdateView(OperacionRequiredMixin, UpdateView):
+class TripUpdateView(LockIfStampedMixin, OperacionRequiredMixin, UpdateView):
     model = Trip
     form_class = TripForm
     template_name = "trips/form.html"
@@ -171,8 +172,19 @@ class TripDetailView(OperacionRequiredMixin, DetailView):
             "truck", "reefer_box"
         )
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        trip = self.object
 
-class TripSoftDeleteView(OperacionRequiredMixin, DeleteView):
+        carta = CartaPorteCFDI.objects.filter(trip=trip).only("id", "status", "uuid").first()
+
+        ctx["carta"] = carta
+        ctx["carta_is_stamped"] = bool(carta and carta.status == "stamped")
+        ctx["carta_uuid"] = (carta.uuid if carta else "")
+        return ctx
+
+
+class TripSoftDeleteView(LockIfStampedMixin, OperacionRequiredMixin, DeleteView):
     model = Trip
     template_name = "trips/confirm_delete.html"
     success_url = reverse_lazy("trips:list")

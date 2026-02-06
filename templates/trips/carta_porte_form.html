@@ -175,6 +175,13 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size:.78rem;
 }
+
+.cp-locked {
+  background-color: #f6f7fb !important;
+  border-color: #d1d3e2 !important;
+  color: #6c757d;
+  cursor: not-allowed;
+}
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -187,7 +194,7 @@
 
 
 
-<form method="post" class="card shadow-sm">
+<form id="cp-form" method="post" class="card shadow-sm">
   {% csrf_token %}
 
   <div class="card-body">
@@ -734,8 +741,8 @@
     {% endif %}
 
     {% if carta.uuid %}
-      <span class="cp-meta ml-2">
-        UUID: <span class="cp-mono">{{ carta.uuid }}</span>
+      <span class="cp-meta ml-2" title="Folio fiscal (UUID) del CFDI timbrado">
+        Folio fiscal: <span class="cp-mono">{{ carta.uuid }}</span>
       </span>
     {% endif %}
 
@@ -748,11 +755,26 @@
   </div>
 
   {# ✅ Acciones (derecha) #}
-  <div class="d-flex align-items-center gap-2">
-    <button class="btn btn-primary btn-sm" type="submit" name="action" value="save">
-      <i class="fas fa-save"></i> Guardar
-    </button>
+<div class="d-flex align-items-center gap-2">
+  <button class="btn btn-primary btn-sm" type="submit" name="action" value="save">
+    <i class="fas fa-save"></i> Guardar
+  </button>
 &nbsp;
+
+  {# ✅ Blindaje UI: si ya está timbrada o tiene UUID => no permitir re-timbrar #}
+  {% if carta.status == "stamped" or carta.uuid %}
+    <button class="btn btn-success btn-sm" type="button" disabled
+            title="Este CFDI ya fue timbrado y no puede generarse de nuevo.">
+      <i class="fas fa-file-invoice"></i> Timbrar CFDI
+    </button>
+
+  {% elif carta.status == "canceled" %}
+    <button class="btn btn-dark btn-sm" type="button" disabled
+            title="Este CFDI está cancelado y no puede timbrarse nuevamente desde aquí.">
+      <i class="fas fa-ban"></i> CFDI cancelado
+    </button>
+
+  {% else %}
     {% if can_generate_cfdi %}
       <button class="btn btn-success btn-sm" type="submit" name="action" value="generate_cfdi">
         <i class="fas fa-file-invoice"></i> Timbrar CFDI
@@ -762,13 +784,58 @@
         <i class="fas fa-file-invoice"></i> Timbrar CFDI
       </button>
     {% endif %}
-  </div>
-
+  {% endif %}
 </div>
-</form>
 
+</form>
+<script>
+  window.CP_IS_STAMPED = {% if carta.status == "stamped" %}true{% else %}false{% endif %};
+</script>
 <script>
 (function () {
+  if (!window.CP_IS_STAMPED) return;
+
+  const form = document.getElementById("cp-form");
+  if (!form) return;
+
+  // Inputs, selects, textareas (solo dentro del form de Carta Porte)
+  form.querySelectorAll("input, select, textarea").forEach(el => {
+    if (el.type === "hidden") return;
+
+    // checkbox/radio -> disabled
+    if (el.type === "checkbox" || el.type === "radio") {
+      el.disabled = true;
+      el.classList.add("cp-locked");
+      return;
+    }
+
+    // select no soporta readonly
+    if (el.tagName === "SELECT") {
+      el.disabled = true;
+      el.classList.add("cp-locked");
+      el.tabIndex = -1;
+      return;
+    }
+
+    // inputs/textarea -> readonly
+    el.readOnly = true;
+    el.classList.add("cp-locked");
+    el.tabIndex = -1;
+  });
+
+  // Deshabilitar acciones (agregar/quitar mercancía, expandir locaciones, etc.)
+  form.querySelectorAll(".js-remove-good, #btn-add-good, .loc-toggle").forEach(btn => {
+    btn.disabled = true;
+    btn.style.pointerEvents = "none";
+    btn.classList.add("disabled");
+  });
+
+  // ✅ Opcional: deshabilitar también Guardar (si no quieres permitir submit)
+  form.querySelectorAll('button[type="submit"]').forEach(btn => {
+    btn.disabled = true;
+    btn.title = "Este CFDI ya fue timbrado y no puede modificarse.";
+  });
+
   function ready(fn){
     if (document.readyState !== "loading") fn();
     else document.addEventListener("DOMContentLoaded", fn);

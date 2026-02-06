@@ -220,8 +220,8 @@ LOGGING = {
     },
 }
 
-FACTURAPI_SECRET_KEY = os.getenv("FACTURAPI_SECRET_KEY", "")
-FACTURAPI_BASE_URL = os.getenv("FACTURAPI_BASE_URL", "https://www.facturapi.io")
+FACTURAPI_API_KEY = os.getenv("FACTURAPI_API_KEY", "")
+FACTURAPI_BASE_URL = os.getenv("FACTURAPI_BASE_URL", "https://www.facturapi.io/v2")
 FACTURAPI_TIMEOUT_SECONDS = int(os.getenv("FACTURAPI_TIMEOUT_SECONDS", "30"))
 
 # Defaults para “producto/servicio” si aún no guardas claves SAT en tu modelo Item

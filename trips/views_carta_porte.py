@@ -109,7 +109,6 @@ class CartaPorteEditView(TemplateView):
     def ensure_single_item_from_subtotal(self, trip: Trip, carta: CartaPorteCFDI):
         subtotal = (carta.subtotal or Decimal("0.00")).quantize(Decimal("0.01"))
 
-        # texto por default
         route_str = str(trip.route) if trip.route_id else "Servicio de transporte"
         default_desc = f"Flete {route_str}"[:255]
 
@@ -117,12 +116,11 @@ class CartaPorteEditView(TemplateView):
         first = qs.first()
 
         if not first:
-            # crea 1
             CartaPorteItem.objects.create(
                 carta_porte=carta,
                 orden=0,
                 cantidad=Decimal("1.000"),
-                unidad="E48",  # mejor solo clave (evita texto largo)
+                unidad="E48",
                 producto="FLETE",
                 descripcion=default_desc,
                 precio=subtotal,
@@ -132,17 +130,14 @@ class CartaPorteEditView(TemplateView):
             )
             return
 
-        # borra extras (si existían)
         qs.exclude(id=first.id).delete()
 
         changed = False
 
-        # normaliza cantidad
         if (first.cantidad is None) or (first.cantidad <= Decimal("0")):
             first.cantidad = Decimal("1.000")
             changed = True
 
-        # fuerza precio = subtotal si viene vacío/0
         if subtotal > Decimal("0.00") and ((first.precio is None) or (first.precio <= Decimal("0.00"))):
             first.precio = subtotal
             changed = True
@@ -271,8 +266,6 @@ class CartaPorteEditView(TemplateView):
 
         self.ensure_locations_from_route(trip, carta)
         self.ensure_subtotal_from_trip(trip, carta)
-
-        # ✅ asegura 1 concepto antes de construir formset
         self.ensure_single_item_from_subtotal(trip, carta)
 
         form, fs_locations, fs_goods, fs_items = self.build_forms(
@@ -286,7 +279,6 @@ class CartaPorteEditView(TemplateView):
             "fs_locations": fs_locations,
             "fs_goods": fs_goods,
             "fs_items": fs_items,
-            # ✅ UX: solo mostrar botón "Generar CFDI" después de guardar (flag en sesión)
             "can_generate_cfdi": self.request.session.get(f"cp_saved_{trip.id}", False),
         })
         return ctx
@@ -315,23 +307,19 @@ class CartaPorteEditView(TemplateView):
                 "can_generate_cfdi": request.session.get(f"cp_saved_{trip.id}", False),
             })
 
-        # Acción (guardar o generar)
         action = (request.POST.get("action") or "save").strip()
 
         carta = form.save(commit=False)
         carta.customer = form.cleaned_data.get("customer")
-        carta.save()  # ✅ guarda cambios del form (incluye timestamps)
+        carta.save()
 
-        # Si fue un guardado normal y aún está draft => listo para generar
         if carta.status == "draft":
             carta.status = "ready"
             carta.last_error = ""
             carta.save(update_fields=["status", "last_error", "updated_at"])
 
-        # ---- Locations
         fs_locations.save()
 
-        # ---- Goods
         goods = fs_goods.save(commit=False)
 
         for obj in fs_goods.deleted_objects:
@@ -394,27 +382,20 @@ class CartaPorteEditView(TemplateView):
 
             it.save()
 
-        # ======================================================
-        # Totales:
-        # - subtotal VIENE DEL VIAJE (snapshot)
-        # - total = subtotal + iva - ret
-        # (NO recalculamos subtotal desde items)
-        # ======================================================
         carta.compute_total()
         carta.save(update_fields=["total", "updated_at"])
 
-        # por si cambió ruta/locs
         self.ensure_locations_from_route(trip, carta)
 
-        # ✅ Marca que ya se guardó (para mostrar botón "Generar CFDI")
         request.session[f"cp_saved_{trip.id}"] = True
 
         # ======================================================
         # Generar CFDI (Facturapi)
         # ======================================================
         if action == "generate_cfdi":
-            if carta.status == "stamped" and carta.uuid:
-                messages.info(request, f"Este CFDI ya fue generado (UUID: {carta.uuid}).")
+            # ✅ BLOQUEO DURO: si ya hay UUID o ya está stamped, NO se vuelve a timbrar
+            if carta.uuid or carta.status == "stamped":
+                messages.info(request, f"Este CFDI ya fue timbrado (UUID: {carta.uuid}).")
                 return redirect(self.get_success_url(trip))
 
             if carta.status == "canceled":
@@ -432,7 +413,25 @@ class CartaPorteEditView(TemplateView):
                 carta.pdf_url = resp.get("pdf_url") or resp.get("pdf") or carta.pdf_url
                 carta.xml_url = resp.get("xml_url") or resp.get("xml") or carta.xml_url
 
-                carta.status = resp.get("status") or "ready"
+                fp_status = (resp.get("status") or "").strip().lower()
+
+                FACTURAPI_TO_LOCAL_STATUS = {
+                    # Facturapi -> tu modelo
+                    # Si Facturapi te devuelve "valid" y además ya hay UUID, es timbrado OK
+                    "valid": "stamped",
+                    "stamped": "stamped",
+                    "draft": "draft",
+                    "canceled": "canceled",
+                    "cancelled": "canceled",
+                    "error": "error",
+                }
+
+                # ✅ si vino UUID, forzamos stamped aunque fp_status sea raro
+                if carta.uuid:
+                    carta.status = "stamped"
+                else:
+                    carta.status = FACTURAPI_TO_LOCAL_STATUS.get(fp_status, "ready")
+
                 carta.last_error = ""
                 carta.save(update_fields=[
                     "payload_snapshot",

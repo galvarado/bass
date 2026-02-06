@@ -124,7 +124,6 @@
 </form>
 <script>
 (function() {
-  // OJO: agarra el form correcto (el primero dentro de la página)
   const form = document.querySelector('form.card');
   const $pais = document.getElementById('id_pais');
   const $cp = document.getElementById('id_cp');
@@ -133,9 +132,7 @@
   const $poblacion = document.getElementById('id_poblacion');
   const $coloniaSat = document.getElementById('id_colonia_sat');
 
-  function isMX() {
-    return ($pais?.value || 'MX') === 'MX';
-  }
+  function isMX() { return ($pais?.value || 'MX') === 'MX'; }
 
   function setReadonly(el, value) {
     if (!el) return;
@@ -143,49 +140,40 @@
     else el.removeAttribute('readonly');
   }
 
-  // ✅ Resetea SIEMPRE, aunque el elemento esté disabled/readonly
   function hardResetField(el) {
     if (!el) return;
 
     const tag = el.tagName;
     const type = (el.getAttribute('type') || '').toLowerCase();
 
-    if (type === 'checkbox' || type === 'radio') {
-      el.checked = false;
-      return;
-    }
-
-    if (tag === 'SELECT') {
-      // para selects normales
-      el.selectedIndex = 0;
-      // además, por si el browser mantiene value
-      el.value = '';
-      return;
-    }
-
-    // input/text/textarea/etc.
+    if (type === 'checkbox' || type === 'radio') { el.checked = false; return; }
+    if (tag === 'SELECT') { el.selectedIndex = 0; el.value = ''; return; }
     el.value = '';
   }
 
-  // ✅ Limpia TODO (menos core)
+  // ✅ Limpia TODO (menos core + CSRF + hidden)
   function clearAllExceptCore() {
     if (!form) return;
 
-    const keepIds = new Set(['id_client', 'id_nombre', 'id_pais', 'id_csrfmiddlewaretoken']);
+    const keepIds = new Set(['id_client', 'id_nombre', 'id_pais']);
 
-    // Limpia inputs/selects/textareas
     const elements = form.querySelectorAll('input, select, textarea');
     elements.forEach(el => {
+      const type = (el.getAttribute('type') || '').toLowerCase();
+
+      // 🔒 NO tocar CSRF ni inputs hidden
+      if (el.name === 'csrfmiddlewaretoken') return;
+      if (type === 'hidden') return;
+
       if (keepIds.has(el.id)) return;
+
       hardResetField(el);
     });
 
-    // Caso especial: colonia puede ser SELECT o INPUT dependiendo del modo
+    // colonia puede ser SELECT o INPUT
     const coloniaEl = document.getElementById('id_colonia');
     if (coloniaEl && !keepIds.has(coloniaEl.id)) {
       hardResetField(coloniaEl);
-
-      // Si es select, deja solo el placeholder (para que no se quede con colonias viejas)
       if (coloniaEl.tagName === 'SELECT') {
         coloniaEl.innerHTML = '<option value="">Seleccione una colonia</option>';
       }
@@ -220,7 +208,6 @@
 
   async function fetchCP(cp) {
     if (!isMX()) return;
-
     try {
       const url = "{% url 'lookup_cp' %}?cp=" + encodeURIComponent(cp);
       const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -237,31 +224,25 @@
           .concat((data.colonias || []).map(c => `<option value="${c}">${c}</option>`));
         coloniaEl.innerHTML = opts.join('');
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   }
 
   function applyCountryMode() {
     const mode = isMX() ? 'MX' : 'US';
-
     ensureColoniaWidget(mode);
 
-    // CP reglas por país
     if ($cp) {
       if (mode === 'MX') {
         $cp.disabled = false;
         $cp.setAttribute('maxlength', '5');
         $cp.setAttribute('pattern', '\\d{5}');
       } else {
-        // US: CP libre, sin lookup
         $cp.disabled = false;
         $cp.removeAttribute('pattern');
         $cp.setAttribute('maxlength', '10');
       }
     }
 
-    // readonly / colonia_sat
     if (mode === 'MX') {
       setReadonly($estado, true);
       setReadonly($municipio, true);
@@ -272,7 +253,6 @@
         setReadonly($coloniaSat, true);
       }
 
-      // lookup si hay cp válido
       const v = ($cp?.value || '').trim();
       if (v.length === 5) fetchCP(v);
 
@@ -288,23 +268,19 @@
     }
   }
 
-  // ✅ Cuando cambia país: borrar SIEMPRE y luego aplicar el modo
   if ($pais) {
     $pais.addEventListener('change', () => {
-      clearAllExceptCore();
+      clearAllExceptCore();   // ✅ ya no borra CSRF
       applyCountryMode();
     });
   }
 
-  // CP lookup solo en MX
   let debounceId = null;
   if ($cp) {
     $cp.addEventListener('input', () => {
       if (!isMX()) return;
-
       const v = ($cp.value || '').replace(/\D/g, '').slice(0, 5);
       $cp.value = v;
-
       if (v.length === 5) {
         clearTimeout(debounceId);
         debounceId = setTimeout(() => fetchCP(v), 250);
@@ -318,9 +294,9 @@
     });
   }
 
-  // init
   applyCountryMode();
 })();
 </script>
+
 
 {% endblock %}

@@ -3,44 +3,78 @@
 
 {% block content %}
 
+<style>
+  .cp-info {
+    border: 1px solid #e3e6f0;
+    border-radius: .6rem;
+    background: #f8f9fc;
+    padding: .75rem 1rem;
+  }
+  .cp-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .35rem .65rem;
+    border-radius: 999px;
+    font-size: .82rem;
+    letter-spacing: .2px;
+    border: 1px solid rgba(0,0,0,.08);
+    background: #fff;
+    white-space: nowrap;
+  }
+  .cp-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    display: inline-block;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.7);
+  }
+  .cp-dot-success { background: #1cc88a; }
+  .cp-dot-info    { background: #36b9cc; }
+  .cp-dot-danger  { background: #e74a3b; }
+  .cp-dot-dark    { background: #5a5c69; }
+  .cp-dot-muted   { background: #858796; }
+
+  .cp-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: .80rem;
+  }
+</style>
+
 <div class="card shadow-sm">
   <div class="card-header d-flex justify-content-between align-items-center">
     <strong>Detalle del viaje #{{ trip.id }}</strong>
+
     <div>
-      {% if trip.status == "PROGRAMADO" %}
-        <!-- Editar habilitado -->
-        <a href="{% url 'trips:update' trip.pk %}"
-           class="btn btn-sm btn-outline-secondary"
-           title="Editar viaje">
-          <i class="fas fa-edit"></i> Editar
-        </a>
-        <!-- Eliminar habilitado -->
-        <a href="{% url 'trips:delete' trip.pk %}"
-           class="btn btn-sm btn-outline-danger"
-           title="Eliminar viaje">
-          <i class="fas fa-trash"></i> Eliminar
-        </a>
-      {% else %}
-        <!-- Editar deshabilitado -->
-        <button class="btn btn-sm btn-outline-secondary"
-                title="Solo se puede editar cuando el viaje está en estado Programado"
-                disabled>
-          <i class="fas fa-edit"></i> Editar
-        </button>
-        <!-- Eliminar deshabilitado -->
-        <button class="btn btn-sm btn-outline-danger"
-                title="Solo se puede eliminar cuando el viaje está en estado Programado"
-                disabled>
-          <i class="fas fa-trash"></i> Eliminar
-        </button>
-      {% endif %}
-    <a class="btn btn-outline-primary btn-sm" href="{% url 'trips:carta_porte_edit' trip.id %}">
-      <i class="fas fa-file-invoice"></i> Carta Porte
-    </a>
+{% if not carta_is_stamped and trip.status == "PROGRAMADO" %}
+
+            <a href="{% url 'trips:update' trip.pk %}" class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'trips:delete' trip.pk %}" class="btn btn-sm btn-outline-danger">
+              <i class="fas fa-trash"></i> Eliminar
+            </a>
+          {% else %}
+            <button class="btn btn-sm btn-outline-secondary" disabled
+                    title="{% if cp_locked %}Bloqueado: Carta Porte timbrada{% else %}Solo se puede editar cuando está Programado{% endif %}">
+              <i class="fas fa-edit"></i> Editar
+            </button>
+            <button class="btn btn-sm btn-outline-danger" disabled
+                    title="{% if cp_locked %}Bloqueado: Carta Porte timbrada{% else %}Solo se puede eliminar cuando está Programado{% endif %}">
+              <i class="fas fa-trash"></i> Eliminar
+            </button>
+          {% endif %}
+
+      <a class="btn btn-outline-primary btn-sm" href="{% url 'trips:carta_porte_edit' trip.id %}">
+        <i class="fas fa-file-invoice"></i> Carta Porte
+      </a>
     </div>
   </div>
 
   <div class="card-body">
+
+
+
 
     <!-- ===== DATOS DEL VIAJE ===== -->
     <h6 class="text-primary mb-3">
@@ -54,29 +88,17 @@
       <dt class="col-sm-3">Estatus</dt>
       <dd class="col-sm-9">
         {% if trip.status == "PROGRAMADO" %}
-          <span class="badge badge-warning text-uppercase">
-            {{ trip.get_status_display }}
-          </span>
+          <span class="badge badge-warning text-uppercase">{{ trip.get_status_display }}</span>
         {% elif trip.status == "EN_ORIGEN" %}
-          <span class="badge badge-info text-uppercase">
-            {{ trip.get_status_display }}
-          </span>
+          <span class="badge badge-info text-uppercase">{{ trip.get_status_display }}</span>
         {% elif trip.status == "EN_CURSO" %}
-          <span class="badge badge-primary text-uppercase">
-            {{ trip.get_status_display }}
-          </span>
+          <span class="badge badge-primary text-uppercase">{{ trip.get_status_display }}</span>
         {% elif trip.status == "EN_DESTINO" %}
-          <span class="badge badge-success text-uppercase">
-            {{ trip.get_status_display }}
-          </span>
+          <span class="badge badge-success text-uppercase">{{ trip.get_status_display }}</span>
         {% elif trip.status == "COMPLETADO" %}
-          <span class="badge badge-secondary text-uppercase">
-            {{ trip.get_status_display }}
-          </span>
+          <span class="badge badge-secondary text-uppercase">{{ trip.get_status_display }}</span>
         {% else %}
-          <span class="badge badge-light text-uppercase">
-            {{ trip.get_status_display }}
-          </span>
+          <span class="badge badge-light text-uppercase">{{ trip.get_status_display }}</span>
         {% endif %}
       </dd>
 
@@ -96,7 +118,6 @@
       <dd class="col-sm-9">{{ trip.route.nombre }}</dd>
       <dt class="col-sm-3">Origen</dt>
       <dd class="col-sm-9">{{ trip.route.origen.nombre }}</dd>
-
       <dt class="col-sm-3">Destino</dt>
       <dd class="col-sm-9">{{ trip.route.destino.nombre }}</dd>
     </dl>
@@ -114,20 +135,12 @@
 
       <dt class="col-sm-3">Camión</dt>
       <dd class="col-sm-9">
-        {% if trip.truck %}
-          {{ trip.truck.numero_economico }}
-        {% else %}
-          <span class="text-muted">Sin camión</span>
-        {% endif %}
+        {% if trip.truck %}{{ trip.truck.numero_economico }}{% else %}<span class="text-muted">Sin camión</span>{% endif %}
       </dd>
 
       <dt class="col-sm-3">Caja</dt>
       <dd class="col-sm-9">
-        {% if trip.reefer_box %}
-          {{ trip.reefer_box.numero_economico}}
-        {% else %}
-          <span class="text-muted">Sin caja</span>
-        {% endif %}
+        {% if trip.reefer_box %}{{ trip.reefer_box.numero_economico }}{% else %}<span class="text-muted">Sin caja</span>{% endif %}
       </dd>
 
       <dt class="col-sm-3">Tipo de transfer</dt>
@@ -149,22 +162,98 @@
 
     <dl class="row small">
       <dt class="col-sm-3">Llegada a origen</dt>
-      <dd class="col-sm-9">
-        {{ trip.arrival_origin_at|date:"d/m/Y H:i"|default:"—" }}
-      </dd>
+      <dd class="col-sm-9">{{ trip.arrival_origin_at|date:"d/m/Y H:i"|default:"—" }}</dd>
 
       <dt class="col-sm-3">Salida de origen</dt>
-      <dd class="col-sm-9">
-        {{ trip.departure_origin_at|date:"d/m/Y H:i"|default:"—" }}
-      </dd>
+      <dd class="col-sm-9">{{ trip.departure_origin_at|date:"d/m/Y H:i"|default:"—" }}</dd>
 
       <dt class="col-sm-3">Llegada a destino</dt>
-      <dd class="col-sm-9">
-        {{ trip.arrival_destination_at|date:"d/m/Y H:i"|default:"—" }}
-      </dd>
+      <dd class="col-sm-9">{{ trip.arrival_destination_at|date:"d/m/Y H:i"|default:"—" }}</dd>
     </dl>
+     <!-- ===== CARTA PORTE ===== -->
+    <h6 class="text-primary mb-3">
+      <i class="fas fa-file-invoice mr-1"></i> Carta Porte
+    </h6>
 
-  </div>
+    <dl class="row small">
+
+      <dt class="col-sm-3">Estado CFDI</dt>
+      <dd class="col-sm-9">
+        {% if carta %}
+          {% if carta.status == "stamped" %}
+            <div class="cp-info">
+              <div class="d-flex align-items-center flex-wrap" style="gap:10px;">
+                <div class="cp-pill">
+                  <span class="cp-dot cp-dot-success"></span>
+                  <span class="font-weight-bold">Timbrada</span>
+                  <span class="text-muted">· No editable</span>
+                </div>
+
+                {% if carta.uuid %}
+                  <div class="small">
+                    <span class="text-muted">Folio fiscal (UUID):</span>
+                    <span class="cp-mono">{{ carta.uuid }}</span>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+
+          {% elif carta.status == "ready" %}
+            <div class="cp-pill">
+              <span class="cp-dot cp-dot-info"></span>
+              <span class="font-weight-bold">Lista para timbrar</span>
+              <span class="text-muted">· Falta enviar a Facturapi</span>
+            </div>
+
+          {% elif carta.status == "error" %}
+            <div class="cp-pill">
+              <span class="cp-dot cp-dot-danger"></span>
+              <span class="font-weight-bold">Error al timbrar</span>
+              <span class="text-muted">· Revisa Carta Porte</span>
+            </div>
+
+          {% elif carta.status == "canceled" %}
+            <div class="cp-pill">
+              <span class="cp-dot cp-dot-dark"></span>
+              <span class="font-weight-bold">Cancelada</span>
+            </div>
+
+          {% else %}
+            <div class="cp-pill">
+              <span class="cp-dot cp-dot-muted"></span>
+              <span class="font-weight-bold">Estado:</span>
+              <span class="text-muted">{{ carta.status|default:"Sin estado" }}</span>
+            </div>
+          {% endif %}
+        {% else %}
+          <span class="text-muted">Sin Carta Porte</span>
+        {% endif %}
+      </dd>
+
+      {# Opcional: links cuando está timbrada #}
+      {% if carta and carta.status == "stamped" %}
+        {% if carta.pdf_url %}
+          <dt class="col-sm-3">PDF</dt>
+          <dd class="col-sm-9">
+            <a href="{{ carta.pdf_url }}" target="_blank" rel="noopener">
+              <i class="fas fa-file-pdf mr-1"></i> Ver PDF
+            </a>
+          </dd>
+        {% endif %}
+
+        {% if carta.xml_url %}
+          <dt class="col-sm-3">XML</dt>
+          <dd class="col-sm-9">
+            <a href="{{ carta.xml_url }}" target="_blank" rel="noopener">
+              <i class="fas fa-file-code mr-1"></i> Ver XML
+            </a>
+          </dd>
+        {% endif %}
+      {% endif %}
+
+    </dl>
+  
 </div>
+
 
 {% endblock %}

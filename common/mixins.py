@@ -123,3 +123,14 @@ class OnlyMyTripsMixin:
             return qs
 
         return qs.filter(operator__user=u)
+
+class LockIfStampedMixin:
+    def dispatch(self, request, *args, **kwargs):
+        trip = self.get_object()
+
+        locked = CartaPorteCFDI.objects.filter(trip=trip, status="stamped").exists()
+        if locked:
+            messages.error(request, "No puedes editar o eliminar el viaje porque la Carta Porte ya fue timbrada.")
+            return redirect(reverse("trips:detail", kwargs={"pk": trip.pk}))
+
+        return super().dispatch(request, *args, **kwargs)
