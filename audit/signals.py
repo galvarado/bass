@@ -11,7 +11,7 @@ import sys
 
 import datetime
 from django.db.models.fields.files import FieldFile, ImageFieldFile
-
+from django.core.exceptions import ObjectDoesNotExist
 # ============================================================
 # Config
 # ============================================================
