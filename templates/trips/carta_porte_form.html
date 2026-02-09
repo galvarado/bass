@@ -661,7 +661,8 @@
                    value="{{ form.subtotal.value|default_if_none:'0.00' }}"
                    readonly>
 
-            <input type="hidden" name="subtotal" class="js-subtotal">
+            <input type="hidden" name="subtotal" class="js-subtotal"
+       value="{{ form.subtotal.value|default_if_none:'0.00' }}">
           </div>
 
           <div class="input-group input-group-sm mb-1">
@@ -674,7 +675,8 @@
                    value="{{ form.iva.value|default_if_none:'0.00' }}"
                    readonly>
 
-            <input type="hidden" name="iva" class="js-iva">
+            <input type="hidden" name="iva" class="js-iva"
+       value="{{ form.iva.value|default_if_none:'0.00' }}">
           </div>
 
           <div class="input-group input-group-sm mb-1">
@@ -687,7 +689,8 @@
                    value="{{ form.retencion.value|default_if_none:'0.00' }}"
                    readonly>
 
-            <input type="hidden" name="retencion" class="js-retencion">
+            <input type="hidden" name="retencion" class="js-retencion"
+       value="{{ form.retencion.value|default_if_none:'0.00' }}">
           </div>
 
           <div class="input-group input-group-sm">
@@ -700,7 +703,8 @@
                    value="{{ form.total.value|default_if_none:'0.00' }}"
                    readonly>
 
-            <input type="hidden" name="total" class="js-total">
+            <input type="hidden" name="total" class="js-total"
+       value="{{ form.total.value|default_if_none:'0.00' }}">
           </div>
         </div>
       </div>
@@ -791,73 +795,34 @@
 <script>
   window.CP_IS_STAMPED = {% if carta.status == "stamped" %}true{% else %}false{% endif %};
 </script>
+
 <script>
 (function () {
-  if (!window.CP_IS_STAMPED) return;
-
-  const form = document.getElementById("cp-form");
-  if (!form) return;
-
-  // Inputs, selects, textareas (solo dentro del form de Carta Porte)
-  form.querySelectorAll("input, select, textarea").forEach(el => {
-    if (el.type === "hidden") return;
-
-    // checkbox/radio -> disabled
-    if (el.type === "checkbox" || el.type === "radio") {
-      el.disabled = true;
-      el.classList.add("cp-locked");
-      return;
-    }
-
-    // select no soporta readonly
-    if (el.tagName === "SELECT") {
-      el.disabled = true;
-      el.classList.add("cp-locked");
-      el.tabIndex = -1;
-      return;
-    }
-
-    // inputs/textarea -> readonly
-    el.readOnly = true;
-    el.classList.add("cp-locked");
-    el.tabIndex = -1;
-  });
-
-  // Deshabilitar acciones (agregar/quitar mercancía, expandir locaciones, etc.)
-  form.querySelectorAll(".js-remove-good, #btn-add-good, .loc-toggle").forEach(btn => {
-    btn.disabled = true;
-    btn.style.pointerEvents = "none";
-    btn.classList.add("disabled");
-  });
-
-  // ✅ Opcional: deshabilitar también Guardar (si no quieres permitir submit)
-  form.querySelectorAll('button[type="submit"]').forEach(btn => {
-    btn.disabled = true;
-    btn.title = "Este CFDI ya fue timbrado y no puede modificarse.";
-  });
-
   function ready(fn){
     if (document.readyState !== "loading") fn();
     else document.addEventListener("DOMContentLoaded", fn);
   }
 
   ready(function () {
+    const isStamped = !!window.CP_IS_STAMPED;
+    const form = document.getElementById("cp-form");
 
     // ==========================
-    // Readonly ubicaciones
+    // ✅ Direcciones SIEMPRE bloqueadas (origen/destino)
     // ==========================
     document.querySelectorAll(".loc-ro").forEach(el => {
       if (el.tagName === "SELECT") {
-        el.style.pointerEvents = "none";
+        el.disabled = true;
         el.tabIndex = -1;
       } else {
         el.readOnly = true;
         el.tabIndex = -1;
       }
+      el.classList.add("cp-locked");
     });
 
     // ==========================
-    // Collapse Origen/Destino (sin bootstrap)
+    // Accordion Origen/Destino (solo si NO timbrada)
     // ==========================
     function togglePanel(btn) {
       let targetSel = (btn.getAttribute("data-target") || "").trim();
@@ -877,6 +842,7 @@
     }
 
     document.querySelectorAll(".loc-toggle").forEach(btn => {
+      if (isStamped) return;
       btn.addEventListener("click", function (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -915,27 +881,18 @@
       return isNaN(n) ? 0 : n;
     }
 
-    function round2(n) {
-      return Math.round((n + Number.EPSILON) * 100) / 100;
-    }
+    function round2(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
 
     const uiFmt = new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      maximumFractionDigits: 2
     });
 
-    function setHidden(hiddenEl, n) {
-      if (!hiddenEl) return;
-      hiddenEl.value = round2(n).toFixed(2);
-    }
-
-    function setUI(uiEl, n) {
-      if (!uiEl) return;
-      uiEl.value = uiFmt.format(round2(n));
-    }
+    function setHidden(hiddenEl, n) { if (hiddenEl) hiddenEl.value = round2(n).toFixed(2); }
+    function setUI(uiEl, n) { if (uiEl) uiEl.value = uiFmt.format(round2(n)); }
 
     // ==========================
-    // Totales (NO editables)
+    // Totales UI + Hidden
     // ==========================
     const elSubtotalUI = document.querySelector(".js-subtotal-ui");
     const elIvaUI      = document.querySelector(".js-iva-ui");
@@ -947,13 +904,10 @@
     const elRet      = document.querySelector(".js-retencion");
     const elTotal    = document.querySelector(".js-total");
 
-    [elSubtotalUI, elIvaUI, elRetUI, elTotalUI].forEach(x => { if (x) x.readOnly = true; });
-
     function recomputeTotalFromHidden() {
       const subtotal = parseMoney(elSubtotal?.value || "0");
       const iva      = parseMoney(elIVA?.value || "0");
       const ret      = parseMoney(elRet?.value || "0");
-
       const total = subtotal + iva - ret;
 
       setHidden(elTotal, total);
@@ -964,201 +918,173 @@
       setUI(elRetUI, ret);
     }
 
-    recomputeTotalFromHidden();
-
     // ==========================
-    // Helpers 1 concepto
+    // ✅ CONCEPTO (1 fila): helpers
     // ==========================
     function firstRow() {
       return document.querySelector("#cpitems-rows .cpitem-row");
     }
-
     function getFieldBySuffix(suffix) {
       const tr = firstRow();
       if (!tr) return null;
       return tr.querySelector(`[name$="-${suffix}"]`) || null;
     }
-
-    function getReadonlyCellInputByIndex(idx) {
+    function getROInputAtTdIndex(idx) {
       const tr = firstRow();
       if (!tr) return null;
       const tds = tr.querySelectorAll("td");
       if (!tds || !tds[idx]) return null;
+      // usa tus inputs readonly existentes
       return tds[idx].querySelector("input") || null;
     }
 
-    const elCant    = () => getFieldBySuffix("cantidad");
-    const elPrecio  = () => getFieldBySuffix("precio");
-    const elDesc    = () => getFieldBySuffix("descuento");
-    const elIvaPct  = () => getFieldBySuffix("iva_pct");
-    const elRetPct  = () => getFieldBySuffix("ret_iva_pct");
+    const $qty   = () => getFieldBySuffix("cantidad");
+    const $price = () => getFieldBySuffix("precio");
+    const $disc  = () => getFieldBySuffix("descuento");
+    const $ivaP  = () => getFieldBySuffix("iva_pct");
+    const $retP  = () => getFieldBySuffix("ret_iva_pct");
 
-    const elSubUI    = () => getReadonlyCellInputByIndex(6);
-    const elIvaMonto = () => getReadonlyCellInputByIndex(8);
-    const elRetMonto = () => getReadonlyCellInputByIndex(10);
-    const elImpUI    = () => getReadonlyCellInputByIndex(11);
+    // indices según tu tabla:
+    // 0 cant, 1 unidad, 2 producto, 3 desc, 4 precio, 5 descuento,
+    // 6 subtotal UI, 7 iva%, 8 iva monto UI, 9 ret%, 10 ret monto UI, 11 importe UI
+    const $subUI = () => getROInputAtTdIndex(6);
+    const $ivaMontoUI = () => getROInputAtTdIndex(8);
+    const $retMontoUI = () => getROInputAtTdIndex(10);
+    const $impUI = () => getROInputAtTdIndex(11);
 
-    function setField(el, v) { if (el) el.value = v; }
-    function valNum(el) { return el ? parseMoney(el.value) : 0; }
+    function setVal(el, v){ if (el) el.value = v; }
+    function num(el){ return el ? parseMoney(el.value) : 0; }
     function clamp0(n){ return n < 0 ? 0 : n; }
 
-    const chkIVA16  = document.getElementById("chk-item-iva16");
-    const chkRET4   = document.getElementById("chk-item-retiva");
-    const chkDESC   = document.getElementById("chk-item-desc");
+    const chkIVA16 = document.getElementById("chk-item-iva16");
+    const chkRET4  = document.getElementById("chk-item-retiva");
+    const chkDESC  = document.getElementById("chk-item-desc");
 
-    if (chkIVA16) chkIVA16.checked = false;
-    if (chkRET4) chkRET4.checked = false;
-    if (chkDESC) chkDESC.checked = false;
+    // ✅ defaults OFF siempre que NO timbrada
+    if (!isStamped) {
+      if (chkIVA16) chkIVA16.checked = false;
+      if (chkRET4)  chkRET4.checked  = false;
+      if (chkDESC)  chkDESC.checked  = false;
+    }
 
-    function enforceLocks() {
-      const p = elPrecio();
+    function applyLocks() {
+      // precio siempre readonly
+      const p = $price();
       if (p) { p.readOnly = true; p.tabIndex = -1; }
 
-      [elSubUI(), elIvaMonto(), elRetMonto(), elImpUI()].forEach(x => { if (x) x.readOnly = true; });
+      // iva% siempre readonly (lo controla el checkbox)
+      const ivaPct = $ivaP();
+      if (ivaPct) { ivaPct.readOnly = true; ivaPct.tabIndex = -1; }
 
-      const ip = elIvaPct();
-      if (ip) ip.readOnly = true;
-
-      const rp = elRetPct();
-      if (rp) {
-        const on = (chkRET4 && chkRET4.checked);
-        rp.readOnly = !on;
-        rp.tabIndex = on ? 0 : -1;
+      // ret% solo editable si checkbox ON (y NO timbrada)
+      const retPct = $retP();
+      if (retPct) {
+        const on = (!isStamped) && !!(chkRET4 && chkRET4.checked);
+        retPct.readOnly = !on;
+        retPct.tabIndex = on ? 0 : -1;
       }
 
-      const d = elDesc();
+      // descuento solo editable si checkbox ON (y NO timbrada)
+      const d = $disc();
       if (d) {
-        const on = (chkDESC && chkDESC.checked);
+        const on = (!isStamped) && !!(chkDESC && chkDESC.checked);
         d.readOnly = !on;
         d.tabIndex = on ? 0 : -1;
       }
+
+      // si está timbrada: bloquear checkboxes
+      if (isStamped) {
+        [chkIVA16, chkRET4, chkDESC].forEach(c => { if (c) c.disabled = true; });
+      }
     }
 
-    function recomputeItemUI() {
-      const qty = valNum(elCant());
-      const price = valNum(elPrecio());
-      const disc = clamp0(valNum(elDesc()));
+    function recomputeConceptAndTotals() {
+      const qty   = num($qty());
+      const price = num($price());
+      const disc  = clamp0(num($disc()));
 
       const base = round2(qty * price);
-      const sub = round2(clamp0(base - disc));
+      const sub  = round2(clamp0(base - disc));
 
       const ivaPct = (chkIVA16 && chkIVA16.checked) ? 16.0 : 0.0;
-      if (elIvaPct()) setField(elIvaPct(), ivaPct.toFixed(2));
+      if ($ivaP()) setVal($ivaP(), ivaPct.toFixed(2));
 
-      const retPct = (chkRET4 && chkRET4.checked) ? valNum(elRetPct()) : 0.0;
+      // retención default 4% cuando ON
+      let retPct = 0.0;
+      if (chkRET4 && chkRET4.checked) {
+        retPct = num($retP());
+        if (!retPct) retPct = 4.0;
+        if ($retP()) setVal($retP(), retPct.toFixed(2));
+      } else {
+        if ($retP()) setVal($retP(), "0.00");
+      }
+
+      // si descuento OFF -> forzar 0
+      if (!(chkDESC && chkDESC.checked)) {
+        if ($disc()) setVal($disc(), "0.00");
+      }
 
       const ivaMonto = round2(sub * (ivaPct / 100));
       const retMonto = round2(sub * (retPct / 100));
       const importe  = round2(sub + ivaMonto - retMonto);
 
-      if (elSubUI()) setUI(elSubUI(), sub);
-      if (elIvaMonto()) setUI(elIvaMonto(), ivaMonto);
-      if (elRetMonto()) setUI(elRetMonto(), retMonto);
-      if (elImpUI()) setUI(elImpUI(), importe);
+      // pintar UI readonly por fila
+      if ($subUI())      setUI($subUI(), sub);
+      if ($ivaMontoUI()) setUI($ivaMontoUI(), ivaMonto);
+      if ($retMontoUI()) setUI($retMontoUI(), retMonto);
+      if ($impUI())      setUI($impUI(), importe);
 
+      // ✅ hidden del formulario principal (lo que se envía al backend)
       setHidden(elSubtotal, sub);
       setHidden(elIVA, ivaMonto);
       setHidden(elRet, retMonto);
       recomputeTotalFromHidden();
     }
 
-    function enforceDefaultsOff() {
-      if (elIvaPct()) setField(elIvaPct(), "0.00");
-      if (elRetPct()) setField(elRetPct(), "0.00");
-      if (elDesc()) setField(elDesc(), "0.00");
-      enforceLocks();
-      recomputeItemUI();
+    // init: locks + cálculo inicial
+    applyLocks();
+    recomputeConceptAndTotals();
+
+    // ==========================
+    // Checkboxes: habilitar/deshabilitar + recalcular
+    // ==========================
+    if (!isStamped) {
+      chkIVA16?.addEventListener("change", function () {
+        applyLocks();
+        recomputeConceptAndTotals();
+      });
+
+      chkRET4?.addEventListener("change", function () {
+        // al prender -> default 4.00
+        if (chkRET4.checked) {
+          if ($retP()) setVal($retP(), "4.00");
+        } else {
+          if ($retP()) setVal($retP(), "0.00");
+        }
+        applyLocks();
+        recomputeConceptAndTotals();
+      });
+
+      chkDESC?.addEventListener("change", function () {
+        if (!chkDESC.checked) {
+          if ($disc()) setVal($disc(), "0.00");
+        }
+        applyLocks();
+        recomputeConceptAndTotals();
+      });
     }
 
-    enforceDefaultsOff();
-
-    chkIVA16?.addEventListener("change", function () {
-      enforceLocks();
-      recomputeItemUI();
-    });
-
-    chkRET4?.addEventListener("change", function () {
-      const rp = elRetPct();
-      if (rp) {
-        if (chkRET4.checked) {
-          rp.readOnly = false;
-          rp.value = "4.00";
-        } else {
-          rp.value = "0.00";
-          rp.readOnly = true;
-        }
-      }
-      enforceLocks();
-      recomputeItemUI();
-    });
-
-    chkDESC?.addEventListener("change", function () {
-      const d = elDesc();
-      if (d) {
-        if (chkDESC.checked) d.readOnly = false;
-        else { d.value = "0.00"; d.readOnly = true; }
-      }
-      enforceLocks();
-      recomputeItemUI();
-    });
-
+    // ==========================
+    // Cambios en inputs del concepto -> recalcular
+    // ==========================
     function bindRecalc(el) {
       if (!el) return;
-      el.addEventListener("input", () => recomputeItemUI());
-      el.addEventListener("blur",  () => recomputeItemUI());
+      el.addEventListener("input", () => recomputeConceptAndTotals());
+      el.addEventListener("blur",  () => recomputeConceptAndTotals());
     }
-
-    bindRecalc(elCant());
-    bindRecalc(elDesc());
-    bindRecalc(elRetPct());
-
-    // ==========================
-    // ✅ Control horizontal mercancías (sync)
-    // ==========================
-    const goodsWrap = document.getElementById("goods-scroll-wrap");
-    const goodsCtrl = document.getElementById("goods-scroll-ctrl");
-    const goodsCtrlInner = goodsCtrl?.querySelector(".goods-scroll-ctrl-inner");
-    const goodsTable = document.getElementById("goods-table");
-
-    function syncGoodsCtrlWidth() {
-      if (!goodsCtrlInner || !goodsTable) return;
-      goodsCtrlInner.style.width = goodsTable.scrollWidth + "px";
-    }
-
-    let syncingScroll = false;
-    function bindGoodsScrollSync() {
-      if (!goodsWrap || !goodsCtrl) return;
-
-      goodsCtrl.addEventListener("scroll", () => {
-        if (syncingScroll) return;
-        syncingScroll = true;
-        goodsWrap.scrollLeft = goodsCtrl.scrollLeft;
-        syncingScroll = false;
-      });
-
-      goodsWrap.addEventListener("scroll", () => {
-        if (syncingScroll) return;
-        syncingScroll = true;
-        goodsCtrl.scrollLeft = goodsWrap.scrollLeft;
-        syncingScroll = false;
-      });
-    }
-
-    bindGoodsScrollSync();
-
-    function hardSyncGoodsCtrl() {
-      syncGoodsCtrlWidth();
-      if (goodsCtrl && goodsWrap) goodsCtrl.scrollLeft = goodsWrap.scrollLeft;
-    }
-
-    hardSyncGoodsCtrl();
-    requestAnimationFrame(hardSyncGoodsCtrl);
-    setTimeout(hardSyncGoodsCtrl, 50);
-    setTimeout(hardSyncGoodsCtrl, 250);
-    window.addEventListener("load", hardSyncGoodsCtrl);
-    window.addEventListener("resize", hardSyncGoodsCtrl);
-    syncGoodsCtrlWidth();
-    window.addEventListener("resize", syncGoodsCtrlWidth);
+    bindRecalc($qty());
+    bindRecalc($disc());
+    bindRecalc($retP());
 
     // ==========================
     // Mercancías: autofill + remove
@@ -1202,6 +1128,36 @@
       });
     }
 
+    // Scroll sync mercancías
+    const goodsWrap = document.getElementById("goods-scroll-wrap");
+    const goodsCtrl = document.getElementById("goods-scroll-ctrl");
+    const goodsCtrlInner = goodsCtrl?.querySelector(".goods-scroll-ctrl-inner");
+    const goodsTable = document.getElementById("goods-table");
+
+    function syncGoodsCtrlWidth() {
+      if (!goodsCtrlInner || !goodsTable) return;
+      goodsCtrlInner.style.width = goodsTable.scrollWidth + "px";
+    }
+
+    let syncingScroll = false;
+    if (goodsWrap && goodsCtrl) {
+      goodsCtrl.addEventListener("scroll", () => {
+        if (syncingScroll) return;
+        syncingScroll = true;
+        goodsWrap.scrollLeft = goodsCtrl.scrollLeft;
+        syncingScroll = false;
+      });
+
+      goodsWrap.addEventListener("scroll", () => {
+        if (syncingScroll) return;
+        syncingScroll = true;
+        goodsCtrl.scrollLeft = goodsWrap.scrollLeft;
+        syncingScroll = false;
+      });
+    }
+    syncGoodsCtrlWidth();
+    window.addEventListener("resize", syncGoodsCtrlWidth);
+
     function markDeletedRow(tr) {
       const del = tr.querySelector('input[type="checkbox"][name$="-DELETE"]');
       if (del) {
@@ -1220,6 +1176,7 @@
         btn.dataset.removeBound = "1";
 
         btn.addEventListener("click", function () {
+          if (isStamped) return;
           const tr = btn.closest("tr");
           if (!tr) return;
           markDeletedRow(tr);
@@ -1231,7 +1188,7 @@
     bindRemoveButtons(document);
 
     // ==========================
-    // ✅ Agregar mercancía (prefix = goods)
+    // ✅ Agregar mercancía (prefix goods) solo si NO timbrada
     // ==========================
     const btnAddGood = document.getElementById("btn-add-good");
     const goodsBody = document.getElementById("goods-rows");
@@ -1245,57 +1202,101 @@
       return current;
     }
 
-    btnAddGood?.addEventListener("click", function () {
-      const idx = bumpTotal("goods");
+    if (btnAddGood && goodsBody && goodsTpl && !isStamped) {
+      btnAddGood.addEventListener("click", function () {
+        const idx = bumpTotal("goods");
 
-      const emptyHidden = `{{ fs_goods.empty_form.hidden_fields|join:"" | escapejs }}`;
-      const emptyMerc   = `{{ fs_goods.empty_form.mercancia | escapejs }}`;
-      const emptyCant   = `{{ fs_goods.empty_form.cantidad  | escapejs }}`;
-      const emptyUni    = `{{ fs_goods.empty_form.unidad    | escapejs }}`;
-      const emptyPeso   = `{{ fs_goods.empty_form.peso_en_kg| escapejs }}`;
-      const emptyVal    = `{{ fs_goods.empty_form.valor_mercancia| escapejs }}`;
-      const emptyMon    = `{{ fs_goods.empty_form.moneda    | escapejs }}`;
-      const emptyEmb    = `{{ fs_goods.empty_form.embalaje  | escapejs }}`;
-      const emptyPed    = `{{ fs_goods.empty_form.pedimento | escapejs }}`;
-      const emptyDelete = `{{ fs_goods.empty_form.DELETE    | escapejs }}`;
+        const emptyHidden = `{{ fs_goods.empty_form.hidden_fields|join:"" | escapejs }}`;
+        const emptyMerc   = `{{ fs_goods.empty_form.mercancia | escapejs }}`;
+        const emptyCant   = `{{ fs_goods.empty_form.cantidad  | escapejs }}`;
+        const emptyUni    = `{{ fs_goods.empty_form.unidad    | escapejs }}`;
+        const emptyPeso   = `{{ fs_goods.empty_form.peso_en_kg| escapejs }}`;
+        const emptyVal    = `{{ fs_goods.empty_form.valor_mercancia| escapejs }}`;
+        const emptyMon    = `{{ fs_goods.empty_form.moneda    | escapejs }}`;
+        const emptyEmb    = `{{ fs_goods.empty_form.embalaje  | escapejs }}`;
+        const emptyPed    = `{{ fs_goods.empty_form.pedimento | escapejs }}`;
+        const emptyDelete = `{{ fs_goods.empty_form.DELETE    | escapejs }}`;
 
-      function repl(s) {
-        return (s || "").replaceAll("__prefix__", String(idx));
-      }
+        function repl(s) { return (s || "").replaceAll("__prefix__", String(idx)); }
 
-      let html = goodsTpl.innerHTML;
-      html = html
-        .replaceAll("__HIDDEN__",   repl(emptyHidden))
-        .replaceAll("__MERCANCIA__",repl(emptyMerc))
-        .replaceAll("__CANT__",     repl(emptyCant))
-        .replaceAll("__UNIDAD__",   repl(emptyUni))
-        .replaceAll("__PESO__",     repl(emptyPeso))
-        .replaceAll("__VALOR__",    repl(emptyVal))
-        .replaceAll("__MONEDA__",   repl(emptyMon))
-        .replaceAll("__EMB__",      repl(emptyEmb))
-        .replaceAll("__PEDIMENTO__",repl(emptyPed))
-        .replaceAll("__DELETE__",   repl(emptyDelete));
+        let html = goodsTpl.innerHTML;
+        html = html
+          .replaceAll("__HIDDEN__",    repl(emptyHidden))
+          .replaceAll("__MERCANCIA__", repl(emptyMerc))
+          .replaceAll("__CANT__",      repl(emptyCant))
+          .replaceAll("__UNIDAD__",    repl(emptyUni))
+          .replaceAll("__PESO__",      repl(emptyPeso))
+          .replaceAll("__VALOR__",     repl(emptyVal))
+          .replaceAll("__MONEDA__",    repl(emptyMon))
+          .replaceAll("__EMB__",       repl(emptyEmb))
+          .replaceAll("__PEDIMENTO__", repl(emptyPed))
+          .replaceAll("__DELETE__",    repl(emptyDelete));
 
-      const tmp = document.createElement("tbody");
-      tmp.innerHTML = html.trim();
-      const newRow = tmp.firstElementChild;
-      if (!newRow) return;
+        const tmp = document.createElement("tbody");
+        tmp.innerHTML = html.trim();
+        const newRow = tmp.firstElementChild;
+        if (!newRow) return;
 
-      goodsBody.appendChild(newRow);
+        goodsBody.appendChild(newRow);
 
-      bindMercanciaAutofill(newRow);
-      bindRemoveButtons(newRow);
-      syncGoodsCtrlWidth();
+        bindMercanciaAutofill(newRow);
+        bindRemoveButtons(newRow);
+        syncGoodsCtrlWidth();
+      });
+    }
+
+    // ==========================
+    // ✅ Submit: forzar hidden RAW (sin comas) para Django DecimalField
+    // ==========================
+    form?.addEventListener("submit", function () {
+      // Recalcular antes de enviar
+      recomputeConceptAndTotals();
+
+      // ✅ Hidden sin formato
+      if (elSubtotal && elSubtotalUI) elSubtotal.value = String(parseMoney(elSubtotalUI.value || "0")).toFixed(2);
+      if (elIVA && elIvaUI)           elIVA.value      = String(parseMoney(elIvaUI.value || "0")).toFixed(2);
+      if (elRet && elRetUI)           elRet.value      = String(parseMoney(elRetUI.value || "0")).toFixed(2);
+      if (elTotal && elTotalUI)       elTotal.value    = String(parseMoney(elTotalUI.value || "0")).toFixed(2);
     });
 
-    const formEl = document.querySelector("form");
-    formEl?.addEventListener("submit", function () {
-      recomputeItemUI();
-      recomputeTotalFromHidden();
-    });
+    // ==========================
+    // ✅ Si está timbrado: bloquear todo al final
+    // ==========================
+    if (isStamped && form) {
+      form.querySelectorAll("input, select, textarea").forEach(el => {
+        if (el.type === "hidden") return;
 
+        if (el.type === "checkbox" || el.type === "radio") {
+          el.disabled = true;
+          el.classList.add("cp-locked");
+          return;
+        }
+
+        if (el.tagName === "SELECT") {
+          el.disabled = true;
+          el.classList.add("cp-locked");
+          el.tabIndex = -1;
+          return;
+        }
+
+        el.readOnly = true;
+        el.classList.add("cp-locked");
+        el.tabIndex = -1;
+      });
+
+      form.querySelectorAll(".js-remove-good, #btn-add-good, .loc-toggle").forEach(btn => {
+        btn.disabled = true;
+        btn.style.pointerEvents = "none";
+        btn.classList.add("disabled");
+      });
+
+      form.querySelectorAll('button[type="submit"]').forEach(btn => {
+        btn.disabled = true;
+        btn.title = "Este CFDI ya fue timbrado y no puede modificarse.";
+      });
+    }
   });
 })();
 </script>
 
-{% endblock %}
+{% endblock  %}
