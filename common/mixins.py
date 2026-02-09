@@ -1,6 +1,8 @@
 # common/mixins.py
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from trips.models import CartaPorteCFDI
+
 
 # ============================================================
 # Constantes de roles
