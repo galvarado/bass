@@ -1,136 +1,393 @@
 {% extends "base.html" %}
-{% load roles %}
+{% load humanize %}
 
-{% block title %}Dashboard · BASS{% endblock %}
+{% block title %}Dashboard · Gerencial · BASS{% endblock %}
 
 {% block content %}
-<h1 class="h3 text-gray-800 mb-4">Dashboard</h1>
+<style>
+  .kpi-card { border-left: 4px solid #4e73df; }
+  .kpi-card.kpi-green { border-left-color: #1cc88a; }
+  .kpi-card.kpi-yellow { border-left-color: #f6c23e; }
+  .kpi-card.kpi-red { border-left-color: #e74a3b; }
+  .kpi-card.kpi-gray { border-left-color: #858796; }
+  .kpi-value { font-size: 1.35rem; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: .85rem; color: #6c757d; }
+  .mini-muted { font-size: .78rem; color: #858796; }
+  .pill { padding: .2rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+  .pill-ok { background: rgba(28,200,138,.15); color: #1cc88a; }
+  .pill-warn { background: rgba(246,194,62,.15); color: #b58900; }
+  .pill-bad { background: rgba(231,74,59,.15); color: #e74a3b; }
+  .pill-info { background: rgba(78,115,223,.12); color: #4e73df; }
+  .pill-gray { background: rgba(133,135,150,.14); color: #6c757d; }
+  .table-sm td, .table-sm th { padding: .45rem .55rem; }
+  .card .card-header { background: #fff; }
+  .shadow-soft { box-shadow: 0 0.25rem 1rem rgba(0,0,0,.06) !important; }
+  .section-title { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .section-title h6 { margin:0; }
+</style>
 
-<div class="row">
-  <!-- Viajes -->
-  {% if user|has_any_group:"Admin,Operaciones,Logistica" %}
-  <div class="col-lg-4 mb-4">
-    <div class="card border-left-primary shadow h-100 py-2">
-      <div class="card-body">
-        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Viajes</div>
-        <div class="h5 mb-3 font-weight-bold text-gray-800">Panel operativo</div>
-        <a href="/trips/" class="btn btn-primary btn-sm">Abrir</a>
-        {% if user|has_perm:"trips.add_trip" %}
-          <a href="/trips/new/" class="btn btn-outline-primary btn-sm">Nuevo viaje</a>
-        {% endif %}
-      </div>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Dashboard Gerencial</h1>
+    <div class="mini-muted">Operación · Cobranza · Liquidación · CTPAT · Rentabilidad · Almacén · Taller</div>
   </div>
-  {% endif %}
 
-  <!-- Logística -->
-  {% if user|has_any_group:"Admin,Logistica" %}
-  <div class="col-lg-4 mb-4">
-    <div class="card border-left-success shadow h-100 py-2">
-      <div class="card-body">
-        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Logística</div>
-        <div class="h5 mb-3 font-weight-bold text-gray-800">Planeación y rutas</div>
-        <a href="/logistics/" class="btn btn-success btn-sm">Abrir</a>
-        {% if user|has_perm:"catalogs.change_route" %}
-          <a href="/logistics/optimize/" class="btn btn-outline-success btn-sm">Optimizar rutas</a>
-        {% endif %}
-      </div>
+  <div class="d-flex align-items-center gap-2">
+    <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Rango">
+      <button type="button" class="btn btn-outline-primary active" data-range="today">Hoy</button>
+      <button type="button" class="btn btn-outline-primary" data-range="week">Semana</button>
+      <button type="button" class="btn btn-outline-primary" data-range="month">Mes</button>
+      <button type="button" class="btn btn-outline-primary" data-range="custom">Custom</button>
     </div>
-  </div>
-  {% endif %}
 
-  <!-- Monitoreo -->
-  {% if user|has_any_group:"Admin,Monitoreo" %}
-  <div class="col-lg-4 mb-4">
-    <div class="card border-left-warning shadow h-100 py-2">
-      <div class="card-body">
-        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Monitoreo</div>
-        <div class="h5 mb-3 font-weight-bold text-gray-800">GPS y eventos</div>
-        <a href="/monitoring/" class="btn btn-warning btn-sm text-white">Abrir</a>
-      </div>
-    </div>
+    <a href="#" class="btn btn-sm btn-primary shadow-sm">
+      <i class="fas fa-download fa-sm text-white-50"></i> Exportar
+    </a>
   </div>
-  {% endif %}
-
-  <!-- Taller -->
-  {% if user|has_any_group:"Admin,Taller" %}
-  <div class="col-lg-4 mb-4">
-    <div class="card border-left-info shadow h-100 py-2">
-      <div class="card-body">
-        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Taller</div>
-        <div class="h5 mb-3 font-weight-bold text-gray-800">Mantenimiento</div>
-        <a href="/workshop/" class="btn btn-info btn-sm text-white">Abrir</a>
-        {% if user|has_perm:"workshop.add_workorder" %}
-          <a href="/workshop/workorders/new/" class="btn btn-outline-info btn-sm">Nueva OT</a>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Almacén -->
-  {% if user|has_any_group:"Admin,Almacen" %}
-  <div class="col-lg-4 mb-4">
-    <div class="card border-left-secondary shadow h-100 py-2">
-      <div class="card-body">
-        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Almacén</div>
-        <div class="h5 mb-3 font-weight-bold text-gray-800">Inventario</div>
-        <a href="/warehouse/" class="btn btn-secondary btn-sm">Abrir</a>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Liquidación -->
-  {% if user|has_any_group:"Admin,Liquidacion" %}
-  <div class="col-lg-4 mb-4">
-    <div class="card border-left-dark shadow h-100 py-2">
-      <div class="card-body">
-        <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Liquidación</div>
-        <div class="h5 mb-3 font-weight-bold text-gray-800">Rendiciones</div>
-        <a href="/settlement/" class="btn btn-dark btn-sm">Abrir</a>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Cobranza -->
-  {% if user|has_any_group:"Admin,Cobranza" %}
-  <div class="col-lg-4 mb-4">
-    <div class="card border-left-danger shadow h-100 py-2">
-      <div class="card-body">
-        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Cobranza</div>
-        <div class="h5 mb-3 font-weight-bold text-gray-800">Cuentas por cobrar</div>
-        <a href="/collection/" class="btn btn-danger btn-sm">Abrir</a>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Financiero -->
-  {% if user|has_any_group:"Admin,Financiero" %}
-  <div class="col-lg-4 mb-4">
-    <div class="card border-left-primary shadow h-100 py-2">
-      <div class="card-body">
-        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Financiero</div>
-        <div class="h5 mb-3 font-weight-bold text-gray-800">KPIs</div>
-        <a href="/finance/" class="btn btn-primary btn-sm">Abrir</a>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- CTPAT -->
-  {% if user|has_any_group:"Admin,CTPAT" %}
-  <div class="col-lg-4 mb-4">
-    <div class="card border-left-success shadow h-100 py-2">
-      <div class="card-body">
-        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">CTPAT</div>
-        <div class="h5 mb-3 font-weight-bold text-gray-800">Cumplimiento</div>
-        <a href="/ctpat/" class="btn btn-success btn-sm">Abrir</a>
-      </div>
-    </div>
-  </div>
-  {% endif %}
 </div>
+
+{# ===================== KPIs TOP: FINANZAS + OPERACIÓN ===================== #}
+<div class="row">
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Ingresos (emitidos)</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">$ 1,245,900</div>
+          <span class="pill pill-info">+8.2%</span>
+        </div>
+        <div class="mini-muted mt-1">CFDI/Facturas emitidas</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-green">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Cobranza (pagado)</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">$ 980,340</div>
+          <span class="pill pill-ok">78%</span>
+        </div>
+        <div class="mini-muted mt-1">Pagos aplicados / emitido</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-yellow">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Costos directos</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">$ 702,110</div>
+          <span class="pill pill-warn">Fuel+Casetas</span>
+        </div>
+        <div class="mini-muted mt-1">Gastos de viaje (posteados)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-red">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Margen operativo</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">18.6%</div>
+          <span class="pill pill-bad">-2.1%</span>
+        </div>
+        <div class="mini-muted mt-1">Estimado por viaje completado</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ===================== KPIs SECONDARY: ALMACÉN + TALLER ===================== #}
+<div class="row">
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-gray">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Inventario (valor)</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">$ 2,410,800</div>
+          <span class="pill pill-gray">almacén</span>
+        </div>
+        <div class="mini-muted mt-1">Costo promedio / valuación</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-yellow">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Stock bajo</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">14</div>
+          <span class="pill pill-warn">crítico</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-red">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">OTs abiertas</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">9</div>
+          <span class="pill pill-bad">backlog</span>
+        </div>
+        <div class="mini-muted mt-1">Órdenes de taller en proceso</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-info">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Unidades en taller</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">3</div>
+          <span class="pill pill-info">downtime</span>
+        </div>
+        <div class="mini-muted mt-1">Impacta disponibilidad operativa</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ===================== FILA: ALERTAS TRANSVERSALES ===================== #}
+<div class="row">
+
+  <div class="col-lg-6 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Información financiera</h6>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ver detalle</a>
+      </div>
+
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+          <div>
+            <div class="font-weight-bold">Cobranza vencida</div>
+            <div class="mini-muted">Facturas con vencimiento pasado</div>
+          </div>
+          <span class="pill pill-bad">6</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+          <div>
+            <div class="font-weight-bold">Pagos a proveedor por vencer</div>
+            <div class="mini-muted">Compras/servicios con fecha límite</div>
+          </div>
+          <span class="pill pill-warn">5</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center border rounded p-2">
+          <div>
+            <div class="font-weight-bold">Liquidaciones pendientes</div>
+            <div class="mini-muted">Aprobadas pero no pagadas</div>
+          </div>
+          <span class="pill pill-warn">3</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Información operativa</h6>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ver detalle</a>
+      </div>
+
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+          <div>
+            <div class="font-weight-bold">CTPAT no conforme</div>
+            <div class="mini-muted">Incidentes / checklist fail</div>
+          </div>
+          <span class="pill pill-bad">2</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+          <div>
+            <div class="font-weight-bold">Stock crítico</div>
+            <div class="mini-muted">Refacciones que pueden detener unidad</div>
+          </div>
+          <span class="pill pill-warn">14</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center border rounded p-2">
+          <div>
+            <div class="font-weight-bold">Unidades fuera de servicio</div>
+            <div class="mini-muted">En taller / sin liberar</div>
+          </div>
+          <span class="pill pill-bad">3</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ===================== FILA: TABLAS RÁPIDAS (ALMACÉN + TALLER) ===================== #}
+<div class="row">
+
+  <div class="col-lg-6 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Refacciones críticas</h6>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ir a almacén</a>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="thead-light">
+              <tr>
+                <th>SKU</th>
+                <th>Refacción</th>
+                <th class="text-right">Exist.</th>
+                <th class="text-right">Mín.</th>
+                <th class="text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="pill pill-gray">BRK-001</span></td>
+                <td>Balatas eje delantero</td>
+                <td class="text-right">2</td>
+                <td class="text-right">10</td>
+                <td class="text-right"><a href="#" class="btn btn-sm btn-outline-primary">Comprar</a></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-gray">FLT-210</span></td>
+                <td>Filtro diésel</td>
+                <td class="text-right">5</td>
+                <td class="text-right">12</td>
+                <td class="text-right"><a href="#" class="btn btn-sm btn-outline-primary">Comprar</a></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-gray">TIR-900</span></td>
+                <td>Llanta 295/75 R22.5</td>
+                <td class="text-right">1</td>
+                <td class="text-right">6</td>
+                <td class="text-right"><a href="#" class="btn btn-sm btn-outline-primary">Comprar</a></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-gray">OIL-15W</span></td>
+                <td>Aceite 15W40 (cubeta)</td>
+                <td class="text-right">3</td>
+                <td class="text-right">8</td>
+                <td class="text-right"><a href="#" class="btn btn-sm btn-outline-primary">Comprar</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="mini-muted">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Órdenes de taller activas</h6>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ir a taller</a>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="thead-light">
+              <tr>
+                <th>OT</th>
+                <th>Unidad</th>
+                <th>Tipo</th>
+                <th>Prioridad</th>
+                <th class="text-right">Estatus</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><a href="#" class="font-weight-bold">OT-1029</a></td>
+                <td>Tracto #12</td>
+                <td>Mantenimiento</td>
+                <td><span class="pill pill-warn">Media</span></td>
+                <td class="text-right"><span class="pill pill-info">En proceso</span></td>
+              </tr>
+              <tr>
+                <td><a href="#" class="font-weight-bold">OT-1032</a></td>
+                <td>Tracto #07</td>
+                <td>Correctivo</td>
+                <td><span class="pill pill-bad">Alta</span></td>
+                <td class="text-right"><span class="pill pill-info">Diagnóstico</span></td>
+              </tr>
+              <tr>
+                <td><a href="#" class="font-weight-bold">OT-1034</a></td>
+                <td>Caja #03</td>
+                <td>Reparación</td>
+                <td><span class="pill pill-warn">Media</span></td>
+                <td class="text-right"><span class="pill pill-warn">En espera refacción</span></td>
+              </tr>
+              <tr>
+                <td><a href="#" class="font-weight-bold">OT-1036</a></td>
+                <td>Tracto #15</td>
+                <td>Correctivo</td>
+                <td><span class="pill pill-bad">Alta</span></td>
+                <td class="text-right"><span class="pill pill-warn">Aprobación pendiente</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="mini-muted">
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<script>
+(function () {
+  // Toggle de rango (hoy/semana/mes)
+  document.querySelectorAll("[data-range]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-range]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      console.log("Range:", btn.getAttribute("data-range"));
+      // TODO: refrescar KPIs por rango
+    });
+  });
+
+  // Placeholders de canvas
+  const c1 = document.getElementById("chartTrends");
+  if (c1) {
+    const ctx = c1.getContext("2d");
+    ctx.font = "14px Arial";
+    ctx.fillText("Placeholder chart: revenue / expenses / workshop", 10, 35);
+  }
+})();
+</script>
+
 {% endblock %}
