@@ -75,15 +75,16 @@
     </div>
   </div>
 
+  {# ✅ CAMBIO: antes “Costos directos” #}
   <div class="col-xl-3 col-md-6 mb-3">
     <div class="card shadow-soft kpi-card kpi-yellow">
       <div class="card-body py-3">
-        <div class="kpi-label text-uppercase">Costos directos</div>
+        <div class="kpi-label text-uppercase">Gastos operativos (viajes)</div>
         <div class="d-flex justify-content-between align-items-end">
           <div class="kpi-value">$ 702,110</div>
-          <span class="pill pill-warn">Fuel+Casetas</span>
+          <span class="pill pill-warn">Combustible + Casetas</span>
         </div>
-        <div class="mini-muted mt-1">Gastos de viaje (posteados)</div>
+        <div class="mini-muted mt-1">Gastos registrados del periodo (incluye viáticos, etc.)</div>
       </div>
     </div>
   </div>
@@ -96,7 +97,64 @@
           <div class="kpi-value">18.6%</div>
           <span class="pill pill-bad">-2.1%</span>
         </div>
-        <div class="mini-muted mt-1">Estimado por viaje completado</div>
+        <div class="mini-muted mt-1">Estimado sobre viajes completados</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ===================== NUEVO: NUMERALIA DE VIAJES ===================== #}
+<div class="row">
+
+  <div class="col-lg-12 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Estadisticas de viajes</h6>
+          <div class="mini-muted">Programados, en tránsito y realizados (según el rango seleccionado).</div>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ver calendario</a>
+      </div>
+
+      <div class="card-body">
+        <div class="row">
+
+          <div class="col-md-4 mb-3">
+            <div class="border rounded p-3">
+              <div class="d-flex justify-content-between">
+                <div class="kpi-label text-uppercase">Programados</div>
+                <span class="pill pill-info">upcoming</span>
+              </div>
+              <div class="kpi-value">12</div>
+              <div class="mini-muted">Viajes asignados con fecha futura</div>
+            </div>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <div class="border rounded p-3">
+              <div class="d-flex justify-content-between">
+                <div class="kpi-label text-uppercase">En tránsito</div>
+                <span class="pill pill-warn">live</span>
+              </div>
+              <div class="kpi-value">27</div>
+              <div class="mini-muted">En ruta / en carga / en descarga</div>
+            </div>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <div class="border rounded p-3">
+              <div class="d-flex justify-content-between">
+                <div class="kpi-label text-uppercase">Realizados</div>
+                <span class="pill pill-ok">done</span>
+              </div>
+              <div class="kpi-value">19</div>
+              <div class="mini-muted">Completados en el periodo</div>
+            </div>
+          </div>
+
+        </div>
+
       </div>
     </div>
   </div>
@@ -127,6 +185,7 @@
           <div class="kpi-value">14</div>
           <span class="pill pill-warn">crítico</span>
         </div>
+        <div class="mini-muted mt-1">Refacciones bajo mínimo</div>
       </div>
     </div>
   </div>
@@ -238,6 +297,86 @@
 
 </div>
 
+{# ===================== NUEVO: CLIENTES (TOP POR VIAJES) ===================== #}
+<div class="row">
+
+  <div class="col-lg-12 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Clientes</h6>
+          <div class="mini-muted">Quién mueve más volumen (por número de viajes en el periodo).</div>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ver clientes</a>
+      </div>
+
+      <div class="card-body">
+        <div class="row">
+
+          <div class="col-lg-4 mb-3">
+            <div class="border rounded p-3">
+              <div class="kpi-label text-uppercase">Cliente más activo</div>
+              <div class="kpi-value">Cliente A</div>
+              <div class="mini-muted mt-1">42 viajes · $ 320,000 emitido</div>
+              <div class="mini-muted">Ruta top: GDL → MTY</div>
+            </div>
+          </div>
+
+          <div class="col-lg-8 mb-3">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0">
+                <thead class="thead-light">
+                  <tr>
+                    <th>Cliente</th>
+                    <th class="text-right"># Viajes</th>
+                    <th class="text-right">Emitido</th>
+                    <th class="text-right">Cobrado</th>
+                    <th class="text-right">Vencido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Cliente A</td>
+                    <td class="text-right">42</td>
+                    <td class="text-right">$ 320,000</td>
+                    <td class="text-right">$ 250,000</td>
+                    <td class="text-right"><span class="pill pill-warn">$ 70,000</span></td>
+                  </tr>
+                  <tr>
+                    <td>Cliente B</td>
+                    <td class="text-right">31</td>
+                    <td class="text-right">$ 210,500</td>
+                    <td class="text-right">$ 190,500</td>
+                    <td class="text-right"><span class="pill pill-ok">$ 0</span></td>
+                  </tr>
+                  <tr>
+                    <td>Cliente C</td>
+                    <td class="text-right">18</td>
+                    <td class="text-right">$ 184,900</td>
+                    <td class="text-right">$ 120,000</td>
+                    <td class="text-right"><span class="pill pill-bad">$ 64,900</span></td>
+                  </tr>
+                  <tr>
+                    <td>Cliente D</td>
+                    <td class="text-right">12</td>
+                    <td class="text-right">$ 96,200</td>
+                    <td class="text-right">$ 80,000</td>
+                    <td class="text-right"><span class="pill pill-warn">$ 16,200</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
 {# ===================== FILA: TABLAS RÁPIDAS (ALMACÉN + TALLER) ===================== #}
 <div class="row">
 
@@ -297,8 +436,7 @@
       </div>
 
       <div class="card-body">
-        <div class="mini-muted">
-        </div>
+        <div class="mini-muted"></div>
       </div>
     </div>
   </div>
@@ -359,18 +497,15 @@
       </div>
 
       <div class="card-body">
-        <div class="mini-muted">
-        </div>
+        <div class="mini-muted"></div>
       </div>
     </div>
   </div>
 
 </div>
 
-
 <script>
 (function () {
-  // Toggle de rango (hoy/semana/mes)
   document.querySelectorAll("[data-range]").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll("[data-range]").forEach(b => b.classList.remove("active"));
@@ -379,14 +514,6 @@
       // TODO: refrescar KPIs por rango
     });
   });
-
-  // Placeholders de canvas
-  const c1 = document.getElementById("chartTrends");
-  if (c1) {
-    const ctx = c1.getContext("2d");
-    ctx.font = "14px Arial";
-    ctx.fillText("Placeholder chart: revenue / expenses / workshop", 10, 35);
-  }
 })();
 </script>
 
