@@ -202,7 +202,7 @@
             <div class="cp-pill">
               <span class="cp-dot cp-dot-info"></span>
               <span class="font-weight-bold">Lista para timbrar</span>
-              <span class="text-muted">· Falta enviar a Facturapi</span>
+              <span class="text-muted">· Falta enviar a timbrar</span>
             </div>
 
           {% elif carta.status == "error" %}
@@ -216,6 +216,11 @@
             <div class="cp-pill">
               <span class="cp-dot cp-dot-dark"></span>
               <span class="font-weight-bold">Cancelada</span>
+            </div>
+          {% elif carta.status == "draft" %}
+            <div class="cp-pill">
+              <span class="cp-dot cp-dot-dark"></span>
+              <span class="font-weight-bold">Borrador</span>
             </div>
 
           {% else %}

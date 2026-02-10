@@ -75,7 +75,7 @@
 
     <!-- Carta Porte (solo si NO está programado) -->
     {% if trip.status != "PROGRAMADO" %}
-    <a href="{% url 'trips:detail' trip.id %}"
+    <a href="{% url 'trips:carta_porte_edit' trip.id %}"
       class="ktc-btn"
       title="Ver Carta Porte">
       <i class="fas fa-file-alt"></i>

@@ -1,6 +1,9 @@
 # trips/views_carta_porte.py
 from decimal import Decimal
-
+from django.shortcuts import get_object_or_404
+from django.views import View
+from .models import CartaPorteCFDI
+from common.pdf import render_pdf
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect
@@ -15,10 +18,62 @@ from .forms import (
     get_carta_porte_goods_formset,
     get_carta_porte_item_formset,
 )
-
-# ✅ Facturapi service
 from .services.facturapi import create_invoice_in_facturapi, FacturapiError
 
+
+import base64
+from io import BytesIO
+import base64
+import io
+import qrcode
+
+
+def build_qr_data_uri(url: str) -> str | None:
+    if not url:
+        return None
+
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=6,
+        border=2,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+
+    b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+    return f"data:image/png;base64,{b64}"
+
+# ✅ Facturapi service
+
+class CartaPorteStampedPDFView(View):
+    def get(self, request, carta_id):
+        carta = get_object_or_404(
+            CartaPorteCFDI,
+            id=carta_id,
+            status="stamped",
+            uuid__isnull=False,
+        )
+
+        raw = carta.response_snapshot.get("raw", {})
+        verification_url = raw.get("verification_url")
+
+        qr_data_uri = build_qr_data_uri(verification_url)
+
+        return render_pdf(
+            request,
+            "trips/carta_porte_pdf.html",
+            {
+                "carta": carta,
+                "qr_data_uri": qr_data_uri,
+                "verification_url": verification_url,
+            },
+            filename=f"carta-porte-{carta.uuid}.pdf",
+        )
 
 class CartaPorteEditView(TemplateView):
     template_name = "trips/carta_porte_form.html"
