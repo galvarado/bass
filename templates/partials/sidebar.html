@@ -7,7 +7,7 @@
   {#  BRAND: operador -> mis viajes, normal -> dashboard        #}
   {# ========================================================= #}
   <a class="sidebar-brand d-flex align-items-center justify-content-center"
-     href="{% if user|has_group:"operador" and not user|has_group:"admin" and not user|has_group:"superadmin" %}{% url 'trips:my_list' %}{% else %}{% url 'dashboard' %}{% endif %}">
+     href="{% if user|has_group:"operador" and not user|has_group:"admin" and not user|has_group:"superadmin" %}{% url 'trips:my_list' %}{% else %}{% url 'post_login_redirect' %}{% endif %}">
     <div class="sidebar-brand-icon text-center" style="padding: 20px 10px;">
       <img src="{% static 'img/basslogowhite.png' %}"
            alt="BASS"
@@ -39,7 +39,7 @@
 
     <!-- Dashboard -->
     <li class="nav-item">
-      <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">
+      <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'post_login_redirect' %}">
         <i class="fas fa-fw fa-tachometer-alt"></i> <span>Dashboard</span>
       </a>
     </li>

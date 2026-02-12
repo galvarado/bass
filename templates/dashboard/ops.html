@@ -1,0 +1,475 @@
+
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Dashboard · Operación · BASS{% endblock %}
+
+{% block content %}
+<style>
+  .kpi-card { border-left: 4px solid #4e73df; }
+  .kpi-card.kpi-green { border-left-color: #1cc88a; }
+  .kpi-card.kpi-yellow { border-left-color: #f6c23e; }
+  .kpi-card.kpi-red { border-left-color: #e74a3b; }
+  .kpi-card.kpi-gray { border-left-color: #858796; }
+  .kpi-value { font-size: 1.35rem; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: .85rem; color: #6c757d; }
+  .mini-muted { font-size: .78rem; color: #858796; }
+  .pill { padding: .2rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+  .pill-ok { background: rgba(28,200,138,.15); color: #1cc88a; }
+  .pill-warn { background: rgba(246,194,62,.15); color: #b58900; }
+  .pill-bad { background: rgba(231,74,59,.15); color: #e74a3b; }
+  .pill-info { background: rgba(78,115,223,.12); color: #4e73df; }
+  .pill-gray { background: rgba(133,135,150,.14); color: #6c757d; }
+  .table-sm td, .table-sm th { padding: .45rem .55rem; }
+  .card .card-header { background: #fff; }
+  .shadow-soft { box-shadow: 0 0.25rem 1rem rgba(0,0,0,.06) !important; }
+  .section-title { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .section-title h6 { margin:0; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Dashboard Operativo</h1>
+    <div class="mini-muted">Operación · Viajes · CTPAT · Almacén · Taller</div>
+  </div>
+
+  <div class="d-flex align-items-center gap-2">
+    <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Rango">
+      <button type="button" class="btn btn-outline-primary active" data-range="today">Hoy</button>
+      <button type="button" class="btn btn-outline-primary" data-range="week">Semana</button>
+      <button type="button" class="btn btn-outline-primary" data-range="month">Mes</button>
+      <button type="button" class="btn btn-outline-primary" data-range="custom">Custom</button>
+    </div>
+
+    <a href="#" class="btn btn-sm btn-primary shadow-sm">
+      <i class="fas fa-download fa-sm text-white-50"></i> Exportar
+    </a>
+  </div>
+</div>
+
+{# ===================== KPIs TOP: OPERACIÓN (SIN FINANZAS) ===================== #}
+<div class="row">
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Viajes programados</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">12</div>
+          <span class="pill pill-info">upcoming</span>
+        </div>
+        <div class="mini-muted mt-1">Asignados con fecha futura</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-yellow">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">En tránsito</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">27</div>
+          <span class="pill pill-warn">live</span>
+        </div>
+        <div class="mini-muted mt-1">En ruta / carga / descarga</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-green">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Realizados</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">19</div>
+          <span class="pill pill-ok">done</span>
+        </div>
+        <div class="mini-muted mt-1">Completados en el periodo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-red">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Incidentes operativos</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">2</div>
+          <span class="pill pill-bad">alertas</span>
+        </div>
+        <div class="mini-muted mt-1">CTPAT / checklist / eventos</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ===================== NUMERALIA DE VIAJES ===================== #}
+<div class="row">
+
+  <div class="col-lg-12 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Estadísticas de viajes</h6>
+          <div class="mini-muted">Programados, en tránsito y realizados (según el rango seleccionado).</div>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ver calendario</a>
+      </div>
+
+      <div class="card-body">
+        <div class="row">
+
+          <div class="col-md-4 mb-3">
+            <div class="border rounded p-3">
+              <div class="d-flex justify-content-between">
+                <div class="kpi-label text-uppercase">Programados</div>
+                <span class="pill pill-info">upcoming</span>
+              </div>
+              <div class="kpi-value">12</div>
+              <div class="mini-muted">Viajes asignados con fecha futura</div>
+            </div>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <div class="border rounded p-3">
+              <div class="d-flex justify-content-between">
+                <div class="kpi-label text-uppercase">En tránsito</div>
+                <span class="pill pill-warn">live</span>
+              </div>
+              <div class="kpi-value">27</div>
+              <div class="mini-muted">En ruta / en carga / en descarga</div>
+            </div>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <div class="border rounded p-3">
+              <div class="d-flex justify-content-between">
+                <div class="kpi-label text-uppercase">Realizados</div>
+                <span class="pill pill-ok">done</span>
+              </div>
+              <div class="kpi-value">19</div>
+              <div class="mini-muted">Completados en el periodo</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ===================== KPIs: ALMACÉN + TALLER (SIN "VALOR") ===================== #}
+<div class="row">
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-gray">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Inventario</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">—</div>
+          <span class="pill pill-gray">almacén</span>
+        </div>
+        <div class="mini-muted mt-1">Conteo/estatus (sin valuación)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-yellow">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Stock bajo</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">14</div>
+          <span class="pill pill-warn">crítico</span>
+        </div>
+        <div class="mini-muted mt-1">Refacciones bajo mínimo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card kpi-red">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">OTs abiertas</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">9</div>
+          <span class="pill pill-bad">backlog</span>
+        </div>
+        <div class="mini-muted mt-1">Órdenes de taller en proceso</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-3">
+    <div class="card shadow-soft kpi-card">
+      <div class="card-body py-3">
+        <div class="kpi-label text-uppercase">Unidades en taller</div>
+        <div class="d-flex justify-content-between align-items-end">
+          <div class="kpi-value">3</div>
+          <span class="pill pill-info">downtime</span>
+        </div>
+        <div class="mini-muted mt-1">Impacta disponibilidad operativa</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ===================== FILA: ALERTAS OPERATIVAS ===================== #}
+<div class="row">
+
+  <div class="col-lg-12 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Información operativa</h6>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ver detalle</a>
+      </div>
+
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+          <div>
+            <div class="font-weight-bold">CTPAT no conforme</div>
+            <div class="mini-muted">Incidentes / checklist fail</div>
+          </div>
+          <span class="pill pill-bad">2</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+          <div>
+            <div class="font-weight-bold">Stock crítico</div>
+            <div class="mini-muted">Refacciones que pueden detener unidad</div>
+          </div>
+          <span class="pill pill-warn">14</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center border rounded p-2">
+          <div>
+            <div class="font-weight-bold">Unidades fuera de servicio</div>
+            <div class="mini-muted">En taller / sin liberar</div>
+          </div>
+          <span class="pill pill-bad">3</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ===================== CLIENTES: TOP POR VIAJES (SIN COLUMNAS FINANCIERAS) ===================== #}
+<div class="row">
+
+  <div class="col-lg-12 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Clientes</h6>
+          <div class="mini-muted">Quién mueve más volumen (por número de viajes en el periodo).</div>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ver clientes</a>
+      </div>
+
+      <div class="card-body">
+        <div class="row">
+
+          <div class="col-lg-4 mb-3">
+            <div class="border rounded p-3">
+              <div class="kpi-label text-uppercase">Cliente más activo</div>
+              <div class="kpi-value">Cliente A</div>
+              <div class="mini-muted mt-1">42 viajes</div>
+              <div class="mini-muted">Ruta top: GDL → MTY</div>
+            </div>
+          </div>
+
+          <div class="col-lg-8 mb-3">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0">
+                <thead class="thead-light">
+                  <tr>
+                    <th>Cliente</th>
+                    <th class="text-right"># Viajes</th>
+                    <th>Ruta top</th>
+                    <th class="text-right">Incidentes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Cliente A</td>
+                    <td class="text-right">42</td>
+                    <td>GDL → MTY</td>
+                    <td class="text-right"><span class="pill pill-warn">1</span></td>
+                  </tr>
+                  <tr>
+                    <td>Cliente B</td>
+                    <td class="text-right">31</td>
+                    <td>QRO → CDMX</td>
+                    <td class="text-right"><span class="pill pill-ok">0</span></td>
+                  </tr>
+                  <tr>
+                    <td>Cliente C</td>
+                    <td class="text-right">18</td>
+                    <td>TIJ → MTY</td>
+                    <td class="text-right"><span class="pill pill-bad">2</span></td>
+                  </tr>
+                  <tr>
+                    <td>Cliente D</td>
+                    <td class="text-right">12</td>
+                    <td>GDL → BJX</td>
+                    <td class="text-right"><span class="pill pill-ok">0</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ===================== TABLAS RÁPIDAS (ALMACÉN + TALLER) ===================== #}
+<div class="row">
+
+  <div class="col-lg-6 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Refacciones críticas</h6>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ir a almacén</a>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="thead-light">
+              <tr>
+                <th>SKU</th>
+                <th>Refacción</th>
+                <th class="text-right">Exist.</th>
+                <th class="text-right">Mín.</th>
+                <th class="text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="pill pill-gray">BRK-001</span></td>
+                <td>Balatas eje delantero</td>
+                <td class="text-right">2</td>
+                <td class="text-right">10</td>
+                <td class="text-right"><a href="#" class="btn btn-sm btn-outline-primary">Comprar</a></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-gray">FLT-210</span></td>
+                <td>Filtro diésel</td>
+                <td class="text-right">5</td>
+                <td class="text-right">12</td>
+                <td class="text-right"><a href="#" class="btn btn-sm btn-outline-primary">Comprar</a></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-gray">TIR-900</span></td>
+                <td>Llanta 295/75 R22.5</td>
+                <td class="text-right">1</td>
+                <td class="text-right">6</td>
+                <td class="text-right"><a href="#" class="btn btn-sm btn-outline-primary">Comprar</a></td>
+              </tr>
+              <tr>
+                <td><span class="pill pill-gray">OIL-15W</span></td>
+                <td>Aceite 15W40 (cubeta)</td>
+                <td class="text-right">3</td>
+                <td class="text-right">8</td>
+                <td class="text-right"><a href="#" class="btn btn-sm btn-outline-primary">Comprar</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="mini-muted"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-3">
+    <div class="card shadow-soft">
+      <div class="card-header py-3 section-title">
+        <div>
+          <h6 class="font-weight-bold text-primary">Órdenes de taller activas</h6>
+        </div>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ir a taller</a>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="thead-light">
+              <tr>
+                <th>OT</th>
+                <th>Unidad</th>
+                <th>Tipo</th>
+                <th>Prioridad</th>
+                <th class="text-right">Estatus</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><a href="#" class="font-weight-bold">OT-1029</a></td>
+                <td>Tracto #12</td>
+                <td>Mantenimiento</td>
+                <td><span class="pill pill-warn">Media</span></td>
+                <td class="text-right"><span class="pill pill-info">En proceso</span></td>
+              </tr>
+              <tr>
+                <td><a href="#" class="font-weight-bold">OT-1032</a></td>
+                <td>Tracto #07</td>
+                <td>Correctivo</td>
+                <td><span class="pill pill-bad">Alta</span></td>
+                <td class="text-right"><span class="pill pill-info">Diagnóstico</span></td>
+              </tr>
+              <tr>
+                <td><a href="#" class="font-weight-bold">OT-1034</a></td>
+                <td>Caja #03</td>
+                <td>Reparación</td>
+                <td><span class="pill pill-warn">Media</span></td>
+                <td class="text-right"><span class="pill pill-warn">En espera refacción</span></td>
+              </tr>
+              <tr>
+                <td><a href="#" class="font-weight-bold">OT-1036</a></td>
+                <td>Tracto #15</td>
+                <td>Correctivo</td>
+                <td><span class="pill pill-bad">Alta</span></td>
+                <td class="text-right"><span class="pill pill-warn">Aprobación pendiente</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="mini-muted"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll("[data-range]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-range]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      console.log("Range:", btn.getAttribute("data-range"));
+      // TODO: refrescar KPIs por rango
+    });
+  });
+})();
+</script>
+
+{% endblock %}

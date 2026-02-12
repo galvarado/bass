@@ -1,7 +1,8 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.views.generic import TemplateView
-from common.mixins import AdminRequiredMixin
+from common.mixins import LoginRequiredMixin, SuperadminRequiredMixin
+
 
 @login_required
 def post_login_redirect(request):
@@ -11,8 +12,19 @@ def post_login_redirect(request):
     if u.groups.filter(name="operador").exists() and not (u.is_staff or u.is_superuser):
         return redirect("trips:my_list")
 
-    # Resto -> Dashboard
-    return redirect("dashboard")
+    # Superadmin/Admin -> Dashboard financiero
+    if u.is_superuser or u.is_staff:
+        return redirect("finance")
 
-class DashboardView(AdminRequiredMixin, TemplateView):
-    template_name = "dashboard.html"
+    # Resto -> Dashboard operativo
+    return redirect("ops")
+
+
+# 🔵 Dashboard Operativo (sin finanzas)
+class OpsDashboardView(LoginRequiredMixin, TemplateView):
+    template_name = "dashboard/ops.html"
+
+
+# 🔴 Dashboard Financiero (solo superadmin/admin)
+class FinanceDashboardView(SuperadminRequiredMixin, TemplateView):
+    template_name = "dashboard/finance.html"
