@@ -1,0 +1,591 @@
+{% extends "base.html" %}
+{% block title %}Viajes para liquidar · BASS{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Viajes para liquidar</h1>
+    <div class="small text-muted">
+      Solo viajes en estado <strong>COMPLETADO</strong>.
+      Requieren evidencias (Carga + Sello) y aprobación previa.
+    </div>
+  </div>
+
+  <div class="d-flex align-items-center">
+    <a class="btn btn-sm btn-outline-primary mr-2" href="#">
+      <i class="fas fa-filter"></i> Filtros
+    </a>
+    <a class="btn btn-sm btn-primary" href="#">
+      <i class="fas fa-download"></i> Exportar
+    </a>
+  </div>
+</div>
+
+<form method="get" class="card mb-3">
+  <div class="card-body py-3">
+    <div class="form-row align-items-center form-compact">
+
+      <div class="col-md-6 mb-2">
+        <div class="input-group input-group-sm">
+          <input
+            type="text"
+            name="q"
+            class="form-control"
+            placeholder="Buscar ruta / operador / unidad / cliente..."
+            value="{{ request.GET.q }}"
+          >
+          <div class="input-group-append">
+            <button class="btn btn-outline-primary" type="submit">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 mb-2">
+        <select name="evidence" class="form-control form-control-sm">
+          <option value="">Evidencia (todas)</option>
+          <option value="missing" {% if request.GET.evidence == "missing" %}selected{% endif %}>Faltante</option>
+          <option value="partial" {% if request.GET.evidence == "partial" %}selected{% endif %}>Parcial</option>
+          <option value="complete" {% if request.GET.evidence == "complete" %}selected{% endif %}>Completa</option>
+        </select>
+      </div>
+
+      <div class="col-md-3 mb-2">
+        <select name="approval" class="form-control form-control-sm">
+          <option value="">Aprobación (todas)</option>
+          <option value="pending" {% if request.GET.approval == "pending" %}selected{% endif %}>Pendiente</option>
+          <option value="submitted" {% if request.GET.approval == "submitted" %}selected{% endif %}>En revisión</option>
+          <option value="approved" {% if request.GET.approval == "approved" %}selected{% endif %}>Aprobada</option>
+          <option value="rejected" {% if request.GET.approval == "rejected" %}selected{% endif %}>Rechazada</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if is_paginated and paginator.count %}
+      Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }}
+      de {{ paginator.count }} · Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% else %}
+      {{ trips|length }} viaje{{ trips|length|pluralize:"s" }}
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="thead-light">
+        <tr>
+          <th>Ruta</th>
+          <th>Operador</th>
+          <th>Unidad</th>
+          <th class="text-center">Evidencias</th>
+          <th class="text-center">Aprobación</th>
+          <th class="text-center">Liquidación</th>
+          <th style="width: 260px;" class="text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        {% for t in trips %}
+        <tr>
+
+          {# ===== Ruta ===== #}
+          <td>
+            <a href="{% url 'trips:detail' t.pk %}">
+              {{ t.route }}
+            </a><br>
+            <small class="text-muted">Viaje #{{ t.id }}</small>
+          </td>
+
+          {# ===== Operador ===== #}
+          <td>
+            {{ t.operator.nombre|default:t.operator }}<br>
+            {% if t.operator.telefono %}
+              <small class="text-muted">
+                <i class="fas fa-phone"></i> {{ t.operator.telefono }}
+              </small>
+            {% endif %}
+          </td>
+
+          {# ===== Unidad ===== #}
+          <td>
+            {% if t.truck %}
+              <strong>Camión:</strong> {{ t.truck.numero_economico|default:t.truck }}<br>
+              {% if t.truck.placas %}
+                <small class="text-muted">Placas: {{ t.truck.placas }}</small><br>
+              {% endif %}
+            {% else %}
+              <span class="text-muted">Sin camión</span><br>
+            {% endif %}
+
+            {% if t.reefer_box %}
+              <strong>Caja:</strong> {{ t.reefer_box.numero_economico|default:t.reefer_box }}
+            {% else %}
+              <small class="text-muted">Sin caja</small>
+            {% endif %}
+          </td>
+
+          {# ===== Evidencias ===== #}
+          <td class="text-center">
+            {% if t.evidence_count >= 2 %}
+              <span class="badge badge-success">Completas</span><br>
+            {% elif t.evidence_count == 1 %}
+              <span class="badge badge-warning">Parcial</span><br>
+              <small class="text-muted">1 imagen</small>
+            {% else %}
+              <span class="badge badge-secondary">Faltantes</span><br>
+            {% endif %}
+          </td>
+
+          {# ===== Aprobación ===== #}
+          <td class="text-center">
+            {% with a=t.settlement_approval %}
+              {% if a and a.status == "approved" %}
+                <span class="badge badge-success">Aprobada</span>
+              {% elif a and a.status == "submitted" %}
+                <span class="badge badge-warning">En revisión</span>
+              {% elif a and a.status == "rejected" %}
+                <span class="badge badge-danger">Rechazada</span>
+              {% else %}
+                <span class="badge badge-secondary">Pendiente</span>
+              {% endif %}
+            {% endwith %}
+          </td>
+
+          {# ===== Liquidación ===== #}
+          <td class="text-center">
+            {% if t.settlement_id %}
+              <span class="badge badge-info">En liquidación</span><br>
+              <small class="text-muted">#{{ t.settlement_id }}</small>
+            {% else %}
+              <span class="badge badge-secondary">No liquidado</span>
+            {% endif %}
+          </td>
+
+          {# ===== Acciones ===== #}
+          <td class="text-right">
+
+            <a href="{% url 'trips:detail' t.pk %}"
+               class="btn btn-sm btn-outline-secondary"
+               title="Ver viaje">
+              <i class="fas fa-eye"></i>
+            </a>
+
+            <a href="#"
+              class="btn btn-sm btn-outline-primary js-open-evidence"
+              data-trip-id="{{ t.id }}"
+              title="Ver evidencias">
+              <i class="fas fa-images"></i>
+            </a>
+            {% if t.settlement_id %}
+              <a href="{% url 'settlement:detail' t.settlement_id %}"
+                 class="btn btn-sm btn-outline-info"
+                 title="Ver liquidación">
+                <i class="fas fa-receipt"></i>
+              </a>
+            {% else %}
+              {% with a=t.settlement_approval %}
+                {% if a and a.status == "approved" %}
+                  <a href="{% url 'settlement:create' %}?trip_load={{ t.id }}"
+                     class="btn btn-sm btn-primary"
+                     title="Crear liquidación (Carga)">
+                    <i class="fas fa-hand-holding-usd"></i> Liquidar
+                  </a>
+                {% else %}
+                  <button class="btn btn-sm btn-primary" disabled
+                          title="Disponible al aprobar evidencias">
+                    <i class="fas fa-hand-holding-usd"></i> Liquidar
+                  </button>
+                {% endif %}
+              {% endwith %}
+            {% endif %}
+
+          </td>
+
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            No hay viajes completados para liquidar.
+          </td>
+        </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+  <div class="card-footer py-2">
+    <nav aria-label="Paginación">
+      <ul class="pagination pagination-sm mb-0">
+
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1">« Primero</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">‹ Anterior</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
+        {% endif %}
+
+        <li class="page-item active">
+          <span class="page-link">{{ page_obj.number }}</span>
+        </li>
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente ›</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ paginator.num_pages }}">Última »</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
+          <li class="page-item disabled"><span class="page-link">Última »</span></li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+
+<div class="modal fade" id="evidenceModal" tabindex="-1" role="dialog" aria-labelledby="evidenceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="evidenceModalLabel">
+          Evidencias · Viaje <span id="evTripId">#—</span>
+        </h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="small text-muted" id="evTripMeta">—</div>
+          <div id="evApprovalBadge"></div>
+        </div>
+
+        <div id="evMissingPills" class="mb-3"></div>
+
+        <div id="evLoading" class="text-center text-muted py-4" style="display:none;">
+          <i class="fas fa-spinner fa-spin"></i> Cargando evidencias...
+        </div>
+
+        <div id="evEmpty" class="text-center text-muted py-4" style="display:none;">
+          Aún no hay evidencias cargadas.
+        </div>
+
+        <div id="evGrid" class="row" style="display:none;"></div>
+
+        <hr>
+
+        <div class="form-group mb-0">
+          <label class="small text-muted">Notas de decisión (opcional)</label>
+          <textarea id="evDecisionNotes" class="form-control form-control-sm" rows="2" placeholder="Ej: evidencia borrosa, falta sello, etc."></textarea>
+        </div>
+
+      </div>
+
+      <div class="modal-footer d-flex justify-content-between">
+        <div>
+        </div>
+
+        <div>
+          <button type="button" class="btn btn-sm btn-outline-danger" id="evRejectBtn">
+            <i class="fas fa-times"></i> Rechazar
+          </button>
+          <button type="button" class="btn btn-sm btn-success" id="evApproveBtn">
+            <i class="fas fa-check"></i> Aprobar
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><script>
+(function () {
+  function ready(fn){
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+
+  // CSRF desde cookie
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return "";
+  }
+
+  function esc(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function normalizeUrl(u) {
+    if (!u) return "";
+    if (!/^https?:\/\//i.test(u) && !u.startsWith("/")) u = "/" + u;
+    try { return new URL(u, window.location.origin).toString(); }
+    catch { return u; }
+  }
+
+  function approvalBadge(status) {
+    const s = (status || "draft").toLowerCase();
+    if (s === "approved")  return `<span class="badge badge-success">Aprobada</span>`;
+    if (s === "submitted") return `<span class="badge badge-warning">En revisión</span>`;
+    if (s === "rejected")  return `<span class="badge badge-danger">Rechazada</span>`;
+    return `<span class="badge badge-secondary">Pendiente</span>`;
+  }
+
+  function renderMissingPills(missingTypes) {
+    const missing = Array.isArray(missingTypes) ? missingTypes : [];
+    if (!missing.length) return "";
+
+    const map = {
+      load: "Falta: Carga",
+      seal: "Falta: Sello",
+    };
+
+    return missing.map(t => {
+      const label = map[t] || `Falta: ${t}`;
+      return `<span class="badge badge-warning mr-1 mb-1">${esc(label)}</span>`;
+    }).join("");
+  }
+
+  function renderEvidenceGrid(evidences) {
+    const items = Array.isArray(evidences) ? evidences : [];
+    if (!items.length) return "";
+
+    return items.map(e => {
+      const url = normalizeUrl(e.url);
+      const label = e.type_label || e.evidence_type || "—";
+      const notes = (e.notes && String(e.notes).trim()) ? e.notes : "—";
+      const uploadedAt = e.uploaded_at || "—";
+
+      return `
+        <div class="col-md-6 mb-3">
+          <div class="card border-0 shadow-sm">
+            <a href="${esc(url)}" target="_blank" rel="noopener" class="d-block">
+              <img
+                src="${esc(url)}"
+                alt="${esc(label)}"
+                style="width:100%;height:220px;object-fit:cover;border-top-left-radius:.35rem;border-top-right-radius:.35rem;"
+                onerror="console.warn('No cargó IMG:', this.src); this.style.display='none'; this.parentElement.insertAdjacentHTML('beforeend','<div class=&quot;p-3 text-center text-muted&quot;>Imagen no disponible</div>');"
+              >
+            </a>
+            <div class="card-body py-2">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="font-weight-bold small">${esc(label)}</div>
+                <div class="text-muted small">${esc(uploadedAt)}</div>
+              </div>
+              <div class="text-muted small mt-1">${esc(notes)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  ready(function () {
+    let tries = 0;
+
+    function bootWhenJqueryReady() {
+      if (window.jQuery && window.$) {
+        initWithJquery(window.$);
+        return;
+      }
+      tries += 1;
+      if (tries > 40) {
+        console.warn("jQuery no disponible, script de evidencias no se inicializó.");
+        return;
+      }
+      setTimeout(bootWhenJqueryReady, 50);
+    }
+
+    function initWithJquery($) {
+
+      function setVisible(sel, show) {
+        const $el = $(sel);
+        if (!$el.length) return;
+        $el.css("display", show ? "" : "none");
+      }
+
+      function setButtonsDisabled(disabled) {
+        $("#evApproveBtn").prop("disabled", !!disabled);
+        $("#evRejectBtn").prop("disabled", !!disabled);
+      }
+
+      async function safeJson(res) {
+        try { return await res.json(); } catch { return {}; }
+      }
+
+      async function loadTripEvidence(tripId) {
+        $("#evTripId").text("#" + tripId);
+
+        // Reset UI
+        $("#evTripMeta").text("—");
+        $("#evApprovalBadge").html("");
+        $("#evMissingPills").html("");
+        $("#evGrid").html("");
+
+        setVisible("#evLoading", true);
+        setVisible("#evEmpty", false);
+        setVisible("#evGrid", false);
+
+        // Si NO tienes este elemento en el HTML, no pasa nada (no truena)
+        $("#evOpenFull").attr("href", `/trips/${tripId}/evidencia/`);
+
+        try {
+          const res = await fetch(`/settlement/ajax/trip-evidences/${tripId}/`, {
+            credentials: "same-origin"
+          });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+
+          const data = await safeJson(res);
+
+          const evidences = data.evidences || data.items || [];
+          const missingTypes = data.missing_types || [];
+          const approvalStatus = (data.approval_status || "draft").toLowerCase();
+          const tripLabel = data.trip_label || "";
+
+          $("#evTripMeta").text(tripLabel ? tripLabel : ("Viaje #" + tripId));
+          $("#evApprovalBadge").html(approvalBadge(approvalStatus));
+          $("#evMissingPills").html(renderMissingPills(missingTypes));
+
+          setVisible("#evLoading", false);
+
+          if (!evidences.length) {
+            setVisible("#evEmpty", true);
+            setVisible("#evGrid", false);
+          } else {
+            $("#evGrid").html(renderEvidenceGrid(evidences));
+            setVisible("#evEmpty", false);
+            setVisible("#evGrid", true);
+          }
+
+          // Si ya está aprobado, bloquea botones
+          const isApproved = approvalStatus === "approved";
+          setButtonsDisabled(isApproved);
+
+        } catch (e) {
+          console.error("Error cargando evidencias:", e);
+          setVisible("#evLoading", false);
+          $("#evGrid").html(
+            `<div class="col-12"><div class="alert alert-danger mb-0">No se pudieron cargar evidencias.</div></div>`
+          );
+          setVisible("#evGrid", true);
+          setButtonsDisabled(true);
+        }
+      }
+
+      async function postApprovalDecision(tripId, action, notes) {
+        const csrftoken = getCookie("csrftoken");
+
+        const res = await fetch(`/settlement/ajax/trip-approval/${tripId}/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrftoken
+          },
+          // 👇 IMPORTANTE: el backend requiere action ("approve"/"reject")
+          body: JSON.stringify({ action, notes }),
+          credentials: "same-origin"
+        });
+
+        const data = await safeJson(res);
+
+        if (!res.ok || !data.ok) {
+          const msg = data.error || `No se pudo procesar (HTTP ${res.status}).`;
+          throw new Error(msg);
+        }
+
+        return data;
+      }
+
+      // Abrir modal
+      $(document).on("click", ".js-open-evidence", function (e) {
+        e.preventDefault();
+        const tripId = $(this).data("trip-id");
+        $("#evidenceModal").data("trip-id", tripId).modal("show");
+        loadTripEvidence(tripId);
+      });
+
+      // Aprobar
+      $("#evApproveBtn").on("click", async function () {
+        const tripId = $("#evidenceModal").data("trip-id");
+        if (!tripId) return;
+
+        const notes = ($("#evDecisionNotes").val() || "").trim();
+
+        setButtonsDisabled(true);
+        try {
+          await postApprovalDecision(tripId, "approve", notes);
+          window.location.reload();
+        } catch (e) {
+          console.error(e);
+          alert(e.message || "Error al aprobar.");
+          setButtonsDisabled(false);
+        }
+      });
+
+      // Rechazar
+      $("#evRejectBtn").on("click", async function () {
+        const tripId = $("#evidenceModal").data("trip-id");
+        if (!tripId) return;
+
+        const notes = ($("#evDecisionNotes").val() || "").trim();
+
+        setButtonsDisabled(true);
+        try {
+          await postApprovalDecision(tripId, "reject", notes);
+          window.location.reload();
+        } catch (e) {
+          console.error(e);
+          alert(e.message || "Error al rechazar.");
+          setButtonsDisabled(false);
+        }
+      });
+
+      // Limpiar al cerrar
+      $("#evidenceModal").on("hidden.bs.modal", function () {
+        $("#evGrid").html("");
+        $("#evDecisionNotes").val("");
+        $("#evTripId").text("#—");
+        $("#evTripMeta").text("—");
+        $("#evApprovalBadge").html("");
+        $("#evMissingPills").html("");
+        setVisible("#evLoading", false);
+        setVisible("#evEmpty", false);
+        setVisible("#evGrid", false);
+        $(this).removeData("trip-id");
+        setButtonsDisabled(false);
+      });
+    }
+
+    bootWhenJqueryReady();
+  });
+})();
+</script>
+
+
+{% endblock %}

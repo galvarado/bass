@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.TripListView.as_view(), name="list"),
     path("nuevo/", views.TripCreateView.as_view(), name="create"),
     path("<int:pk>/editar/", views.TripUpdateView.as_view(), name="update"),
+    path("<int:pk>/evidencia/", views.TripEvidenceView.as_view(), name="evidence"),
     path("<int:pk>/", views.TripDetailView.as_view(), name="detail"),
     path("<int:pk>/eliminar/", views.TripSoftDeleteView.as_view(), name="delete"),
     path("monitoreo/", views.TripBoardView.as_view(), name="board"),
@@ -18,6 +19,4 @@ urlpatterns = [
     path("mis-viajes/<int:pk>/", views.MyTripDetailView.as_view(), name="my_detail"),
     path("<int:trip_id>/carta-porte/", CartaPorteEditView.as_view(), name="carta_porte_edit"),
     path("<int:carta_id>/carta-porte/pdf/", CartaPorteStampedPDFView.as_view(), name="carta_porte_pdf"),
-
-
 ]

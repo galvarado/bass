@@ -1,0 +1,480 @@
+{# templates/settlement/form.html #}
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if object %}Editar{% else %}Nueva{% endif %} Liquidación · BASS{% endblock %}
+{% block content %}
+
+<style>
+  .table-sm td, .table-sm th { vertical-align: middle; }
+  .trash-btn { color:#dc3545; cursor:pointer; }
+  .trash-btn:hover { color:#b52a37; }
+  .muted { color:#6c757d; }
+  .money { text-align:right; }
+  .pill { display:inline-block; padding:.15rem .45rem; border-radius:999px; font-size:.75rem; }
+  .pill-soft { background:#f8f9fa; border:1px solid #e9ecef; }
+  .readonly-input { background:#f8f9fa; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">{% if object %}Editar{% else %}Nueva{% endif %} Liquidación</h1>
+    {% if trip_load %}
+      <div class="small text-muted">
+        Viaje CARGA: <strong>#{{ trip_load.id }}</strong> · {{ trip_load.route }}
+      </div>
+    {% else %}
+      <div class="small text-muted">⚠️ Falta trip_load (se espera ?trip_load=ID)</div>
+    {% endif %}
+  </div>
+
+  <div>
+    {% if object %}
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'settlement:detail' object.pk %}">
+        <i class="fas fa-arrow-left"></i> Volver
+      </a>
+    {% else %}
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'settlement:completed_trips' %}">
+        <i class="fas fa-arrow-left"></i> Volver
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<form method="post" class="card shadow-sm">
+  {% csrf_token %}
+  <div class="card-body">
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    {# Hidden helpers para sync pagos (los rellena JS) #}
+    <input type="hidden" name="pay_load" id="id_pay_load" value="0">
+    <input type="hidden" name="pay_baja" id="id_pay_baja" value="0">
+
+    <div class="form-row form-compact">
+      <div class="col-md-4 mb-2">
+        <label class="small text-muted mb-1">Operador</label>
+        {{ form.operator }}
+        {{ form.operator.errors }}
+      </div>
+
+      <div class="col-md-2 mb-2">
+        <label class="small text-muted mb-1">Unidad</label>
+        {{ form.unit_label }}
+        {{ form.unit_label.errors }}
+      </div>
+
+      <div class="col-md-2 mb-2">
+        <label class="small text-muted mb-1">Desde</label>
+        {{ form.period_from }}
+        {{ form.period_from.errors }}
+      </div>
+
+      <div class="col-md-2 mb-2">
+        <label class="small text-muted mb-1">Hasta</label>
+        {{ form.period_to }}
+        {{ form.period_to.errors }}
+      </div>
+
+      <div class="col-md-2 mb-2">
+        <label class="small text-muted mb-1">Fecha depósito</label>
+        {{ form.deposit_date }}
+        {{ form.deposit_date.errors }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="col-md-3 mb-2">
+        <label class="small text-muted mb-1">Carga en (origen del viaje)</label>
+        {{ form.carga_en }}
+      </div>
+
+      <div class="col-md-3 mb-2">
+        <label class="small text-muted mb-1">Baja (selecciona viaje)</label>
+        {{ form.baja_trip }}
+        {{ form.baja_trip.errors }}
+      </div>
+
+      <div class="col-md-3 mb-2">
+        <label class="small text-muted mb-1">Baja en (destino)</label>
+        <input id="id_baja_en" class="form-control form-control-sm readonly-input" value="—" disabled>
+      </div>
+
+      <div class="col-md-3 mb-2">
+        <label class="small text-muted mb-1">Pagos sugeridos</label>
+        <div class="d-flex flex-wrap">
+          <span class="pill pill-soft mr-2 mb-1">Pago carga: $ <span id="ui_pay_load">0.00</span></span>
+          <span class="pill pill-soft mr-2 mb-1">Pago baja: $ <span id="ui_pay_baja">0.00</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="col-md-3 mb-2">
+        <label class="small text-muted mb-1">Cruce ida</label>
+        {{ form.cruce_ida }}
+        {{ form.cruce_ida.errors }}
+      </div>
+      <div class="col-md-3 mb-2">
+        <label class="small text-muted mb-1">Cruce vuelta</label>
+        {{ form.cruce_vuelta }}
+        {{ form.cruce_vuelta.errors }}
+      </div>
+      <div class="col-md-6 mb-2">
+        <label class="small text-muted mb-1">Notas</label>
+        {{ form.notes }}
+        {{ form.notes.errors }}
+      </div>
+    </div>
+
+    <hr>
+
+    {{ line_formset.management_form }}
+
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <h6 class="mb-2">Anticipos / Descuentos</h6>
+        <button type="button" class="btn btn-sm btn-outline-primary js-add-line" data-category="anticipo">
+          <i class="fas fa-plus"></i> Agregar
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm mb-0" id="tbl-anticipo">
+          <thead class="thead-light">
+            <tr>
+              <th>Concepto</th>
+              <th style="width:160px;">Tipo</th>
+              <th style="width:140px;" class="text-right">Importe</th>
+              <th style="width:44px;" class="text-center"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <small class="muted">Captura montos positivos; el cálculo los resta.</small>
+    </div>
+
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <h6 class="mb-2">Gastos</h6>
+        <button type="button" class="btn btn-sm btn-outline-primary js-add-line" data-category="gasto">
+          <i class="fas fa-plus"></i> Agregar
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm mb-0" id="tbl-gasto">
+          <thead class="thead-light">
+            <tr>
+              <th>Concepto</th>
+              <th style="width:140px;" class="text-right">Importe</th>
+              <th style="width:44px;" class="text-center"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-body py-2">
+        <div class="row small">
+          <div class="col-md-3">
+            <span class="muted">Ingresos</span>
+            <div class="h6 mb-0">$ <span id="tot_ing">0.00</span></div>
+          </div>
+          <div class="col-md-3">
+            <span class="muted">Anticipos</span>
+            <div class="h6 mb-0">-$ <span id="tot_ant">0.00</span></div>
+          </div>
+          <div class="col-md-3">
+            <span class="muted">Gastos</span>
+            <div class="h6 mb-0">$ <span id="tot_gas">0.00</span></div>
+          </div>
+          <div class="col-md-3 text-right">
+            <span class="muted">TOTAL A LIQUIDAR</span>
+            <div class="h5 mb-0">$ <span id="tot_total">0.00</span></div>
+          </div>
+        </div>
+        <div class="small muted mt-1">
+          Fórmula: <strong>Ingresos - Anticipos + Gastos</strong>.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card-footer d-flex justify-content-end">
+    <button class="btn btn-primary">
+      <i class="fas fa-save"></i> Guardar
+    </button>
+  </div>
+</form>
+
+<script>
+(function () {
+  function byId(id){ return document.getElementById(id); }
+
+  function money(v){
+    const n = Number(v || 0);
+    return n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function numFromInput(el){
+    if (!el) return 0;
+    const v = String(el.value || "").replace(/,/g,"").trim();
+    const n = Number(v || 0);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function getTotalForms(){
+    return parseInt(byId("id_lines-TOTAL_FORMS")?.value || "0", 10);
+  }
+  function setTotalForms(n){
+    byId("id_lines-TOTAL_FORMS").value = String(n);
+  }
+
+  function attachTrash(tr, idx){
+    const td = document.createElement("td");
+    td.className = "text-center";
+    td.innerHTML = `<i class="fas fa-trash trash-btn" title="Eliminar"></i>`;
+    td.querySelector(".trash-btn").addEventListener("click", function(){
+      const del = byId(`id_lines-${idx}-DELETE`) || tr.querySelector(`input[name="lines-${idx}-DELETE"]`);
+      if (del) del.checked = true;
+      tr.style.display = "none";
+      recalcTotals();
+    });
+    tr.appendChild(td);
+  }
+
+  function mountExistingRows(){
+    const total = getTotalForms();
+
+    for (let i=0; i<total; i++){
+      const catEl = byId(`id_lines-${i}-category`);
+      const concept = byId(`id_lines-${i}-concept`);
+      const payment = byId(`id_lines-${i}-payment_type`);
+      const amount = byId(`id_lines-${i}-amount`);
+      const del = byId(`id_lines-${i}-DELETE`);
+      const notes = byId(`id_lines-${i}-notes`);
+
+      if (!catEl || !concept || !amount) continue;
+
+      const cat = (catEl.value || "").toLowerCase();
+
+      // ✅ solo anticipo y gasto (sin caseta)
+      if (!["anticipo","gasto"].includes(cat)) {
+        concept.type = "hidden";
+        amount.type = "hidden";
+        if (payment) payment.type = "hidden";
+        if (del) del.type = "hidden";
+        if (notes) notes.type = "hidden";
+        catEl.type = "hidden";
+        continue;
+      }
+
+      const tr = document.createElement("tr");
+      tr.className = "js-line-row";
+      tr.dataset.idx = String(i);
+      tr.dataset.cat = cat;
+
+      const td1 = document.createElement("td");
+      td1.appendChild(concept);
+      tr.appendChild(td1);
+
+      const td2 = document.createElement("td");
+      if (cat === "anticipo") {
+        if (payment) td2.appendChild(payment);
+        else td2.innerHTML = '<span class="muted">—</span>';
+      } else {
+        td2.innerHTML = '<span class="muted">—</span>';
+        if (payment) { payment.style.display = "none"; td2.appendChild(payment); }
+      }
+      tr.appendChild(td2);
+
+      const td3 = document.createElement("td");
+      td3.className = "text-right";
+      td3.appendChild(amount);
+      tr.appendChild(td3);
+
+      attachTrash(tr, i);
+
+      if (notes) { notes.type = "hidden"; tr.appendChild(notes); }
+      tr.appendChild(catEl);
+      if (del) { del.style.display = "none"; tr.appendChild(del); }
+
+      const tbody = document.querySelector(`#tbl-${cat} tbody`);
+      if (tbody) tbody.appendChild(tr);
+
+      amount.addEventListener("input", recalcTotals);
+    }
+  }
+
+  function addLine(category){
+    const idx = getTotalForms();
+    setTotalForms(idx + 1);
+
+    function makeInput(name, attrs){
+      const el = document.createElement("input");
+      el.name = `lines-${idx}-${name}`;
+      el.id = `id_lines-${idx}-${name}`;
+      Object.entries(attrs||{}).forEach(([k,v]) => el.setAttribute(k,v));
+      return el;
+    }
+
+    const catEl = makeInput("category", {type:"hidden"});
+    catEl.value = category;
+
+    const concept = makeInput("concept", {class:"form-control form-control-sm", placeholder:"Concepto"});
+    const payment = makeInput("payment_type", {class:"form-control form-control-sm", placeholder:"Tipo"});
+    const amount = makeInput("amount", {class:"form-control form-control-sm", type:"number", step:"0.01", min:"0"});
+    const notes = makeInput("notes", {type:"hidden"});
+
+    const del = document.createElement("input");
+    del.type = "checkbox";
+    del.name = `lines-${idx}-DELETE`;
+    del.id = `id_lines-${idx}-DELETE`;
+    del.style.display = "none";
+
+    const tr = document.createElement("tr");
+    tr.className = "js-line-row";
+    tr.dataset.idx = String(idx);
+    tr.dataset.cat = category;
+
+    const td1 = document.createElement("td");
+    td1.appendChild(concept);
+
+    const td2 = document.createElement("td");
+    if (category === "anticipo") {
+      td2.appendChild(payment);
+    } else {
+      td2.innerHTML = '<span class="muted">—</span>';
+      payment.style.display = "none";
+      td2.appendChild(payment);
+    }
+
+    const td3 = document.createElement("td");
+    td3.className="text-right";
+    td3.appendChild(amount);
+
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    tr.appendChild(td3);
+
+    attachTrash(tr, idx);
+
+    tr.appendChild(notes);
+    tr.appendChild(catEl);
+    tr.appendChild(del);
+
+    const tbody = document.querySelector(`#tbl-${category} tbody`);
+    if (tbody) tbody.appendChild(tr);
+
+    amount.addEventListener("input", recalcTotals);
+    recalcTotals();
+  }
+
+  function ingresosTotal(){
+    const payLoad = Number(byId("id_pay_load")?.value || 0);
+    const payBaja = Number(byId("id_pay_baja")?.value || 0);
+    const cruceIda = numFromInput(byId("id_cruce_ida"));
+    const cruceVuelta = numFromInput(byId("id_cruce_vuelta"));
+    return payLoad + payBaja + cruceIda + cruceVuelta;
+  }
+
+  function sumCategoryTable(cat){
+    let sum = 0;
+    document.querySelectorAll(`#tbl-${cat} tbody tr.js-line-row`).forEach(tr => {
+      if (tr.style.display === "none") return;
+      const idx = tr.dataset.idx;
+      const del = byId(`id_lines-${idx}-DELETE`) || tr.querySelector(`input[name="lines-${idx}-DELETE"]`);
+      if (del && del.checked) return;
+      sum += numFromInput(byId(`id_lines-${idx}-amount`) || tr.querySelector(`input[name="lines-${idx}-amount"]`));
+    });
+    return sum;
+  }
+
+  function anticiposTotal(){
+    return sumCategoryTable("anticipo");
+  }
+
+  function gastosTotal(){
+    return sumCategoryTable("gasto");
+  }
+
+  function recalcTotals(){
+    const ing = ingresosTotal();
+    const ant = anticiposTotal();
+    const gas = gastosTotal();
+    const total = ing - ant + gas;
+
+    byId("tot_ing").textContent = money(ing);
+    byId("tot_ant").textContent = money(ant);
+    byId("tot_gas").textContent = money(gas);
+    byId("tot_total").textContent = money(total);
+  }
+
+  async function refreshPricing(){
+    const loadId = {{ trip_load.id|default:"0" }};
+    const bajaSel = byId("id_baja_trip");
+    const bajaId = Number(bajaSel ? (bajaSel.value || 0) : 0);
+
+    if (!loadId) return;
+
+    try{
+      const res = await fetch(`/settlement/ajax/trip-pricing/${loadId}/${bajaId || 0}/`, {credentials:"same-origin"});
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || ("HTTP " + res.status));
+
+      byId("id_pay_load").value = data.pay_load || "0";
+      byId("id_pay_baja").value = data.pay_baja || "0";
+
+      const uiPL = byId("ui_pay_load"); if (uiPL) uiPL.textContent = money(data.pay_load || 0);
+      const uiPB = byId("ui_pay_baja"); if (uiPB) uiPB.textContent = money(data.pay_baja || 0);
+
+      const bajaEn = byId("id_baja_en");
+      if (bajaEn) bajaEn.value = data.baja_en || "—";
+
+      recalcTotals();
+    } catch(e){
+      console.error("pricing error:", e);
+      byId("id_pay_baja").value = "0";
+      const uiPB = byId("ui_pay_baja"); if (uiPB) uiPB.textContent = money(0);
+      const bajaEn = byId("id_baja_en"); if (bajaEn) bajaEn.value = "—";
+      recalcTotals();
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    ["id_operator","id_unit_label","id_carga_en"].forEach(id => {
+      const el = byId(id);
+      if (el) el.classList.add("readonly-input");
+    });
+
+    mountExistingRows();
+
+    document.querySelectorAll(".js-add-line").forEach(btn => {
+      btn.addEventListener("click", () => addLine(btn.dataset.category));
+    });
+
+    ["id_cruce_ida","id_cruce_vuelta"].forEach(id => {
+      const el = byId(id);
+      if (el) el.addEventListener("input", recalcTotals);
+    });
+
+    document.addEventListener("input", function(ev){
+      if (ev.target && ev.target.name && ev.target.name.endsWith("-amount")) recalcTotals();
+    });
+
+    const bajaSel = byId("id_baja_trip");
+    if (bajaSel) bajaSel.addEventListener("change", refreshPricing);
+
+    refreshPricing();
+  });
+})();
+</script>
+
+{% endblock %}

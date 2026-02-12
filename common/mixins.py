@@ -2,6 +2,7 @@
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from trips.models import CartaPorteCFDI
+from django.db.models import QuerySet
 
 
 # ============================================================
@@ -112,20 +113,26 @@ class OperadorRequiredMixin(GroupRequiredMixin):
 # Casos especiales
 # ============================================================
 
+
 class OnlyMyTripsMixin:
     """
-    Restringe el queryset a los viajes del operador.
-    Admin/Superadmin ven todo.
+    Restringe Trip queryset a los viajes del operador logueado.
+    Usa Operator.user (OneToOneField con related_name='operator_profile')
     """
-    def get_queryset(self):
+
+    def get_operator(self):
+        user = self.request.user
+        return getattr(user, "operator_profile", None)
+
+    def get_queryset(self) -> QuerySet:
         qs = super().get_queryset()
-        u = self.request.user
 
-        if is_admin(u):
-            return qs
+        operator = self.get_operator()
+        if not operator:
+            # Seguridad total: si no es operador, no ve nada
+            return qs.none()
 
-        return qs.filter(operator__user=u)
-
+        return qs.filter(operator=operator)
 class LockIfStampedMixin:
     def dispatch(self, request, *args, **kwargs):
         trip = self.get_object()

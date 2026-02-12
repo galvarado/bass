@@ -73,14 +73,6 @@
     {% with section="finanzas" %}
       {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
         <div class="sidebar-heading text-uppercase">Finanzas</div>
-
-        <li class="nav-item">
-          <a class="nav-link {% if '/finanzas/liquidacion' in request.path %}active{% endif %}"
-             href="">
-            <i class="fas fa-hand-holding-usd"></i> <span>Liquidación</span>
-          </a>
-        </li>
-
         <li class="nav-item">
           <a class="nav-link {% if '/finanzas/cobranza' in request.path %}active{% endif %}"
              href="">
@@ -91,6 +83,58 @@
         <hr class="sidebar-divider">
       {% endif %}
     {% endwith %}
+
+    {# ===================== LIQUIDACIONES ===================== #}
+{% with section="finanzas" %}
+  {% if user|has_group:"superadmin" or user|has_group:"admin" or user|has_group:section %}
+    <div class="sidebar-heading text-uppercase">Liquidaciones</div>
+
+    <li class="nav-item
+      {% if request.resolver_match and request.resolver_match.namespace == 'settlement' %}
+        active
+      {% endif %}">
+
+      <a class="nav-link collapsed"
+         href="#"
+         data-toggle="collapse"
+         data-target="#collapseLiquidaciones"
+         aria-expanded="{% if request.resolver_match and request.resolver_match.namespace == 'settlement' %}true{% else %}false{% endif %}"
+         aria-controls="collapseLiquidaciones">
+        <i class="fas fa-hand-holding-usd"></i>
+        <span>Liquidaciones</span>
+      </a>
+
+      <div id="collapseLiquidaciones"
+           class="collapse {% if request.resolver_match and request.resolver_match.namespace == 'settlement' %}show{% endif %}"
+           aria-labelledby="headingLiquidaciones"
+           data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+
+          <a class="collapse-item
+             {% if request.resolver_match.url_name == 'completed_trips' %}
+               active
+             {% endif %}"
+             href="{% url 'settlement:completed_trips' %}">
+            <i class="fas fa-route mr-2 text-muted"></i>
+            Viajes por liquidar
+          </a>
+
+          <a class="collapse-item
+             {% if request.resolver_match.url_name == 'list' %}
+               active
+             {% endif %}"
+             href="{% url 'settlement:list' %}">
+            <i class="fas fa-receipt mr-2 text-muted"></i>
+            Liquidaciones
+          </a>
+
+        </div>
+      </div>
+    </li>
+
+    <hr class="sidebar-divider">
+  {% endif %}
+{% endwith %}
 
     {# ======================= CATÁLOGOS ======================= #}
     {% with section="catalogos" %}

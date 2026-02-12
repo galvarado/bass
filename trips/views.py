@@ -2,7 +2,8 @@
 # trips/views.py
 import json
 from datetime import datetime
-
+from django import forms
+from settlement.models import SettlementEvidence, REQUIRED_EVIDENCE_TYPES, EvidenceType
 from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponseRedirect, JsonResponse
@@ -448,3 +449,124 @@ class MyTripDetailView(OperadorRequiredMixin, OnlyMyTripsMixin, DetailView):
                 "truck", "reefer_box", "operator"
             )
         )
+
+
+class TripEvidenceView(View):
+    """
+    Evidencias para un Trip.
+    Permite al operador o transfer_operator cargar:
+        - Foto de carga
+        - Foto de sello
+    No permite subir si status == PROGRAMADO.
+    """
+
+    template_name = "trips/trip_evidence.html"
+
+    # -----------------------------------------------------
+    # Helpers
+    # -----------------------------------------------------
+
+    def get_operator(self):
+        op = getattr(self.request.user, "operator_profile", None)
+        if not op:
+            raise Http404("Operador no encontrado.")
+        return op
+
+    def get_trip(self):
+        trip = get_object_or_404(
+            Trip.objects.select_related(
+                "route", "route__origen", "route__destino",
+                "client", "operator", "transfer_operator",
+                "truck", "reefer_box",
+            ),
+            pk=self.kwargs["pk"],
+            deleted=False,
+        )
+
+        op = self.get_operator()
+
+        if trip.operator_id != op.id and trip.transfer_operator_id != op.id:
+            raise Http404("No tienes acceso a este viaje.")
+
+        return trip
+
+    def build_context(self, trip):
+        evidences = (
+            SettlementEvidence.objects
+            .filter(trip=trip, deleted=False)
+            .order_by("-uploaded_at", "-id")
+        )
+
+        present = set(evidences.values_list("evidence_type", flat=True))
+        missing_types = set(REQUIRED_EVIDENCE_TYPES) - present
+
+        can_upload = (trip.status != TripStatus.PROGRAMADO)
+
+        return {
+            "trip": trip,
+            "evidences": evidences,
+            "EvidenceType": EvidenceType,
+            "missing_types": missing_types,
+            "can_upload": can_upload,
+        }
+
+    # -----------------------------------------------------
+    # GET
+    # -----------------------------------------------------
+
+    def get(self, request, *args, **kwargs):
+        trip = self.get_trip()
+        return render(request, self.template_name, self.build_context(trip))
+
+    # -----------------------------------------------------
+    # POST
+    # -----------------------------------------------------
+
+    def post(self, request, *args, **kwargs):
+        trip = self.get_trip()
+
+        if trip.status == TripStatus.PROGRAMADO:
+            messages.error(
+                request,
+                "No puedes subir evidencias mientras el viaje esté PROGRAMADO."
+            )
+            return redirect("trips:evidencia", pk=trip.pk)
+
+        load_image = request.FILES.get("load_image")
+        seal_image = request.FILES.get("seal_image")
+        notes = request.POST.get("notes", "")
+
+        if not load_image and not seal_image:
+            messages.error(request, "Debes subir al menos una imagen.")
+            return redirect("trips:evidencia", pk=trip.pk)
+
+        # ---- CARGA ----
+        if load_image:
+            SettlementEvidence.objects.update_or_create(
+                trip=trip,
+                evidence_type=EvidenceType.LOAD,
+                defaults={
+                    "image": load_image,
+                    "notes": notes,
+                    "uploaded_by": request.user,
+                    "uploaded_at": timezone.now(),
+                    "deleted": False,
+                }
+            )
+
+        # ---- SELLO ----
+        if seal_image:
+            SettlementEvidence.objects.update_or_create(
+                trip=trip,
+                evidence_type=EvidenceType.SEAL,
+                defaults={
+                    "image": seal_image,
+                    "notes": notes,
+                    "uploaded_by": request.user,
+                    "uploaded_at": timezone.now(),
+                    "deleted": False,
+                }
+            )
+
+        messages.success(request, "Evidencias guardadas correctamente.")
+        return redirect("trips:evidence", pk=trip.pk)

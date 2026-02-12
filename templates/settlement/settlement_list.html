@@ -1,0 +1,296 @@
+{# templates/settlement/settlement_list.html #}
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Liquidaciones · BASS{% endblock %}
+{% block content %}
+
+<style>
+  .pill { padding: .18rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+  .pill-ok { background: rgba(28,200,138,.15); color: #1cc88a; }
+  .pill-warn { background: rgba(246,194,62,.15); color: #b58900; }
+  .pill-bad { background: rgba(231,74,59,.15); color: #e74a3b; }
+  .pill-info { background: rgba(78,115,223,.12); color: #4e73df; }
+  .pill-gray { background: rgba(133,135,150,.14); color: #6c757d; }
+  .table-sm td, .table-sm th { padding: .45rem .55rem; }
+  .card .card-header { background: #fff; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Liquidaciones</h1>
+    <div class="small text-muted">
+      Historial y control de documentos de liquidación (Draft → Ready → Paid).
+    </div>
+  </div>
+
+  <div class="d-flex align-items-center">
+    <a class="btn btn-sm btn-outline-primary mr-2" href="#">
+      <i class="fas fa-download"></i> Exportar
+    </a>
+    <a class="btn btn-sm btn-primary" href="{% url 'settlement:create' %}">
+      <i class="fas fa-plus"></i> Nueva liquidación
+    </a>
+  </div>
+</div>
+
+<form method="get" class="card mb-3">
+  <div class="card-body py-3">
+    <div class="form-row align-items-center form-compact">
+
+      <div class="col-md-6 mb-2">
+        <div class="input-group input-group-sm">
+          <input
+            type="text"
+            name="q"
+            class="form-control"
+            placeholder="Buscar operador / unidad / notas..."
+            value="{{ request.GET.q }}"
+          >
+          <div class="input-group-append">
+            <button class="btn btn-outline-primary" type="submit">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 mb-2">
+        <select name="status" class="form-control form-control-sm">
+          <option value="">Estatus (todos)</option>
+          <option value="draft" {% if request.GET.status == "draft" %}selected{% endif %}>Borrador</option>
+          <option value="ready" {% if request.GET.status == "ready" %}selected{% endif %}>Lista</option>
+          <option value="paid"  {% if request.GET.status == "paid" %}selected{% endif %}>Pagada</option>
+          <option value="canceled" {% if request.GET.status == "canceled" %}selected{% endif %}>Cancelada</option>
+        </select>
+      </div>
+
+      <div class="col-md-3 mb-2">
+        <select name="period" class="form-control form-control-sm" disabled>
+          <option value="">Periodo (próximamente)</option>
+          <option>Semana</option>
+          <option>Mes</option>
+          <option>Custom</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+  <div>
+    {% if is_paginated and paginator.count %}
+      Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }}
+      de {{ paginator.count }} · Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    {% elif paginator and paginator.count == 0 %}
+      0 resultados
+    {% else %}
+      {{ settlements|length }} liquidación{{ settlements|length|pluralize:"es" }}
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="thead-light">
+        <tr>
+          <th>Liquidación</th>
+          <th>Operador</th>
+          <th>Unidad</th>
+          <th>Periodo</th>
+          <th class="text-center">Estatus</th>
+          <th class="text-right">Total</th>
+          <th style="width: 220px;" class="text-right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        {% for s in settlements %}
+        <tr>
+
+          <td>
+            <a href="{% url 'settlement:detail' s.pk %}">
+              Liquidación #{{ s.id }}
+            </a><br>
+            <small class="text-muted">
+              Creada: {{ s.created_at|date:"d/m/Y H:i" }}
+              {% if s.created_by %} · {{ s.created_by }}{% endif %}
+            </small>
+          </td>
+
+          <td>
+            {{ s.operator.nombre|default:s.operator }}<br>
+            {% if s.operator.telefono %}
+              <small class="text-muted"><i class="fas fa-phone"></i> {{ s.operator.telefono }}</small>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if s.unit_label %}
+              <span class="pill pill-gray">{{ s.unit_label }}</span>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if s.period_from or s.period_to %}
+              <div class="small">
+                {% if s.period_from %}{{ s.period_from|date:"d/m/Y" }}{% else %}<span class="text-muted">—</span>{% endif %}
+                <span class="text-muted">→</span>
+                {% if s.period_to %}{{ s.period_to|date:"d/m/Y" }}{% else %}<span class="text-muted">—</span>{% endif %}
+              </div>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+            {% if s.deposit_date %}
+              <small class="text-muted">Depósito: {{ s.deposit_date|date:"d/m/Y" }}</small>
+            {% endif %}
+          </td>
+
+          <td class="text-center">
+            {% if s.status == "draft" %}
+              <span class="pill pill-gray">Borrador</span>
+            {% elif s.status == "ready" %}
+              <span class="pill pill-warn">Lista</span>
+            {% elif s.status == "paid" %}
+              <span class="pill pill-ok">Pagada</span>
+            {% elif s.status == "canceled" %}
+              <span class="pill pill-bad">Cancelada</span>
+            {% else %}
+              <span class="pill pill-info">{{ s.status }}</span>
+            {% endif %}
+          </td>
+
+          <td class="text-right">
+            {# Ideal: s.total (property) #}
+            {% if s.total is not None %}
+              $ {{ s.total|floatformat:2|intcomma }}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+
+          <td class="text-right">
+            <a href="{% url 'settlement:detail' s.pk %}"
+               class="btn btn-sm btn-outline-secondary"
+               title="Ver detalle">
+              <i class="fas fa-eye"></i>
+            </a>
+
+            <a href="{% url 'settlement:update' s.pk %}"
+               class="btn btn-sm btn-outline-secondary"
+               title="Editar">
+              <i class="fas fa-edit"></i>
+            </a>
+
+            {% if s.status == "ready" or s.status == "paid" %}
+              <a href="#"
+                 class="btn btn-sm btn-outline-secondary"
+                 title="Imprimir (próximamente)">
+                <i class="fas fa-print"></i>
+              </a>
+            {% else %}
+              <button class="btn btn-sm btn-outline-secondary" disabled title="Disponible al marcar LISTA">
+                <i class="fas fa-print"></i>
+              </button>
+            {% endif %}
+
+            {% if s.status == "draft" %}
+              <a href="{% url 'settlement:assign_trips' s.pk %}"
+                 class="btn btn-sm btn-primary"
+                 title="Asignar viajes / completar">
+                <i class="fas fa-list-check"></i>
+              </a>
+            {% else %}
+              <a href="{% url 'settlement:detail' s.pk %}"
+                 class="btn btn-sm btn-primary"
+                 title="Abrir">
+                <i class="fas fa-arrow-right"></i>
+              </a>
+            {% endif %}
+          </td>
+
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            No hay liquidaciones registradas.
+          </td>
+        </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+  <div class="card-footer py-2">
+    <nav aria-label="Paginación">
+      <ul class="pagination pagination-sm mb-0">
+
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?page=1&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">
+              « Primero
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">
+              ‹ Anterior
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">« Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
+        {% endif %}
+
+        {# Ventana simple alrededor de la página actual #}
+        {% for i in paginator.page_range %}
+          {% if i == 1 or i == paginator.num_pages or i >= page_obj.number|add:'-2' and i <= page_obj.number|add:'2' %}
+            {% if page_obj.number == i %}
+              <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+              <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ i }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">
+                  {{ i }}
+                </a>
+              </li>
+            {% endif %}
+          {% elif i == 2 and page_obj.number > 4 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% elif i == paginator.num_pages|add:'-1' and page_obj.number < paginator.num_pages|add:'-3' %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">
+              Siguiente ›
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link"
+               href="?page={{ paginator.num_pages }}&q={{ request.GET.q|urlencode }}&status={{ request.GET.status|urlencode }}">
+              Última »
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente ›</span></li>
+          <li class="page-item disabled"><span class="page-link">Última »</span></li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

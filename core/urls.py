@@ -44,6 +44,7 @@ urlpatterns = [
     path("audit/", include("audit.urls")),
     path("workshop/", include("workshop.urls")),
     path("warehouse/", include("warehouse.urls")),
+    path("settlement/", include("settlement.urls", namespace="settlement")),
     path("api/utils/header-info/", header_info, name="header_info"),
     path("api/utils/lookup-cp/", lookup_cp, name="lookup_cp"),
     path("healthz", healthz, name="healthz"),
