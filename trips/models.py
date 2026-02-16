@@ -64,11 +64,6 @@ class Trip(models.Model):
         verbose_name="Operador de cruce (transfer)",
     )
 
-    observations = models.TextField(
-        blank=True,
-        verbose_name="Observaciones",
-    )
-
     status = models.CharField(
         max_length=20,
         choices=TripStatus.choices,

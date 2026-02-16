@@ -41,7 +41,6 @@ class TripForm(forms.ModelForm):
             "temp_scale",
             "temperatura_min",
             "temperatura_max",
-            "observations",
         ]
         widgets = {
             "observations": forms.Textarea(attrs={"rows": 3}),
