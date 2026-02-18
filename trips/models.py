@@ -211,7 +211,7 @@ class CartaPorteCFDI(models.Model):
     )
 
     # --- Datos CFDI generales ---
-    type = models.CharField(max_length=1, choices=TYPE_CHOICES, default="T")
+    type = models.CharField(max_length=1, choices=TYPE_CHOICES, default="I")
     series = models.CharField(max_length=25, blank=True, null=True)
     folio = models.CharField(max_length=40, blank=True, null=True)
 

@@ -53,9 +53,11 @@
         {{ form.no_ext|add_class:"form-control" }}
       </div>
       <div class="form-group col-md-2">
-        <label for="{{ form.estado.id_for_label }}">Estado</label>
+      <label for="{{ form.estado.id_for_label }}">Estado</label>
+      <div id="estado-wrap">
         {{ form.estado|add_class:"form-control" }}
       </div>
+    </div>
     </div>
 
     <div class="form-row">
@@ -127,7 +129,6 @@
   const form = document.querySelector('form.card');
   const $pais = document.getElementById('id_pais');
   const $cp = document.getElementById('id_cp');
-  const $estado = document.getElementById('id_estado');
   const $municipio = document.getElementById('id_municipio');
   const $poblacion = document.getElementById('id_poblacion');
   const $coloniaSat = document.getElementById('id_colonia_sat');
@@ -138,6 +139,12 @@
     if (!el) return;
     if (value) el.setAttribute('readonly', 'readonly');
     else el.removeAttribute('readonly');
+  }
+
+  function setDisabled(el, value) {
+    if (!el) return;
+    if (value) el.setAttribute('disabled', 'disabled');
+    else el.removeAttribute('disabled');
   }
 
   function hardResetField(el) {
@@ -178,8 +185,20 @@
         coloniaEl.innerHTML = '<option value="">Seleccione una colonia</option>';
       }
     }
+
+    // estado puede ser INPUT o SELECT
+    const estadoEl = document.getElementById('id_estado');
+    if (estadoEl && !keepIds.has(estadoEl.id)) {
+      hardResetField(estadoEl);
+      if (estadoEl.tagName === 'SELECT') {
+        estadoEl.innerHTML = '<option value="">Seleccione estado…</option>';
+      }
+    }
   }
 
+  // =========================
+  // Colonia widget: MX=SELECT, US=INPUT
+  // =========================
   function ensureColoniaWidget(mode) {
     const coloniaEl = document.getElementById('id_colonia');
     if (!coloniaEl) return;
@@ -206,6 +225,83 @@
     }
   }
 
+  // =========================
+  // ✅ USA states (code -> name)
+  // =========================
+  const US_STATES = [
+    ["AL","Alabama"],["AK","Alaska"],["AZ","Arizona"],["AR","Arkansas"],
+    ["CA","California"],["CO","Colorado"],["CT","Connecticut"],["DE","Delaware"],
+    ["FL","Florida"],["GA","Georgia"],["HI","Hawaii"],["ID","Idaho"],
+    ["IL","Illinois"],["IN","Indiana"],["IA","Iowa"],["KS","Kansas"],
+    ["KY","Kentucky"],["LA","Louisiana"],["ME","Maine"],["MD","Maryland"],
+    ["MA","Massachusetts"],["MI","Michigan"],["MN","Minnesota"],["MS","Mississippi"],
+    ["MO","Missouri"],["MT","Montana"],["NE","Nebraska"],["NV","Nevada"],
+    ["NH","New Hampshire"],["NJ","New Jersey"],["NM","New Mexico"],["NY","New York"],
+    ["NC","North Carolina"],["ND","North Dakota"],["OH","Ohio"],["OK","Oklahoma"],
+    ["OR","Oregon"],["PA","Pennsylvania"],["RI","Rhode Island"],["SC","South Carolina"],
+    ["SD","South Dakota"],["TN","Tennessee"],["TX","Texas"],["UT","Utah"],
+    ["VT","Vermont"],["VA","Virginia"],["WA","Washington"],["WV","West Virginia"],
+    ["WI","Wisconsin"],["WY","Wyoming"],
+    ["DC","District of Columbia"],
+  ];
+
+  function normalizeUSStateToCode(v) {
+    if (!v) return "";
+    const s = String(v).trim();
+
+    // si ya viene como "TX"
+    if (/^[A-Za-z]{2}$/.test(s)) return s.toUpperCase();
+
+    // si viene como "Texas" / "TEXAS"
+    const up = s.toUpperCase();
+    const found = US_STATES.find(([code, name]) => name.toUpperCase() === up);
+    return found ? found[0] : "";
+  }
+
+  // =========================
+  // Estado widget: MX=INPUT, US=SELECT (usa #estado-wrap)
+  // =========================
+  function ensureEstadoWidget(mode) {
+    const wrap = document.getElementById('estado-wrap');
+    if (!wrap) return;
+
+    const el = document.getElementById('id_estado');
+    if (!el) return;
+
+    // MX => INPUT (readonly por CP)
+    if (mode === 'MX' && el.tagName !== 'INPUT') {
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = el.id;
+      inp.name = el.name;
+      inp.className = el.className;
+      inp.value = el.value || '';
+      wrap.replaceChildren(inp);
+      return;
+    }
+
+    // US => SELECT
+    if (mode === 'US' && el.tagName !== 'SELECT') {
+      const currentRaw = el.value || '';
+      const currentCode = normalizeUSStateToCode(currentRaw);
+
+      const sel = document.createElement('select');
+      sel.id = el.id;
+      sel.name = el.name;
+      sel.className = el.className;
+
+      const opts = ['<option value="">Seleccione estado…</option>']
+        .concat(US_STATES.map(([code, name]) => {
+          const selected = (code === currentCode) ? 'selected' : '';
+          return `<option value="${code}" ${selected}>${name} (${code})</option>`;
+        }));
+
+      sel.innerHTML = opts.join('');
+      wrap.replaceChildren(sel);
+      return;
+    }
+  }
+
   async function fetchCP(cp) {
     if (!isMX()) return;
     try {
@@ -214,7 +310,10 @@
       const data = await res.json();
       if (!res.ok || !data.ok || !data.found) return;
 
-      if ($estado)    $estado.value = data.estado || '';
+      // ⚠️ estado puede ser INPUT o SELECT dependiendo del país: refrescamos
+      const estadoEl = document.getElementById('id_estado');
+
+      if (estadoEl)   estadoEl.value = data.estado || '';
       if ($municipio) $municipio.value = data.municipio || '';
       if ($poblacion) $poblacion.value = data.ciudad || '';
 
@@ -229,8 +328,15 @@
 
   function applyCountryMode() {
     const mode = isMX() ? 'MX' : 'US';
-    ensureColoniaWidget(mode);
 
+    // ✅ swapea widgets (pueden reemplazar nodos)
+    ensureColoniaWidget(mode);
+    ensureEstadoWidget(mode);
+
+    // 🔄 refrescar referencias (estado/colonia pueden cambiar de tipo/nodo)
+    const estadoEl = document.getElementById('id_estado');
+
+    // CP rules
     if ($cp) {
       if (mode === 'MX') {
         $cp.disabled = false;
@@ -244,12 +350,14 @@
     }
 
     if (mode === 'MX') {
-      setReadonly($estado, true);
+      // MX: estado/municipio/poblacion readonly (se llenan por CP)
+      setReadonly(estadoEl, true);
       setReadonly($municipio, true);
       setReadonly($poblacion, true);
 
+      // Colonia SAT readonly, habilitada
       if ($coloniaSat) {
-        $coloniaSat.disabled = false;
+        setDisabled($coloniaSat, false);
         setReadonly($coloniaSat, true);
       }
 
@@ -257,20 +365,26 @@
       if (v.length === 5) fetchCP(v);
 
     } else {
-      setReadonly($estado, false);
+      // US: estado = SELECT habilitado, municipio/poblacion editables
+      if (estadoEl) {
+        // si es select no aplica readonly; mejor asegurar enabled
+        if (estadoEl.tagName === 'SELECT') setDisabled(estadoEl, false);
+        else setReadonly(estadoEl, false);
+      }
       setReadonly($municipio, false);
       setReadonly($poblacion, false);
 
+      // Colonia SAT no aplica en US
       if ($coloniaSat) {
         $coloniaSat.value = '';
-        $coloniaSat.disabled = true;
+        setDisabled($coloniaSat, true);
       }
     }
   }
 
   if ($pais) {
     $pais.addEventListener('change', () => {
-      clearAllExceptCore();   // ✅ ya no borra CSRF
+      clearAllExceptCore(); // ✅ ya no borra CSRF
       applyCountryMode();
     });
   }
