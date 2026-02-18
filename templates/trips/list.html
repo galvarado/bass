@@ -161,14 +161,22 @@
             </a>
             {% with c=t.carta_porte_cfdi %}
             {% if c and c.status == 'stamped' %}
-              <a class="btn btn-sm btn-outline-primary"
+              <a class="btn btn-sm btn-outline-secondary"
                 href="{% url 'trips:carta_porte_pdf' c.id %}" target="_blank">
                 <i class="fas fa-file-pdf"></i> PDF
+              </a>
+              <a class="btn btn-sm btn-outline-secondary"
+                href="{% url 'trips:carta_porte_xml' c.id %}" target="_blank">
+                <i class="fas fa-file-code"></i> XML
               </a>
             {% else %}
               <button class="btn btn-sm btn-outline-secondary" disabled
                       title="Disponible solo cuando la Carta Porte esté timbrada">
                 <i class="fas fa-file-pdf"></i> PDF
+              </button>
+              <button class="btn btn-sm btn-outline-secondary" disabled
+                      title="Disponible solo cuando la Carta Porte esté timbrada">
+                <i class="fas fa-file-code"></i> XML
               </button>
             {% endif %}
 {% endwith %}

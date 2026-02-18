@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views_carta_porte import CartaPorteEditView, CartaPorteStampedPDFView
+from .views_carta_porte import CartaPorteEditView, CartaPorteStampedPDFView, CartaPorteStampedXMLView
 
 app_name = "trips"
 
@@ -19,4 +19,5 @@ urlpatterns = [
     path("mis-viajes/<int:pk>/", views.MyTripDetailView.as_view(), name="my_detail"),
     path("<int:trip_id>/carta-porte/", CartaPorteEditView.as_view(), name="carta_porte_edit"),
     path("<int:carta_id>/carta-porte/pdf/", CartaPorteStampedPDFView.as_view(), name="carta_porte_pdf"),
+    path("<int:carta_id>/carta-porte/xml/", CartaPorteStampedXMLView.as_view(), name="carta_porte_xml"),
 ]

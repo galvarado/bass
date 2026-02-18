@@ -5,6 +5,7 @@ from decimal import Decimal
 from io import BytesIO
 import base64
 import qrcode
+from django.http import HttpResponse
 
 from django.contrib import messages
 from django.db import transaction
@@ -22,10 +23,8 @@ from .forms import (
     get_carta_porte_goods_formset,
     get_carta_porte_item_formset,
 )
-from .services.facturapi import create_invoice_in_facturapi, FacturapiError
+from .services.facturapi import create_invoice_in_facturapi, FacturapiError, download_carta_porte_xml
 import re
-
-
 # ======================================================
 # QR helper
 # ======================================================
@@ -77,6 +76,23 @@ class CartaPorteStampedPDFView(View):
             filename=f"carta-porte-{carta.uuid}.pdf",
         )
 
+class CartaPorteStampedXMLView(View):
+    def get(self, request, carta_id):
+        carta = get_object_or_404(
+            CartaPorteCFDI,
+            id=carta_id,
+            status="stamped",
+            uuid__isnull=False,
+        )
+
+        try:
+            xml_bytes = download_carta_porte_xml(carta=carta)
+        except FacturapiError as e:
+            return HttpResponse(str(e), status=400)
+
+        resp = HttpResponse(xml_bytes, content_type="application/xml; charset=utf-8")
+        resp["Content-Disposition"] = f'attachment; filename="carta-porte-{carta.uuid}.xml"'
+        return resp
 
 # ======================================================
 # Edit Carta Porte

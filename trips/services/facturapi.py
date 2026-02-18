@@ -14,6 +14,57 @@ from trips.facturapi_payloads import build_cfdi_payload
 logger = logging.getLogger(__name__)
 
 
+def download_invoice_xml(*, invoice_id: str) -> bytes:
+    """
+    Descarga el XML de una factura timbrada en Facturapi.
+    Retorna bytes del XML.
+    """
+    if not invoice_id:
+        raise FacturapiError("invoice_id requerido para descargar XML.")
+
+    api_key, base_url, timeout = _get_facturapi_config()
+
+    # Facturapi: GET /invoices/{id}/xml  (retorna XML, NO JSON)
+    url = f"{base_url}/invoices/{invoice_id}/xml"
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/xml",
+    }
+
+    try:
+        resp = requests.get(url, headers=headers, timeout=timeout)
+    except requests.RequestException as e:
+        raise FacturapiError(f"Error de red con Facturapi: {e}")
+
+    if resp.status_code >= 400:
+        # Facturapi a veces devuelve JSON con message/details o texto
+        ct = resp.headers.get("Content-Type", "")
+        body = (resp.text or "")[:800]
+        logger.error("FACTURAPI XML DOWNLOAD ERROR %s %s CT=%s Body=%s", resp.status_code, url, ct, body)
+        raise FacturapiError(f"No se pudo descargar XML ({resp.status_code}): {body}")
+
+    return resp.content
+
+
+def _get_facturapi_invoice_id_from_carta(carta: CartaPorteCFDI) -> Optional[str]:
+    """
+    Intenta resolver el invoice_id de Facturapi desde los snapshots guardados.
+    """
+    snap = carta.response_snapshot or {}
+    raw = (snap.get("raw") or {}) if isinstance(snap, dict) else {}
+    return (raw.get("id") or snap.get("id") or None)
+
+
+def download_carta_porte_xml(*, carta: CartaPorteCFDI) -> bytes:
+    """
+    Descarga XML usando el invoice_id guardado en response_snapshot.
+    """
+    invoice_id = _get_facturapi_invoice_id_from_carta(carta)
+    if not invoice_id:
+        raise FacturapiError("No se encontró el ID de Facturapi en response_snapshot para descargar el XML.")
+    return download_invoice_xml(invoice_id=invoice_id)
+
 # ======================================================
 # Errores controlados
 # ======================================================

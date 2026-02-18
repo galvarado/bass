@@ -793,6 +793,17 @@
                 title="Este CFDI ya fue timbrado y no puede generarse de nuevo.">
           <i class="fas fa-file-invoice"></i> Timbrar CFDI
         </button>
+        &nbsp;
+        <a class="btn btn-sm btn-primary"
+          href="{% url 'trips:carta_porte_pdf' carta.id %}" target="_blank">
+          <i class="fas fa-file-pdf"></i> PDF
+        </a>
+        &nbsp;
+        <a class="btn btn-sm btn-primary"
+          href="{% url 'trips:carta_porte_xml' carta.id %}" target="_blank">
+          <i class="fas fa-file-code"></i> XML
+        </a>
+
 
       {% elif carta.status == "canceled" %}
         <button class="btn btn-dark btn-sm" type="button" disabled
