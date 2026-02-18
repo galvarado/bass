@@ -379,6 +379,11 @@ class CartaPorteCFDIForm(forms.ModelForm):
         self.fields["customer"].queryset = qs
         self.fields["customer"].label_from_instance = lambda o: o.nombre
 
+        if not self.is_bound:
+            current = getattr(self.instance, "type", None)
+            if not current:  # None / "" / falsy
+                self.initial.setdefault("type", "I")
+
         # Para que al editar se vea bien en el input datetime-local
         for f in ("fecha_salida", "fecha_llegada"):
             if self.instance and getattr(self.instance, f, None):
