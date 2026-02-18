@@ -361,8 +361,11 @@ class CartaPorteCFDIForm(forms.ModelForm):
                 attrs={"type": "datetime-local", "class": "form-control form-control-sm"},
                 format="%Y-%m-%dT%H:%M",
             ),
-            "itrn_us_entry": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "us_entry": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "itrn": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
             "pedimento": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "orden": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "factura_clinte": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
 
             "subtotal": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
             "iva": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
@@ -479,6 +482,10 @@ class CartaPorteGoodsForm(forms.ModelForm):
             "valor_mercancia": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
             "moneda": forms.Select(choices=CURRENCY_CHOICES, attrs={"class": "form-control form-control-sm js-moneda"}),
             "pedimento": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+            "comercio_exterior_uuid": forms.TextInput(
+                attrs={"class": "form-control form-control-sm js-uuidce-input"}
+            ),
+
         }
 
     def __init__(self, *args, **kwargs):
@@ -505,9 +512,9 @@ class CartaPorteGoodsForm(forms.ModelForm):
             if hasattr(instance, "fraccion_arancelaria") and not (getattr(instance, "fraccion_arancelaria", "") or "").strip():
                 instance.fraccion_arancelaria = getattr(merc, "fraccion_arancelaria", "") or ""
 
-            if hasattr(instance, "uuid_comercio_exterior") and not (getattr(instance, "uuid_comercio_exterior", "") or "").strip():
+            if hasattr(instance, "comercio_exterior_uuid") and not (getattr(instance, "comercio_exterior_uuid", "") or "").strip():
                 ce_uuid = getattr(merc, "comercio_exterior_uuid", None)
-                instance.uuid_comercio_exterior = str(ce_uuid) if ce_uuid else ""
+                instance.comercio_exterior_uuid = str(ce_uuid) if ce_uuid else ""
 
             # moneda por default desde carta si existe
             if not (instance.moneda or "").strip() and getattr(instance.carta_porte, "currency", None):

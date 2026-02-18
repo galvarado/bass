@@ -236,8 +236,11 @@ class CartaPorteCFDI(models.Model):
     fecha_llegada = models.DateTimeField(default=timezone.now)
     orden = models.CharField(max_length=50, blank=True)
 
-    itrn_us_entry = models.CharField("ITRN US entry", max_length=80, blank=True)
+    us_entry = models.CharField("US entry", max_length=80, blank=True)
+    itrn = models.CharField("ITRN", max_length=80, blank=True)
     pedimento = models.CharField(max_length=50, blank=True)
+    orden = models.CharField(max_length=50, blank=True)
+    factura_clinte = models.CharField(max_length=50, blank=True)
 
     # subtotal viene del viaje/ruta (snapshot); se guarda para dejar evidencia
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
@@ -314,6 +317,7 @@ class CartaPorteGoods(models.Model):
 
     valor_mercancia = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
     moneda = models.CharField(max_length=3, blank=True, null=True)  # ej: MXN, USD
+    comercio_exterior_uuid = models.CharField(max_length=36, blank=True, default="")
 
     pedimento = models.CharField(max_length=40, blank=True, null=True)
 

@@ -123,65 +123,65 @@
   .cp-hint { font-size:.82rem; color:#6c757d; }
 
   .cp-footer{
-  background:#f8f9fc;            /* estilo SB Admin */
-  border-top:1px solid #e3e6f0;
-  gap:12px;
-}
+    background:#f8f9fc;            /* estilo SB Admin */
+    border-top:1px solid #e3e6f0;
+    gap:12px;
+  }
 
-.cp-statusbar{ gap:8px; }
+  .cp-statusbar{ gap:8px; }
 
-.cp-badge{
-  font-size:.80rem;
-  letter-spacing:.3px;
-  padding:.38rem .6rem;
-  display:inline-flex;
-  align-items:center;
-  gap:.35rem;
-}
+  .cp-badge{
+    font-size:.80rem;
+    letter-spacing:.3px;
+    padding:.38rem .6rem;
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+  }
 
-.cp-dot{
-  width:8px; height:8px;
-  border-radius:999px;
-  display:inline-block;
-  box-shadow:0 0 0 2px rgba(255,255,255,.6);
-}
+  .cp-dot{
+    width:8px; height:8px;
+    border-radius:999px;
+    display:inline-block;
+    box-shadow:0 0 0 2px rgba(255,255,255,.6);
+  }
 
-.cp-dot-secondary{ background:#858796; }
-.cp-dot-info{      background:#36b9cc; }
-.cp-dot-success{   background:#1cc88a; }
-.cp-dot-danger{    background:#e74a3b; }
-.cp-dot-dark{      background:#5a5c69; }
-.cp-dot-light{     background:#d1d3e2; }
+  .cp-dot-secondary{ background:#858796; }
+  .cp-dot-info{      background:#36b9cc; }
+  .cp-dot-success{   background:#1cc88a; }
+  .cp-dot-danger{    background:#e74a3b; }
+  .cp-dot-dark{      background:#5a5c69; }
+  .cp-dot-light{     background:#d1d3e2; }
 
-.cp-meta{
-  font-size:.80rem;
-  color:#6c757d;
-  background:#fff;
-  border:1px solid #e3e6f0;
-  border-radius:999px;
-  padding:.25rem .55rem;
-  display:inline-flex;
-  align-items:center;
-  gap:.35rem;
-}
+  .cp-meta{
+    font-size:.80rem;
+    color:#6c757d;
+    background:#fff;
+    border:1px solid #e3e6f0;
+    border-radius:999px;
+    padding:.25rem .55rem;
+    display:inline-flex;
+    align-items:center;
+    gap:.35rem;
+  }
 
-.cp-meta-warn{
-  color:#856404;
-  background:#fff3cd;
-  border-color:#ffeeba;
-}
+  .cp-meta-warn{
+    color:#856404;
+    background:#fff3cd;
+    border-color:#ffeeba;
+  }
 
-.cp-mono{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size:.78rem;
-}
+  .cp-mono{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size:.78rem;
+  }
 
-.cp-locked {
-  background-color: #f6f7fb !important;
-  border-color: #d1d3e2 !important;
-  color: #6c757d;
-  cursor: not-allowed;
-}
+  .cp-locked {
+    background-color: #f6f7fb !important;
+    border-color: #d1d3e2 !important;
+    color: #6c757d;
+    cursor: not-allowed;
+  }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -191,8 +191,6 @@
     <i class="fas fa-arrow-left"></i> Volver
   </a>
 </div>
-
-
 
 <form id="cp-form" method="post" class="card shadow-sm">
   {% csrf_token %}
@@ -267,8 +265,8 @@
 
     <div class="row cp-compact">
       <div class="col-md-12">
-        <div class="form-row">
 
+        <div class="form-row">
           <div class="form-group col-md-4">
             <label>Cliente (Paga)</label>
             {{ form.customer|add_class:"form-control form-control-sm" }}
@@ -286,15 +284,32 @@
 
           <div class="form-group col-md-2">
             <label>US entry</label>
-            {{ form.itrn_us_entry|add_class:"form-control form-control-sm cp-w-itrn" }}
+            {{ form.us_entry|add_class:"form-control form-control-sm" }}
           </div>
 
           <div class="form-group col-md-2">
+            <label>ITRN</label>
+            {{ form.itrn|add_class:"form-control form-control-sm" }}
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-3">
             <label>Pedimento</label>
-            {{ form.pedimento|add_class:"form-control form-control-sm cp-w-ped" }}
+            {{ form.pedimento|add_class:"form-control form-control-sm" }}
           </div>
 
+          <div class="form-group col-md-3">
+            <label>Orden</label>
+            {{ form.orden|add_class:"form-control form-control-sm" }}
+          </div>
+
+          <div class="form-group col-md-3">
+            <label>Factura cliente</label>
+            {{ form.factura_clinte|add_class:"form-control form-control-sm" }}
+          </div>
         </div>
+
       </div>
     </div>
 
@@ -476,7 +491,12 @@
 
             <td class="w-clv"><div class="cp-ro js-clave"></div></td>
             <td class="w-frac"><div class="cp-ro js-fraccion"></div></td>
-            <td class="w-uuid"><div class="cp-ro js-uuidce"></div></td>
+
+            {# ✅ AHORA ES INPUT EDITABLE #}
+            <td class="w-uuid">
+              {{ f.comercio_exterior_uuid|add_class:"form-control form-control-sm js-uuidce-input" }}
+            </td>
+
             <td class="w-cant">{{ f.cantidad|add_class:"form-control form-control-sm" }}</td>
             <td class="w-und">{{ f.unidad|add_class:"form-control form-control-sm" }}</td>
             <td class="w-peso">{{ f.peso_en_kg|add_class:"form-control form-control-sm" }}</td>
@@ -501,12 +521,14 @@
       </table>
     </div>
 
+    <div class="d-none">
+</div>
     <template id="goods-empty-row">
       <tr class="goods-row">
         <td class="w-merc goods-mercancia">__HIDDEN____MERCANCIA__</td>
         <td class="w-clv"><div class="cp-ro js-clave"></div></td>
         <td class="w-frac"><div class="cp-ro js-fraccion"></div></td>
-        <td class="w-uuid"><div class="cp-ro js-uuidce"></div></td>
+        <td class="w-uuid">__UUIDCE__</td>
 
         <td class="w-cant">__CANT__</td>
         <td class="w-und">__UNIDAD__</td>
@@ -662,7 +684,7 @@
                    readonly>
 
             <input type="hidden" name="subtotal" class="js-subtotal"
-       value="{{ form.subtotal.value|default_if_none:'0.00' }}">
+                   value="{{ form.subtotal.value|default_if_none:'0.00' }}">
           </div>
 
           <div class="input-group input-group-sm mb-1">
@@ -676,7 +698,7 @@
                    readonly>
 
             <input type="hidden" name="iva" class="js-iva"
-       value="{{ form.iva.value|default_if_none:'0.00' }}">
+                   value="{{ form.iva.value|default_if_none:'0.00' }}">
           </div>
 
           <div class="input-group input-group-sm mb-1">
@@ -690,7 +712,7 @@
                    readonly>
 
             <input type="hidden" name="retencion" class="js-retencion"
-       value="{{ form.retencion.value|default_if_none:'0.00' }}">
+                   value="{{ form.retencion.value|default_if_none:'0.00' }}">
           </div>
 
           <div class="input-group input-group-sm">
@@ -704,7 +726,7 @@
                    readonly>
 
             <input type="hidden" name="total" class="js-total"
-       value="{{ form.total.value|default_if_none:'0.00' }}">
+                   value="{{ form.total.value|default_if_none:'0.00' }}">
           </div>
         </div>
       </div>
@@ -714,88 +736,88 @@
 
   <div class="card-footer cp-footer d-flex justify-content-between align-items-center flex-wrap py-2">
 
-  {# ✅ Estado (izquierda) #}
-  <div class="cp-statusbar d-flex align-items-center flex-wrap">
-    <span class="text-muted small mr-2">Estado</span>
+    {# ✅ Estado (izquierda) #}
+    <div class="cp-statusbar d-flex align-items-center flex-wrap">
+      <span class="text-muted small mr-2">Estado</span>
 
-    {% if carta.status == "draft" %}
-      <span class="badge badge-pill badge-secondary cp-badge">
-        <span class="cp-dot cp-dot-secondary"></span> Borrador
-      </span>
-    {% elif carta.status == "ready" %}
-      <span class="badge badge-pill badge-info cp-badge">
-        <span class="cp-dot cp-dot-info"></span> Lista para timbrar
-      </span>
-    {% elif carta.status == "stamped" %}
-      <span class="badge badge-pill badge-success cp-badge">
-        <span class="cp-dot cp-dot-success"></span> Timbrada
-      </span>
-    {% elif carta.status == "canceled" %}
-      <span class="badge badge-pill badge-dark cp-badge">
-        <span class="cp-dot cp-dot-dark"></span> Cancelada
-      </span>
-    {% elif carta.status == "error" %}
-      <span class="badge badge-pill badge-danger cp-badge">
-        <span class="cp-dot cp-dot-danger"></span> Error
-      </span>
-    {% else %}
-      <span class="badge badge-pill badge-light cp-badge">
-        <span class="cp-dot cp-dot-light"></span> {{ carta.status|default:"(sin status)" }}
-      </span>
-    {% endif %}
+      {% if carta.status == "draft" %}
+        <span class="badge badge-pill badge-secondary cp-badge">
+          <span class="cp-dot cp-dot-secondary"></span> Borrador
+        </span>
+      {% elif carta.status == "ready" %}
+        <span class="badge badge-pill badge-info cp-badge">
+          <span class="cp-dot cp-dot-info"></span> Lista para timbrar
+        </span>
+      {% elif carta.status == "stamped" %}
+        <span class="badge badge-pill badge-success cp-badge">
+          <span class="cp-dot cp-dot-success"></span> Timbrada
+        </span>
+      {% elif carta.status == "canceled" %}
+        <span class="badge badge-pill badge-dark cp-badge">
+          <span class="cp-dot cp-dot-dark"></span> Cancelada
+        </span>
+      {% elif carta.status == "error" %}
+        <span class="badge badge-pill badge-danger cp-badge">
+          <span class="cp-dot cp-dot-danger"></span> Error
+        </span>
+      {% else %}
+        <span class="badge badge-pill badge-light cp-badge">
+          <span class="cp-dot cp-dot-light"></span> {{ carta.status|default:"(sin status)" }}
+        </span>
+      {% endif %}
 
-    {% if carta.uuid %}
-      <span class="cp-meta ml-2" title="Folio fiscal (UUID) del CFDI timbrado">
-        Folio fiscal: <span class="cp-mono">{{ carta.uuid }}</span>
-      </span>
-    {% endif %}
+      {% if carta.uuid %}
+        <span class="cp-meta ml-2" title="Folio fiscal (UUID) del CFDI timbrado">
+          Folio fiscal: <span class="cp-mono">{{ carta.uuid }}</span>
+        </span>
+      {% endif %}
 
-    {% if carta.last_error %}
-      <span class="cp-meta cp-meta-warn ml-2" title="{{ carta.last_error }}">
-        <i class="fas fa-exclamation-triangle mr-1"></i>
-        {{ carta.last_error|truncatechars:80 }}
-      </span>
-    {% endif %}
-  </div>
+      {% if carta.last_error %}
+        <span class="cp-meta cp-meta-warn ml-2" title="{{ carta.last_error }}">
+          <i class="fas fa-exclamation-triangle mr-1"></i>
+          {{ carta.last_error|truncatechars:80 }}
+        </span>
+      {% endif %}
+    </div>
 
-  {# ✅ Acciones (derecha) #}
-<div class="d-flex align-items-center gap-2">
-  <button class="btn btn-primary btn-sm" type="submit" name="action" value="save">
-    <i class="fas fa-save"></i> Guardar
-  </button>
-&nbsp;
-
-  {# ✅ Blindaje UI: si ya está timbrada o tiene UUID => no permitir re-timbrar #}
-  {% if carta.status == "stamped" or carta.uuid %}
-    <button class="btn btn-success btn-sm" type="button" disabled
-            title="Este CFDI ya fue timbrado y no puede generarse de nuevo.">
-      <i class="fas fa-file-invoice"></i> Timbrar CFDI
-    </button>
-
-  {% elif carta.status == "canceled" %}
-    <button class="btn btn-dark btn-sm" type="button" disabled
-            title="Este CFDI está cancelado y no puede timbrarse nuevamente desde aquí.">
-      <i class="fas fa-ban"></i> CFDI cancelado
-    </button>
-
-  {% else %}
-    {% if can_generate_cfdi %}
-      <button class="btn btn-success btn-sm" type="submit" name="action" value="generate_cfdi">
-        <i class="fas fa-file-invoice"></i> Timbrar CFDI
+    {# ✅ Acciones (derecha) #}
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-primary btn-sm" type="submit" name="action" value="save">
+        <i class="fas fa-save"></i> Guardar
       </button>
-    {% else %}
-      <button class="btn btn-success btn-sm" type="button" disabled title="Guarda primero para habilitar">
-        <i class="fas fa-file-invoice"></i> Timbrar CFDI
-      </button>
-    {% endif %}
-  {% endif %}
-</div>
+      &nbsp;
+
+      {# ✅ Blindaje UI: si ya está timbrada o tiene UUID => no permitir re-timbrar #}
+      {% if carta.status == "stamped" or carta.uuid %}
+        <button class="btn btn-success btn-sm" type="button" disabled
+                title="Este CFDI ya fue timbrado y no puede generarse de nuevo.">
+          <i class="fas fa-file-invoice"></i> Timbrar CFDI
+        </button>
+
+      {% elif carta.status == "canceled" %}
+        <button class="btn btn-dark btn-sm" type="button" disabled
+                title="Este CFDI está cancelado y no puede timbrarse nuevamente desde aquí.">
+          <i class="fas fa-ban"></i> CFDI cancelado
+        </button>
+
+      {% else %}
+        {% if can_generate_cfdi %}
+          <button class="btn btn-success btn-sm" type="submit" name="action" value="generate_cfdi">
+            <i class="fas fa-file-invoice"></i> Timbrar CFDI
+          </button>
+        {% else %}
+          <button class="btn btn-success btn-sm" type="button" disabled title="Guarda primero para habilitar">
+            <i class="fas fa-file-invoice"></i> Timbrar CFDI
+          </button>
+        {% endif %}
+      {% endif %}
+    </div>
 
 </form>
+
 <script>
   window.CP_IS_STAMPED = {% if carta.status == "stamped" %}true{% else %}false{% endif %};
 </script>
-
 <script>
 (function () {
   function ready(fn){
@@ -934,7 +956,6 @@
       if (!tr) return null;
       const tds = tr.querySelectorAll("td");
       if (!tds || !tds[idx]) return null;
-      // usa tus inputs readonly existentes
       return tds[idx].querySelector("input") || null;
     }
 
@@ -944,7 +965,7 @@
     const $ivaP  = () => getFieldBySuffix("iva_pct");
     const $retP  = () => getFieldBySuffix("ret_iva_pct");
 
-    // indices según tu tabla:
+    // indices:
     // 0 cant, 1 unidad, 2 producto, 3 desc, 4 precio, 5 descuento,
     // 6 subtotal UI, 7 iva%, 8 iva monto UI, 9 ret%, 10 ret monto UI, 11 importe UI
     const $subUI = () => getROInputAtTdIndex(6);
@@ -1034,7 +1055,7 @@
       if ($retMontoUI()) setUI($retMontoUI(), retMonto);
       if ($impUI())      setUI($impUI(), importe);
 
-      // ✅ hidden del formulario principal (lo que se envía al backend)
+      // ✅ hidden del formulario principal
       setHidden(elSubtotal, sub);
       setHidden(elIVA, ivaMonto);
       setHidden(elRet, retMonto);
@@ -1045,9 +1066,7 @@
     applyLocks();
     recomputeConceptAndTotals();
 
-    // ==========================
-    // Checkboxes: habilitar/deshabilitar + recalcular
-    // ==========================
+    // Checkboxes -> recalcular
     if (!isStamped) {
       chkIVA16?.addEventListener("change", function () {
         applyLocks();
@@ -1055,7 +1074,6 @@
       });
 
       chkRET4?.addEventListener("change", function () {
-        // al prender -> default 4.00
         if (chkRET4.checked) {
           if ($retP()) setVal($retP(), "4.00");
         } else {
@@ -1074,9 +1092,7 @@
       });
     }
 
-    // ==========================
-    // Cambios en inputs del concepto -> recalcular
-    // ==========================
+    // cambios en inputs concepto
     function bindRecalc(el) {
       if (!el) return;
       el.addEventListener("input", () => recomputeConceptAndTotals());
@@ -1087,7 +1103,7 @@
     bindRecalc($retP());
 
     // ==========================
-    // Mercancías: autofill + remove
+    // Mercancías: autofill + remove + UUID editable
     // ==========================
     const cartaCurrency = "{{ form.currency.value|default_if_none:'' }}";
 
@@ -1098,35 +1114,52 @@
     }
 
     function bindMercanciaAutofill(scopeEl) {
-      const root = scopeEl || document;
-      root.querySelectorAll("select.js-mercancia").forEach(sel => {
-        if (sel.dataset.autofillBound === "1") return;
-        sel.dataset.autofillBound = "1";
+  const root = scopeEl || document;
 
-        sel.addEventListener("change", function () {
-          const opt = sel.options[sel.selectedIndex];
-          if (!opt) return;
+  root.querySelectorAll("select.js-mercancia").forEach(sel => {
+    if (sel.dataset.autofillBound === "1") return;
+    sel.dataset.autofillBound = "1";
 
-          const tr = sel.closest("tr");
-          if (!tr) return;
+    sel.addEventListener("change", function () {
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt) return;
 
-          const vClave = opt.getAttribute("data-clave") || "";
-          const vFrac  = opt.getAttribute("data-fraccion") || "";
-          const vUUID  = opt.getAttribute("data-uuidce") || "";
+      const tr = sel.closest("tr");
+      if (!tr) return;
 
-          fillDiv(tr.querySelector(".js-clave"), vClave);
-          fillDiv(tr.querySelector(".js-fraccion"), vFrac);
-          fillDiv(tr.querySelector(".js-uuidce"), vUUID);
+      const vClave = opt.getAttribute("data-clave") || "";
+      const vFrac  = opt.getAttribute("data-fraccion") || "";
+      const vUUID  = opt.getAttribute("data-uuidce") || "";
 
-          const elMoneda = tr.querySelector("select.js-moneda");
-          if (elMoneda && !String(elMoneda.value || "").trim() && cartaCurrency) {
-            elMoneda.value = cartaCurrency;
-          }
-        });
+      // Clave y fracción (divs readonly)
+      const claveDiv = tr.querySelector(".js-clave");
+      const fracDiv  = tr.querySelector(".js-fraccion");
 
-        if (sel.value) sel.dispatchEvent(new Event("change", { bubbles: true }));
-      });
+      if (claveDiv) claveDiv.textContent = vClave;
+      if (fracDiv)  fracDiv.textContent  = vFrac;
+
+      // ✅ UUID comercio exterior (input editable)
+      const uuidInput =
+        tr.querySelector('input[name$="-comercio_exterior_uuid"]') ||
+        tr.querySelector("input.js-uuidce-input");
+
+      if (uuidInput && !uuidInput.value.trim()) {
+        uuidInput.value = vUUID;
+      }
+
+      // Moneda default
+      const elMoneda = tr.querySelector("select.js-moneda");
+      if (elMoneda && !String(elMoneda.value || "").trim() && cartaCurrency) {
+        elMoneda.value = cartaCurrency;
+      }
+    });
+
+    if (sel.value) {
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
     }
+  });
+}
+
 
     // Scroll sync mercancías
     const goodsWrap = document.getElementById("goods-scroll-wrap");
@@ -1207,12 +1240,13 @@
         const idx = bumpTotal("goods");
 
         const emptyHidden = `{{ fs_goods.empty_form.hidden_fields|join:"" | escapejs }}`;
-        const emptyMerc   = `{{ fs_goods.empty_form.mercancia | escapejs }}`;
+const emptyMerc = `{{ fs_goods.empty_form.mercancia|add_class:"form-control form-control-sm js-mercancia"|escapejs }}`;
+const emptyUUIDCE = `{{ fs_goods.empty_form.comercio_exterior_uuid|escapejs }}`;
         const emptyCant   = `{{ fs_goods.empty_form.cantidad  | escapejs }}`;
         const emptyUni    = `{{ fs_goods.empty_form.unidad    | escapejs }}`;
         const emptyPeso   = `{{ fs_goods.empty_form.peso_en_kg| escapejs }}`;
         const emptyVal    = `{{ fs_goods.empty_form.valor_mercancia| escapejs }}`;
-        const emptyMon    = `{{ fs_goods.empty_form.moneda    | escapejs }}`;
+const emptyMon  = `{{ fs_goods.empty_form.moneda|add_class:"form-control form-control-sm js-moneda"|escapejs }}`;
         const emptyEmb    = `{{ fs_goods.empty_form.embalaje  | escapejs }}`;
         const emptyPed    = `{{ fs_goods.empty_form.pedimento | escapejs }}`;
         const emptyDelete = `{{ fs_goods.empty_form.DELETE    | escapejs }}`;
@@ -1223,6 +1257,7 @@
         html = html
           .replaceAll("__HIDDEN__",    repl(emptyHidden))
           .replaceAll("__MERCANCIA__", repl(emptyMerc))
+          .replaceAll("__UUIDCE__",    repl(emptyUUIDCE))
           .replaceAll("__CANT__",      repl(emptyCant))
           .replaceAll("__UNIDAD__",    repl(emptyUni))
           .replaceAll("__PESO__",      repl(emptyPeso))
@@ -1249,10 +1284,8 @@
     // ✅ Submit: forzar hidden RAW (sin comas) para Django DecimalField
     // ==========================
     form?.addEventListener("submit", function () {
-      // Recalcular antes de enviar
       recomputeConceptAndTotals();
 
-      // ✅ Hidden sin formato
       if (elSubtotal && elSubtotalUI) elSubtotal.value = String(parseMoney(elSubtotalUI.value || "0")).toFixed(2);
       if (elIVA && elIvaUI)           elIVA.value      = String(parseMoney(elIvaUI.value || "0")).toFixed(2);
       if (elRet && elRetUI)           elRet.value      = String(parseMoney(elRetUI.value || "0")).toFixed(2);
@@ -1299,4 +1332,5 @@
 })();
 </script>
 
-{% endblock  %}
+
+{% endblock %}
