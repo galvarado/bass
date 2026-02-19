@@ -68,6 +68,7 @@
       </thead>
       <tbody>
         {% for t in trips %}
+          {% with c=t.carta_porte_cfdi %}
           <tr>
             <td>
               <a href="{% url 'trips:detail' t.pk %}">
@@ -120,97 +121,80 @@
               {% endif %}
             </td>
 
-           <td>
-            {% if t.status == "PROGRAMADO" %}
-              {# Columna PROGRAMADO: bg-warning #}
-              <span class="badge badge-warning">Programado</span>
-
-            {% elif t.status == "EN_ORIGEN" %}
-              {# Columna EN ORIGEN: bg-info #}
-              <span class="badge badge-info">En origen</span>
-
-            {% elif t.status == "EN_CURSO" %}
-              {# Columna EN CURSO: bg-primary #}
-              <span class="badge badge-primary">En curso</span>
-
-            {% elif t.status == "EN_DESTINO" %}
-              {# Columna EN DESTINO: bg-success #}
-              <span class="badge badge-success">En destino</span>
-
-            {% elif t.status == "COMPLETADO" %}
-              {# Columna COMPLETADO: bg-secondary #}
-              <span class="badge badge-secondary">Completado</span>
-
-            {% elif t.status == "CANCELADO" %}
-              {# Extra: cancelado en rojo #}
-              <span class="badge badge-danger">Cancelado</span>
-
-            {% else %}
-              <span class="badge badge-light">{{ t.status }}</span>
-            {% endif %}
-          </td>
-
-          <td class="text-right">
-             <a href="{% url 'trips:detail' t.pk %}"
-               class="btn btn-sm btn-outline-secondary" title="Ver detalle">
-              <i class="fas fa-eye"></i>
-            </a>
-            <a href="{% url 'trips:carta_porte_edit' t.pk %}"
-               class="btn btn-sm btn-outline-secondary" title="Carta">
-              <i class="fas fa-file"></i>
-            </a>
-            {% with c=t.carta_porte_cfdi %}
-           {% if c and c.status == 'stamped' %}
-    <div class="btn-group">
-      <button type="button"
-              class="btn btn-sm btn-outline-secondary dropdown-toggle"
-              data-toggle="dropdown"
-              aria-haspopup="true"
-              aria-expanded="false">
-        <i class="fas fa-download"></i>
-      </button>
-      <div class="dropdown-menu dropdown-menu-right">
-        <a class="dropdown-item"
-           href="{% url 'trips:carta_porte_pdf' c.id %}"
-           target="_blank">
-          <i class="fas fa-file-pdf text-danger mr-2"></i> PDF
-        </a>
-        <a class="dropdown-item"
-           href="{% url 'trips:carta_porte_xml' c.id %}"
-           target="_blank">
-          <i class="fas fa-file-code text-primary mr-2"></i> XML
-        </a>
-      </div>
-    </div>
-  {% else %}
-  
-  {% endif %}
-{% endwith %}
-
-
-            {% with c=t.carta_porte_cfdi %}
-                {% if t.status == "PROGRAMADO" and not c or c.status != "stamped" %}
-
-                <!-- Botón EDITAR habilitado -->
-                <a href="{% url 'trips:update' t.pk %}"
-                  class="btn btn-sm btn-outline-secondary"
-                  title="Editar viaje">
-                  <i class="fas fa-edit"></i>
-                </a>
-                <a href="{% url 'trips:delete' t.pk %}"
-                  class="btn btn-sm btn-outline-danger"
-                  title="Eliminar">
-                  <i class="fas fa-trash"></i>
-                </a>
+            <td>
+              {% if t.status == "PROGRAMADO" %}
+                <span class="badge badge-warning">Programado</span>
+              {% elif t.status == "EN_ORIGEN" %}
+                <span class="badge badge-info">En origen</span>
+              {% elif t.status == "EN_CURSO" %}
+                <span class="badge badge-primary">En curso</span>
+              {% elif t.status == "EN_DESTINO" %}
+                <span class="badge badge-success">En destino</span>
+              {% elif t.status == "COMPLETADO" %}
+                <span class="badge badge-secondary">Completado</span>
+              {% elif t.status == "CANCELADO" %}
+                <span class="badge badge-danger">Cancelado</span>
               {% else %}
-                <!-- Bloqueado -->
-               
+                <span class="badge badge-light">{{ t.status }}</span>
               {% endif %}
-{% endwith %}
+            </td>
 
-           
-          </td>
+            <td class="text-right">
+              <a href="{% url 'trips:detail' t.pk %}"
+                 class="btn btn-sm btn-outline-secondary" title="Ver detalle">
+                <i class="fas fa-eye"></i>
+              </a>
+
+              <a href="{% url 'trips:carta_porte_edit' t.pk %}"
+                 class="btn btn-sm btn-outline-secondary" title="Carta">
+                <i class="fas fa-file"></i>
+              </a>
+
+              {# Descargas solo si está timbrada #}
+              {% if c and c.status == 'stamped' %}
+                <div class="btn-group">
+                  <button type="button"
+                          class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                          data-toggle="dropdown"
+                          aria-haspopup="true"
+                          aria-expanded="false">
+                    <i class="fas fa-download"></i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item"
+                       href="{% url 'trips:carta_porte_pdf' c.id %}"
+                       target="_blank">
+                      <i class="fas fa-file-pdf text-danger mr-2"></i> PDF
+                    </a>
+                    <a class="dropdown-item"
+                       href="{% url 'trips:carta_porte_xml' c.id %}"
+                       target="_blank">
+                      <i class="fas fa-file-code text-primary mr-2"></i> XML
+                    </a>
+                  </div>
+                </div>
+              {% endif %}
+
+              {# Editar/Eliminar SOLO si: PROGRAMADO y (sin CP o CP no stamped) #}
+              {% with c=t.carta_porte_cfdi %}
+                {% if t.status == "PROGRAMADO" %}
+                  {% if not c or c.status != "stamped" %}
+                    <a href="{% url 'trips:update' t.pk %}"
+                      class="btn btn-sm btn-outline-secondary"
+                      title="Editar viaje">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="{% url 'trips:delete' t.pk %}"
+                      class="btn btn-sm btn-outline-danger"
+                      title="Eliminar">
+                      <i class="fas fa-trash"></i>
+                    </a>
+                  {% endif %}
+                {% endif %}
+              {% endwith %}
+            </td>
           </tr>
+          {% endwith %}
         {% empty %}
           <tr>
             <td colspan="6" class="text-center text-muted py-4">Sin resultados.</td>
