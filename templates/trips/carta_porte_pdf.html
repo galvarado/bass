@@ -1,5 +1,7 @@
 {% load static %}
 {% load humanize %}
+{% load sat_catalogos %}
+
 <!doctype html>
 <html>
 <head>
@@ -210,7 +212,6 @@
       display: inline-block;
       margin: 3px 0;
       padding: 2px 6px;
-      border: 1px solid #c40000;
     }
 
     /* ===== Pagaré ===== */
@@ -315,7 +316,7 @@
         <th>Folio Fiscal Complemento(UUID)</th>
       </tr>
       <tr>
-        <td class="center">—</td>
+        <td class="center">    {{ carta.emitter_no_cert|default:"—xc" }}</td>
         <td class="center">{{ raw.uuid|default:carta.uuid|default:"—" }}</td>
       </tr>
       <tr>
@@ -368,12 +369,33 @@
           <td>
             <div><strong>{{ issuer.legal_name|default:"AUTO TRANSPORTES BASS" }}</strong></div>
             <div class="small"><strong>RFC:</strong> {{ issuer.tax_id|default:"—" }}</div>
-            <div class="small"><strong>Régimen:</strong> ({{ issuer.tax_system|default:"—" }})</div>
+
+            {% with reg=issuer.tax_system|default:"" %}
+              <div class="small">
+                <strong>Régimen:</strong>
+                {% if reg %}
+                  ({{ reg }}) {{ reg|tax_system_text|default:"" }}
+                {% else %}
+                  —
+                {% endif %}
+              </div>
+            {% endwith %}
           </td>
+
           <td>
             <div><strong>{{ cust.legal_name|default:"—" }}</strong></div>
             <div class="small"><strong>RFC:</strong> {{ cust.tax_id|default:"—" }}</div>
-            <div class="small"><strong>Uso CFDI:</strong> ({{ raw.use|default:carta.uso_cfdi|default:"—" }})</div>
+
+            {% with u=raw.use|default:carta.uso_cfdi|default:"" %}
+              <div class="small">
+                <strong>Uso CFDI:</strong>
+                {% if u %}
+                  ({{ u }}) {{ u|cfdi_use_text|default:"" }}
+                {% else %}
+                  —
+                {% endif %}
+              </div>
+            {% endwith %}
           </td>
         </tr>
       </tbody>
@@ -404,15 +426,15 @@
               {% with price=prod.price|default:0 %}
               {% with discount=item.discount|default:0 %}
                 {% widthratio discount 1 -1 as discount_neg %}
-                {% with importe=importe_bruto|add:discount_neg %}
+                {% with importe=item.importe|add:discount_neg %}
                 <tr>
                   <td class="center">{{ qty }}</td>
-                  <td class="center">[{{ prod.unit_key|default:"—" }}] {{ prod.unit_name|default:prod.unit_key|default:"—" }}</td>
+                  <td class="center">[{{ prod.unit_key|default:"—" }}] Servicio</td>
                   <td>
                     <span class="nowrap">[{{ prod.product_key|default:"—" }}]</span>
                     {{ prod.description|default:"—" }}
                   </td>
-                  <td class="right">{{ importe|floatformat:2|intcomma }}</td>
+                  <td class="right">{{ prod.price|floatformat:2|intcomma }}</td>
                 </tr>
                 {% endwith %}
               {% endwith %}{% endwith %}{% endwith %}
@@ -431,8 +453,9 @@
 
         <!-- Leyendas -->
         <div class="legend">
-          IMPUESTO RETENIDO DE CONFORMIDAD CON LA LEY DEL IMPUESTO AL VALOR AGREGADO. EFECTOS FISCALES AL PAGO.
+          IMPUESTO RETENIDO DE CONFORMIDAD CON LA LEY DEL IMPUESTO AL VALOR AGREGADO. 
           <div class="warn">TODA MERCANCÍA VIAJA POR CUENTA Y RIESGO DEL CLIENTE POR NO TRAER SEGURO.</div>
+        </br>EFECTOS FISCALES AL PAGO.
           
         </div>
 
@@ -593,7 +616,7 @@
         <th>Folio Fiscal Complemento(UUID)</th>
       </tr>
       <tr>
-        <td class="center">—</td>
+        <td class="center">    {{ carta.emitter_no_cert|default:"—xc" }}</td>
         <td class="center">{{ raw.uuid|default:carta.uuid|default:"—" }}</td>
       </tr>
       <tr>

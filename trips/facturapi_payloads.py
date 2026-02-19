@@ -314,13 +314,14 @@ def build_customer_payload(client: Client) -> Dict[str, Any]:
 def build_items_payload(carta: CartaPorteCFDI) -> List[Dict[str, Any]]:
     items = list(carta.items.order_by("orden", "id").all())
     out: List[Dict[str, Any]] = []
-
+    is_intl = _is_international_shipment(carta)
     for it in items:
         qty = _d(getattr(it, "cantidad", None), "0")
         price = _d(getattr(it, "precio", None), "0")
         desc = (_clean(getattr(it, "descripcion", None)) or "Servicio de transporte")[:255]
-
-        product_key = "78101800"
+        # 78101806 codigo de producto para viaje internacional
+        # http://omawww.sat.gob.mx/informacion_fiscal/factura_electronica/Documents/Sugerencia_PyS/Trans_Carga.pdf
+        product_key = "78101806" if is_intl else "78101800"
         unit_key = _clean(getattr(it, "unidad", None)) or "E48"
 
         taxes: List[Dict[str, Any]] = []

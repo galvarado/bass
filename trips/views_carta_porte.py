@@ -569,6 +569,8 @@ class CartaPorteEditView(TemplateView):
 
                 resp = result.get("response") or {}
                 carta.uuid = resp.get("uuid") or carta.uuid
+                carta.emitter_no_cert = resp.get("emitter_no_cert") or ""
+                carta.sat_no_cert = resp.get("sat_no_cert") or ""
                 carta.pdf_url = resp.get("pdf_url") or resp.get("pdf") or carta.pdf_url
                 carta.xml_url = resp.get("xml_url") or resp.get("xml") or carta.xml_url
 
@@ -595,6 +597,8 @@ class CartaPorteEditView(TemplateView):
                     "uuid",
                     "pdf_url",
                     "xml_url",
+                    "emitter_no_cert",
+                    "sat_no_cert",
                     "status",
                     "last_error",
                     "updated_at",

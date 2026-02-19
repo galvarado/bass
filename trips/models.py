@@ -260,6 +260,8 @@ class CartaPorteCFDI(models.Model):
     xml_url = models.URLField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     last_error = models.TextField(blank=True, null=True)
+    emitter_no_cert = models.CharField(max_length=32, blank=True, default="")
+    sat_no_cert = models.CharField(max_length=32, blank=True, default="")
 
     # Snapshots JSON
     payload_snapshot = models.JSONField(blank=True, null=True)   # lo que enviaste a FacturAPI

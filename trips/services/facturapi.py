@@ -1,9 +1,9 @@
-# trips/services/facturapi.py
 from __future__ import annotations
 
 import json
 import logging
 from typing import Dict, Any, Optional
+import xml.etree.ElementTree as ET
 
 import requests
 from django.conf import settings
@@ -13,57 +13,6 @@ from trips.facturapi_payloads import build_cfdi_payload
 
 logger = logging.getLogger(__name__)
 
-
-def download_invoice_xml(*, invoice_id: str) -> bytes:
-    """
-    Descarga el XML de una factura timbrada en Facturapi.
-    Retorna bytes del XML.
-    """
-    if not invoice_id:
-        raise FacturapiError("invoice_id requerido para descargar XML.")
-
-    api_key, base_url, timeout = _get_facturapi_config()
-
-    # Facturapi: GET /invoices/{id}/xml  (retorna XML, NO JSON)
-    url = f"{base_url}/invoices/{invoice_id}/xml"
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Accept": "application/xml",
-    }
-
-    try:
-        resp = requests.get(url, headers=headers, timeout=timeout)
-    except requests.RequestException as e:
-        raise FacturapiError(f"Error de red con Facturapi: {e}")
-
-    if resp.status_code >= 400:
-        # Facturapi a veces devuelve JSON con message/details o texto
-        ct = resp.headers.get("Content-Type", "")
-        body = (resp.text or "")[:800]
-        logger.error("FACTURAPI XML DOWNLOAD ERROR %s %s CT=%s Body=%s", resp.status_code, url, ct, body)
-        raise FacturapiError(f"No se pudo descargar XML ({resp.status_code}): {body}")
-
-    return resp.content
-
-
-def _get_facturapi_invoice_id_from_carta(carta: CartaPorteCFDI) -> Optional[str]:
-    """
-    Intenta resolver el invoice_id de Facturapi desde los snapshots guardados.
-    """
-    snap = carta.response_snapshot or {}
-    raw = (snap.get("raw") or {}) if isinstance(snap, dict) else {}
-    return (raw.get("id") or snap.get("id") or None)
-
-
-def download_carta_porte_xml(*, carta: CartaPorteCFDI) -> bytes:
-    """
-    Descarga XML usando el invoice_id guardado en response_snapshot.
-    """
-    invoice_id = _get_facturapi_invoice_id_from_carta(carta)
-    if not invoice_id:
-        raise FacturapiError("No se encontró el ID de Facturapi en response_snapshot para descargar el XML.")
-    return download_invoice_xml(invoice_id=invoice_id)
 
 # ======================================================
 # Errores controlados
@@ -77,13 +26,6 @@ class FacturapiError(Exception):
 # Configuración
 # ======================================================
 def _get_facturapi_config():
-    """
-    Espera estas variables en settings.py:
-
-    FACTURAPI_API_KEY = "sk_live_xxx" o "sk_test_xxx"
-    FACTURAPI_BASE_URL = "https://www.facturapi.io/v2"
-    FACTURAPI_TIMEOUT_SECONDS = 30  (opcional)
-    """
     api_key = getattr(settings, "FACTURAPI_API_KEY", None)
     base_url = getattr(settings, "FACTURAPI_BASE_URL", "https://www.facturapi.io/v2")
     timeout = int(getattr(settings, "FACTURAPI_TIMEOUT_SECONDS", 30) or 30)
@@ -95,7 +37,7 @@ def _get_facturapi_config():
 
 
 # ======================================================
-# HTTP helper
+# HTTP helper (JSON)
 # ======================================================
 def _facturapi_request(
     *,
@@ -105,6 +47,7 @@ def _facturapi_request(
     payload: Optional[Dict[str, Any]] = None,
     timeout: int = 30,
 ) -> Dict[str, Any]:
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -124,9 +67,7 @@ def _facturapi_request(
 
     content_type = resp.headers.get("Content-Type", "")
 
-    # ---------- JSON ----------
     if "application/json" not in content_type:
-        # Log duro para diagnósticos (HTML 404, etc.)
         logger.error(
             "FACTURAPI NON-JSON HTTP %s %s\nCT=%s\nBody=%s",
             resp.status_code,
@@ -141,28 +82,11 @@ def _facturapi_request(
     try:
         data = resp.json()
     except Exception:
-        logger.error(
-            "FACTURAPI JSON PARSE ERROR HTTP %s %s\nBody=%s",
-            resp.status_code,
-            url,
-            (resp.text or "")[:2000],
-        )
         raise FacturapiError(
             f"Respuesta JSON inválida de Facturapi ({resp.status_code})."
         )
 
     if resp.status_code >= 400:
-        # Log request/response para debug
-        logger.error(
-            "FACTURAPI HTTP %s %s\nHeaders=%s\nPayload=%s\nResponseCT=%s\nResponse=%s",
-            resp.status_code,
-            url,
-            json.dumps({k: ("***" if k.lower() == "authorization" else v) for k, v in headers.items()}, ensure_ascii=False, indent=2),
-            json.dumps(payload or {}, ensure_ascii=False, indent=2),
-            content_type,
-            json.dumps(data, ensure_ascii=False),
-        )
-
         msg = data.get("message") or data.get("error") or "Error desconocido en Facturapi"
         details = data.get("details")
         if details:
@@ -173,60 +97,104 @@ def _facturapi_request(
 
 
 # ======================================================
-# Crear CFDI en Facturapi
+# Descargar XML (en memoria)
+# ======================================================
+def download_invoice_xml(*, invoice_id: str) -> bytes:
+    """
+    GET /invoices/{id}/xml
+    Devuelve XML como bytes (NO se guarda en disco).
+    """
+    if not invoice_id:
+        raise FacturapiError("invoice_id requerido para descargar XML.")
+
+    api_key, base_url, timeout = _get_facturapi_config()
+    url = f"{base_url}/invoices/{invoice_id}/xml"
+
+    try:
+        resp = requests.get(
+            url,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Accept": "application/xml",
+            },
+            timeout=timeout,
+        )
+    except requests.RequestException as e:
+        raise FacturapiError(f"Error al descargar XML: {e}")
+
+    if resp.status_code >= 400:
+        body = (resp.text or "")[:800]
+        logger.error("FACTURAPI XML ERROR %s %s %s", resp.status_code, url, body)
+        raise FacturapiError(f"No se pudo descargar XML ({resp.status_code}).")
+
+    return resp.content
+
+
+# ======================================================
+# Extraer datos del certificado desde XML
+# ======================================================
+def extract_cert_data_from_xml(xml_bytes: bytes) -> Dict[str, str]:
+    """
+    Extrae:
+      - NoCertificado (emisor)
+      - Certificado (base64 del .cer público)
+    """
+    try:
+        root = ET.fromstring(xml_bytes)
+    except Exception as e:
+        raise FacturapiError(f"No se pudo parsear XML CFDI: {e}")
+
+    return {
+        "emitter_no_cert": root.attrib.get("NoCertificado", "") or "",
+        "emitter_cert_b64": root.attrib.get("Certificado", "") or "",
+    }
+
+
+# ======================================================
+# Crear CFDI en Facturapi + enriquecer con NoCertificado
 # ======================================================
 def create_invoice_in_facturapi(*, carta: CartaPorteCFDI, trip: Trip) -> Dict[str, Any]:
     """
-    - Construye payload desde modelos reales
+    - Construye payload
     - Envía a Facturapi
-    - Devuelve dict con:
-        {
-          "payload": payload_enviado,
-          "response": respuesta_facturapi_normalizada
-        }
+    - Descarga XML
+    - Extrae NoCertificado del emisor
+    - Devuelve payload + respuesta normalizada
     """
 
-    # ----------------------------
-    # Validaciones duras
-    # ----------------------------
+    # =============================
+    # Validaciones
+    # =============================
     if carta.status == "stamped" and carta.uuid:
         raise FacturapiError("Este CFDI ya fue timbrado.")
 
     if carta.status == "canceled":
-        raise FacturapiError("Este CFDI está cancelado y no puede timbrarse.")
+        raise FacturapiError("Este CFDI está cancelado.")
 
     if not carta.customer_id:
-        raise FacturapiError("La Carta Porte no tiene cliente (receptor).")
+        raise FacturapiError("La Carta Porte no tiene cliente.")
 
     if not trip.operator_id:
-        raise FacturapiError("El viaje no tiene operador asignado.")
+        raise FacturapiError("El viaje no tiene operador.")
 
     if carta.total <= 0:
         raise FacturapiError("El total del CFDI debe ser mayor a 0.")
 
-    # ----------------------------
-    # Configuración
-    # ----------------------------
+    # =============================
+    # Config
+    # =============================
     api_key, base_url, timeout = _get_facturapi_config()
 
-    # ----------------------------
-    # Payload CFDI
-    # ----------------------------
     payload = build_cfdi_payload(
         carta=carta,
         trip_operator=trip.operator,
     )
 
-    # 🚫 Facturapi NO permite external_reference -> NO agregar nada extra aquí.
-
-    # ----------------------------
-    # Endpoint Facturapi
-    # ----------------------------
     url = f"{base_url}/invoices"
 
-    # ----------------------------
-    # Request
-    # ----------------------------
+    # =============================
+    # Timbrar
+    # =============================
     response = _facturapi_request(
         method="POST",
         url=url,
@@ -235,19 +203,64 @@ def create_invoice_in_facturapi(*, carta: CartaPorteCFDI, trip: Trip) -> Dict[st
         timeout=timeout,
     )
 
-    # ----------------------------
-    # Normalización respuesta
-    # ----------------------------
-    normalized = {
+    # =============================
+    # Normalizar
+    # =============================
+    normalized: Dict[str, Any] = {
         "id": response.get("id"),
         "uuid": response.get("uuid"),
         "status": response.get("status"),
         "pdf_url": response.get("pdf_url") or response.get("pdf"),
         "xml_url": response.get("xml_url") or response.get("xml"),
         "raw": response,
+        "emitter_no_cert": "",
+        "sat_no_cert": (response.get("stamp") or {}).get("sat_cert_number", "") or "",
     }
+
+    # =============================
+    # Descargar XML y extraer NoCertificado
+    # =============================
+    invoice_id = normalized.get("id")
+    if invoice_id:
+        try:
+            xml_bytes = download_invoice_xml(invoice_id=invoice_id)
+            cert_data = extract_cert_data_from_xml(xml_bytes)
+
+            normalized["emitter_no_cert"] = cert_data.get("emitter_no_cert", "")
+
+            # 🔒 No guardamos emitter_cert_b64 en DB por tamaño
+            # Si algún día necesitas generar .cer:
+            # base64.b64decode(cert_data["emitter_cert_b64"])
+
+            # Liberar referencia
+            del xml_bytes
+
+        except Exception as e:
+            logger.warning("No se pudo enriquecer con certificado del emisor: %s", e)
 
     return {
         "payload": payload,
         "response": normalized,
     }
+
+def _get_facturapi_invoice_id_from_carta(carta: CartaPorteCFDI) -> Optional[str]:
+    """
+    Resuelve el invoice_id de Facturapi desde response_snapshot.
+    """
+    snap = carta.response_snapshot or {}
+    if not isinstance(snap, dict):
+        return None
+    raw = (snap.get("raw") or {}) if isinstance(snap.get("raw"), dict) else {}
+    return raw.get("id") or snap.get("id") or None
+
+
+def download_carta_porte_xml(*, carta: CartaPorteCFDI) -> bytes:
+    """
+    Descarga XML usando el invoice_id guardado en response_snapshot.
+    """
+    invoice_id = _get_facturapi_invoice_id_from_carta(carta)
+    if not invoice_id:
+        raise FacturapiError(
+            "No se encontró el ID de Facturapi en response_snapshot para descargar el XML."
+        )
+    return download_invoice_xml(invoice_id=invoice_id)
